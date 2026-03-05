@@ -1,0 +1,4 @@
+aidlc
+dist/
+*.exe
+references/
