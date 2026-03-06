@@ -151,9 +151,16 @@ When you use `--file` with a markdown file, the orbit CLI:
 2. **Skips first h1** — The first `# Heading` is dropped since Confluence displays the page title
 3. **Replaces TOC sections** — `## Table of Contents` (or "Contents"/"TOC") headings replace the entire section with the Confluence `toc` macro
 4. **Converts headings** — `##` through `######` become `<h2>` through `<h6>`
-5. **Converts lists** — `- ` and `* ` become `<ul>`, `1. ` becomes `<ol>`
-6. **Converts tables** — Markdown tables with `|` pipes become `<table>` with proper `<thead>` and `<tbody>`
-7. **Converts code blocks** — Fenced code blocks with language hints become code macros with syntax highlighting
-8. **Converts blockquotes** — `> ` lines become info panel macros
-9. **Converts inline** — `**bold**`, `` `code` ``, `~~strike~~`, links, images
-10. **Strips relative links** — Links to `.md` files or `./` paths are converted to plain text (they'll be separate Confluence pages)
+5. **Converts nested lists** — `- ` and `* ` become `<ul>`, `1. ` becomes `<ol>`, with proper nesting via indentation
+6. **Task lists** — `- [ ]` and `- [x]` items become status macros (TODO/DONE)
+7. **Converts tables** — Markdown tables with `|` pipes become `<table>` with `<thead>`, `<tbody>`, and column alignment support (`:---`, `:---:`, `---:`)
+8. **Converts code blocks** — Fenced code blocks with language hints become code macros with syntax highlighting. Supports `title="..."` parameter
+9. **GitHub Alerts** — `> [!NOTE]`, `> [!WARNING]`, `> [!TIP]`, `> [!CAUTION]`, `> [!IMPORTANT]` map to Confluence note/warning/tip/info macros
+10. **Plain blockquotes** — `> ` lines become info panel macros
+11. **MkDocs admonitions** — `!!! note "title"` with indented content maps to Confluence panel macros
+12. **Collapsible sections** — `<details><summary>Title</summary>` blocks become expand macros
+13. **Status badges** — Inline `{status:Color|Text}` syntax becomes status macros
+14. **Horizontal rules** — `---`, `***`, `___` become `<hr />`
+15. **Image alt text** — Preserved as `ac:alt` attribute on `ac:image` elements
+16. **Converts inline** — `**bold**`, `` `code` ``, `~~strike~~`, links, images
+17. **Strips relative links** — Links to `.md` files or `./` paths are converted to plain text (they'll be separate Confluence pages)
