@@ -2,5 +2,6 @@ aidlc
 dist/
 *.exe
 references/
+!skills/**/references/
 /CLAUDE.md
 .claude
