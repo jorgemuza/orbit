@@ -2,6 +2,7 @@ package confluence
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -10,6 +11,13 @@ import (
 // The first h1 heading is skipped because Confluence already displays the page title.
 // Any "Table of Contents" section is replaced with the Confluence toc macro.
 func MarkdownToStorage(md string) string {
+	return MarkdownToStorageWithLinks(md, nil)
+}
+
+// MarkdownToStorageWithLinks converts Markdown to Confluence storage format.
+// linkMap maps relative .md paths (e.g. "./piv-loops.md", "../org/governance.md")
+// to exact Confluence page titles for resolving internal links.
+func MarkdownToStorageWithLinks(md string, linkMap map[string]string) string {
 	// Strip YAML frontmatter
 	md = stripFrontmatter(md)
 
@@ -26,6 +34,10 @@ func MarkdownToStorage(md string) string {
 	inTable := false
 	firstH1Skipped := false
 	inTocSection := false
+
+	inline := func(text string) string {
+		return convertInline(text, linkMap)
+	}
 
 	for i := 0; i < len(lines); i++ {
 		line := lines[i]
@@ -109,7 +121,7 @@ func MarkdownToStorage(md string) string {
 			// If we hit a new heading, we're out of the TOC section
 			inTocSection = false
 
-			out = append(out, fmt.Sprintf("<h%d>%s</h%d>", level, convertInline(heading), level))
+			out = append(out, fmt.Sprintf("<h%d>%s</h%d>", level, inline(heading), level))
 			continue
 		}
 
@@ -138,14 +150,14 @@ func MarkdownToStorage(md string) string {
 				// First row is header
 				out = append(out, `<table data-layout="full-width"><thead><tr>`)
 				for _, cell := range cells {
-					out = append(out, fmt.Sprintf("<th>%s</th>", convertInline(cell)))
+					out = append(out, fmt.Sprintf("<th>%s</th>", inline(cell)))
 				}
 				out = append(out, "</tr></thead><tbody>")
 				inTable = true
 			} else {
 				out = append(out, "<tr>")
 				for _, cell := range cells {
-					out = append(out, fmt.Sprintf("<td>%s</td>", convertInline(cell)))
+					out = append(out, fmt.Sprintf("<td>%s</td>", inline(cell)))
 				}
 				out = append(out, "</tr>")
 			}
@@ -170,7 +182,7 @@ func MarkdownToStorage(md string) string {
 				i++
 			}
 			i-- // back up since for loop will increment
-			quoteContent := convertInline(strings.Join(quoteLines, "<br />"))
+			quoteContent := inline(strings.Join(quoteLines, "<br />"))
 			out = append(out, fmt.Sprintf(`<ac:structured-macro ac:name="info"><ac:rich-text-body><p>%s</p></ac:rich-text-body></ac:structured-macro>`, quoteContent))
 			continue
 		}
@@ -186,7 +198,7 @@ func MarkdownToStorage(md string) string {
 				inList = true
 				listTag = "ul"
 			}
-			out = append(out, fmt.Sprintf("<li>%s</li>", convertInline(content)))
+			out = append(out, fmt.Sprintf("<li>%s</li>", inline(content)))
 			continue
 		}
 
@@ -203,7 +215,7 @@ func MarkdownToStorage(md string) string {
 					inList = true
 					listTag = "ol"
 				}
-				out = append(out, fmt.Sprintf("<li>%s</li>", convertInline(m[1])))
+				out = append(out, fmt.Sprintf("<li>%s</li>", inline(m[1])))
 				continue
 			}
 		}
@@ -214,8 +226,14 @@ func MarkdownToStorage(md string) string {
 			inList = false
 		}
 
+		// Pass through lines that are already HTML block elements (e.g. from convertMetadataBlock)
+		if strings.HasPrefix(trimmed, "<table") || strings.HasPrefix(trimmed, "<div") || strings.HasPrefix(trimmed, "<ac:") {
+			out = append(out, trimmed)
+			continue
+		}
+
 		// Regular paragraph
-		out = append(out, fmt.Sprintf("<p>%s</p>", convertInline(trimmed)))
+		out = append(out, fmt.Sprintf("<p>%s</p>", inline(trimmed)))
 	}
 
 	// Close any open structures
@@ -281,29 +299,55 @@ func parseTableRow(line string) []string {
 }
 
 var (
-	reBold       = regexp.MustCompile(`\*\*(.+?)\*\*`)
-	reItalic     = regexp.MustCompile(`(?:^|[^*])_(.+?)_(?:[^*]|$)`)
-	reItalicAlt  = regexp.MustCompile(`\*([^*]+?)\*`)
-	reCode       = regexp.MustCompile("`([^`]+)`")
-	reStrike     = regexp.MustCompile(`~~(.+?)~~`)
-	reLink       = regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`)
-	reImage      = regexp.MustCompile(`!\[([^\]]*)\]\(([^)]+)\)`)
-	reMetadata   = regexp.MustCompile(`^\*\*(.+?)\*\*:\s*(.+)$`)
+	reBold      = regexp.MustCompile(`\*\*(.+?)\*\*`)
+	reItalic    = regexp.MustCompile(`(?:^|[^*])_(.+?)_(?:[^*]|$)`)
+	reItalicAlt = regexp.MustCompile(`\*([^*]+?)\*`)
+	reCode      = regexp.MustCompile("`([^`]+)`")
+	reStrike    = regexp.MustCompile(`~~(.+?)~~`)
+	reLink      = regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`)
+	reImage     = regexp.MustCompile(`!\[([^\]]*)\]\(([^)]+)\)`)
+	reMetadata  = regexp.MustCompile(`^\*\*(.+?)\*\*:\s*(.+)$`)
 )
 
-func convertInline(text string) string {
+// convertInline converts markdown inline formatting to Confluence storage format.
+// linkMap is optional — when provided, relative .md links are resolved to exact
+// Confluence page titles. When nil, the link label is used as the page title.
+func convertInline(text string, linkMap map[string]string) string {
 	// Images before links (images start with !)
 	text = reImage.ReplaceAllString(text, `<ac:image><ri:url ri:value="$2" /></ac:image>`)
-	// Links — handle relative .md links
+	// Links — handle relative .md links as Confluence page links
 	text = reLink.ReplaceAllStringFunc(text, func(s string) string {
 		m := reLink.FindStringSubmatch(s)
 		if m == nil {
 			return s
 		}
 		label, href := m[1], m[2]
-		// Skip relative markdown links (they'll be Confluence pages)
-		if strings.HasSuffix(href, ".md") || strings.HasPrefix(href, "./") {
+		// Anchor-only links (e.g. #section) — skip, not useful in storage format
+		if strings.HasPrefix(href, "#") {
 			return label
+		}
+		// Relative markdown links become Confluence page links
+		if strings.HasSuffix(href, ".md") || strings.HasPrefix(href, "./") || strings.HasPrefix(href, "../") {
+			pageTitle := label // default: use the link label as page title
+			if linkMap != nil {
+				// Try to resolve from the link map
+				// Normalize the href: strip ./ prefix, keep ../ paths
+				normalized := href
+				normalized = strings.TrimPrefix(normalized, "./")
+				// Also try with the raw href
+				if t, ok := linkMap[normalized]; ok {
+					pageTitle = t
+				} else if t, ok := linkMap[href]; ok {
+					pageTitle = t
+				} else {
+					// Try just the filename
+					base := filepath.Base(href)
+					if t, ok := linkMap[base]; ok {
+						pageTitle = t
+					}
+				}
+			}
+			return fmt.Sprintf(`<ac:link><ri:page ri:content-title="%s" /><ac:plain-text-link-body><![CDATA[%s]]></ac:plain-text-link-body></ac:link>`, pageTitle, label)
 		}
 		return fmt.Sprintf(`<a href="%s">%s</a>`, href, label)
 	})
@@ -328,49 +372,74 @@ func convertInline(text string) string {
 	return text
 }
 
-// convertMetadataBlock detects consecutive **Key**: Value lines at the start
-// of the document (before any heading) and replaces them with a pre-rendered
-// Confluence two-column table with the first column in gray.
+// convertMetadataBlock detects consecutive **Key**: Value lines near the top
+// of the document (after frontmatter stripping, skipping the first heading and
+// blank lines) and replaces them with a pre-rendered Confluence two-column
+// table with the first column highlighted in gray.
 func convertMetadataBlock(md string) string {
 	lines := strings.Split(md, "\n")
 	var metaRows [][]string
-	consumed := 0
+	metaStart := -1
+	metaEnd := 0
 
-	for _, line := range lines {
-		trimmed := strings.TrimSpace(line)
+	// Skip leading headings, blank lines, and blockquotes to find metadata block
+	i := 0
+	for i < len(lines) {
+		trimmed := strings.TrimSpace(lines[i])
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, "> ") {
+			i++
+			continue
+		}
+		break
+	}
+
+	// Now look for consecutive **Key**: Value lines
+	for i < len(lines) {
+		trimmed := strings.TrimSpace(lines[i])
 		if trimmed == "" {
 			if len(metaRows) > 0 {
-				consumed++
+				i++
+				continue
 			}
-			continue
+			break
 		}
 		m := reMetadata.FindStringSubmatch(trimmed)
 		if m == nil {
 			break
 		}
+		if metaStart == -1 {
+			metaStart = i
+		}
 		metaRows = append(metaRows, []string{m[1], m[2]})
-		consumed++
+		metaEnd = i + 1
+		i++
 	}
 
 	if len(metaRows) == 0 {
 		return md
 	}
 
-	// Build the table with gray first column
+	// Build the table with gray first column using Confluence's native highlight
 	var tbl strings.Builder
 	tbl.WriteString(`<table data-layout="full-width"><tbody>`)
 	for _, row := range metaRows {
-		tbl.WriteString(fmt.Sprintf(`<tr><td style="background-color: #f4f5f7;"><strong>%s</strong></td><td>%s</td></tr>`, row[0], row[1]))
+		tbl.WriteString(fmt.Sprintf(`<tr><td class="highlight-grey" data-highlight-colour="grey"><strong>%s</strong></td><td>%s</td></tr>`, row[0], row[1]))
 	}
 	tbl.WriteString(`</tbody></table>`)
 
-	// Skip consumed lines and any trailing blank lines
-	rest := lines[consumed:]
-	for len(rest) > 0 && strings.TrimSpace(rest[0]) == "" {
-		rest = rest[1:]
+	// Reconstruct: lines before metadata + table + lines after metadata
+	before := lines[:metaStart]
+	after := lines[metaEnd:]
+	// Skip trailing blank lines after metadata
+	for len(after) > 0 && strings.TrimSpace(after[0]) == "" {
+		after = after[1:]
 	}
 
-	return tbl.String() + "\n" + strings.Join(rest, "\n")
+	var result []string
+	result = append(result, before...)
+	result = append(result, tbl.String())
+	result = append(result, after...)
+	return strings.Join(result, "\n")
 }
 
 func escapeXML(s string) string {
