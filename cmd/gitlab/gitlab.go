@@ -33,6 +33,7 @@ func init() {
 	Command.AddCommand(issueCmd)
 	Command.AddCommand(memberCmd)
 	Command.AddCommand(userCmd)
+	Command.AddCommand(variableCmd)
 }
 
 func resolveGitLabClient(cmd *cobra.Command) (*glsvc.Client, error) {

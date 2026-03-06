@@ -557,3 +557,55 @@ func (c *Client) ListUsers(search string, perPage int) ([]User, error) {
 	}
 	return users, nil
 }
+
+// --- CI/CD Variable operations ---
+
+type Variable struct {
+	Key              string `json:"key"`
+	Value            string `json:"value"`
+	VariableType     string `json:"variable_type"`
+	Protected        bool   `json:"protected"`
+	Masked           bool   `json:"masked"`
+	Raw              bool   `json:"raw"`
+	EnvironmentScope string `json:"environment_scope"`
+	Description      string `json:"description,omitempty"`
+}
+
+func (c *Client) ListVariables(projectID string, perPage int) ([]Variable, error) {
+	var vars []Variable
+	if err := c.DoGet(fmt.Sprintf("%s/projects/%s/variables?per_page=%d", apiV4, encodeProject(projectID), perPage), &vars); err != nil {
+		return nil, fmt.Errorf("listing variables: %w", err)
+	}
+	return vars, nil
+}
+
+func (c *Client) GetVariable(projectID, key string) (*Variable, error) {
+	var v Variable
+	if err := c.DoGet(fmt.Sprintf("%s/projects/%s/variables/%s", apiV4, encodeProject(projectID), url.PathEscape(key)), &v); err != nil {
+		return nil, fmt.Errorf("getting variable: %w", err)
+	}
+	return &v, nil
+}
+
+func (c *Client) CreateVariable(projectID string, v Variable) (*Variable, error) {
+	var result Variable
+	if err := c.DoPost(fmt.Sprintf("%s/projects/%s/variables", apiV4, encodeProject(projectID)), v, &result); err != nil {
+		return nil, fmt.Errorf("creating variable: %w", err)
+	}
+	return &result, nil
+}
+
+func (c *Client) UpdateVariable(projectID string, v Variable) (*Variable, error) {
+	var result Variable
+	if err := c.DoPut(fmt.Sprintf("%s/projects/%s/variables/%s", apiV4, encodeProject(projectID), url.PathEscape(v.Key)), v, &result); err != nil {
+		return nil, fmt.Errorf("updating variable: %w", err)
+	}
+	return &result, nil
+}
+
+func (c *Client) DeleteVariable(projectID, key string) error {
+	if err := c.DoDelete(fmt.Sprintf("%s/projects/%s/variables/%s", apiV4, encodeProject(projectID), url.PathEscape(key))); err != nil {
+		return fmt.Errorf("deleting variable: %w", err)
+	}
+	return nil
+}
