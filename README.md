@@ -2,7 +2,7 @@
 
 A unified CLI for managing connections to development lifecycle services.
 
-Supports **Jira**, **Confluence**, **GitLab**, and **Bitbucket** (cloud and self-hosted). Organize connections into profiles to switch between projects seamlessly.
+Supports **Jira**, **Confluence**, **GitLab**, **GitHub**, and **Bitbucket** (cloud and self-hosted). Organize connections into profiles to switch between projects seamlessly.
 
 Secrets can be stored as [1Password](https://1password.com/) references (`op://vault/item/field`) and are resolved at runtime using the 1Password CLI.
 
@@ -47,6 +47,10 @@ orbit profile add-service \
   --name gitlab-onprem --type gitlab --variant server \
   --base-url https://gitlab.internal.com \
   --auth-method basic --username admin --password "op://Dev/gitlab/password"
+
+orbit profile add-service \
+  --name github-cloud --type github \
+  --auth-method token --token "op://Dev/github-token/credential"
 
 # Test connectivity
 orbit service ping
@@ -126,12 +130,17 @@ orbit profile add-service \
   --base-url https://gitlab.internal.com \
   --auth-method basic --username admin \
   --password "op://Dev/gitlab/password"
+
+# GitHub with personal access token
+orbit profile add-service \
+  --name github-cloud --type github \
+  --auth-method token --token "ghp_xxxxxxxxxxxx"
 ```
 
 | Flag | Description | Default |
 |------|-------------|---------|
 | `-n, --name` | Service connection name (required) | |
-| `-t, --type` | Service type: `jira`, `confluence`, `gitlab`, `bitbucket` (required) | |
+| `-t, --type` | Service type: `jira`, `confluence`, `gitlab`, `github`, `bitbucket` (required) | |
 | `--variant` | Variant: `cloud`, `server` | `cloud` |
 | `--base-url` | Base URL of the service | |
 | `--auth-method` | Auth method: `token`, `basic`, `oauth2` | `token` |
@@ -186,7 +195,7 @@ Each service requires a `--base-url`, `--variant` (cloud/server), and authentica
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `--base-url` | Service base URL (optional for GitLab/Bitbucket cloud) | |
+| `--base-url` | Service base URL (optional for GitLab/GitHub/Bitbucket cloud) | |
 | `--variant` | `cloud` or `server` | `cloud` |
 | `--auth-method` | `token`, `basic`, or `oauth2` | `token` |
 | `--token` | API token / PAT | |
@@ -763,114 +772,221 @@ orbit confluence property delete 12345 status
 
 Connects to GitLab.com or self-hosted GitLab. `--base-url` defaults to `https://gitlab.com` for cloud variant.
 
-#### `gitlab ping`
+Alias: `gl`
 
-Tests connectivity via `GET /api/v4/version`. Returns version and revision.
+#### `gitlab project / projects`
+
+View or list projects.
 
 ```bash
-orbit service ping gitlab-cloud
+orbit gitlab project 595
+orbit gitlab project schools/frontend/my-app
+orbit gitlab projects --search frontend
+orbit gitlab projects --group schools/frontend
 ```
 
-#### `gitlab project list`
+#### `gitlab group`
 
-List accessible projects.
+View groups, list subgroups.
 
 ```bash
-orbit gitlab project list
-orbit gitlab project list --owned
-orbit gitlab project list --search "api"
+orbit gitlab group view schools/frontend
+orbit gitlab group subgroups schools
 ```
 
-#### `gitlab issue list`
+#### `gitlab mr`
 
-List issues in a project.
+Manage merge requests (list, view, create, merge, comment, notes).
 
 ```bash
-orbit gitlab issue list --project my-group/my-project
-orbit gitlab issue list --state opened --assignee me
-orbit gitlab issue list --label bug --label urgent
+orbit gitlab mr list 595
+orbit gitlab mr list 595 --state merged
+orbit gitlab mr view 595 42
+orbit gitlab mr create 595 --source feature/login --target main --title "Add login"
+orbit gitlab mr merge 595 42 --squash
+orbit gitlab mr comment 595 42 --body "LGTM!"
+orbit gitlab mr notes 595 42
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--project` | Project path (required) |
-| `--state` | Filter: `opened`, `closed`, `all` |
-| `--assignee` | Filter by assignee |
-| `--label` | Filter by label (repeatable) |
-| `--milestone` | Filter by milestone |
-| `--search` | Search in title and description |
+#### `gitlab pipeline`
 
-#### `gitlab issue view`
-
-View a single issue.
+Manage CI/CD pipelines (list, view, jobs, retry, cancel). Aliases: `pipe`, `ci`.
 
 ```bash
-orbit gitlab issue view --project my-group/my-project 42
+orbit gitlab pipeline list 595 --ref main --status failed
+orbit gitlab pipeline view 595 12345
+orbit gitlab pipeline jobs 595 12345
+orbit gitlab pipeline retry 595 12345
+orbit gitlab pipeline cancel 595 12345
 ```
 
-#### `gitlab issue create`
+#### `gitlab job`
 
-Create a new issue.
+Manage CI/CD jobs (list, view, log, retry, cancel, play).
 
 ```bash
-orbit gitlab issue create --project my-group/my-project \
-  --title "Fix login timeout" \
-  --description "Users report 30s timeout on login" \
-  --label bug --assignee john
+orbit gitlab job list 595
+orbit gitlab job view 595 67890
+orbit gitlab job log 595 67890
+orbit gitlab job retry 595 67890
 ```
 
-#### `gitlab issue edit`
+#### `gitlab runner`
 
-Update an issue.
+Manage runners (list, enable, disable).
 
 ```bash
-orbit gitlab issue edit --project my-group/my-project 42 \
-  --title "Updated title" --state-event close
+orbit gitlab runner list 595
+orbit gitlab runner all --status online
+orbit gitlab runner enable 595 --runner-id 1
+orbit gitlab runner disable 595 --runner-id 1
 ```
 
-#### `gitlab mr list`
+#### `gitlab branch / tag / commit`
 
-List merge requests.
+Manage branches, tags, and commits.
 
 ```bash
-orbit gitlab mr list --project my-group/my-project
-orbit gitlab mr list --project my-group/my-project --state merged
+orbit gitlab branch list 595 --search feature
+orbit gitlab branch view 595 main
+orbit gitlab branch create 595 feature/new-thing main
+orbit gitlab branch delete 595 feature/old-thing
+
+orbit gitlab tag list 595
+orbit gitlab tag create 595 v1.0.0 main -m "Release v1.0.0"
+
+orbit gitlab commit list 595 --ref main
+orbit gitlab commit view 595 abc1234
 ```
 
-#### `gitlab mr view`
+#### `gitlab issue`
 
-View a merge request.
+Manage issues (list, view, create, close).
 
 ```bash
-orbit gitlab mr view --project my-group/my-project 15
+orbit gitlab issue list 595 --state opened --labels bug
+orbit gitlab issue view 595 1
+orbit gitlab issue create 595 --title "Fix login bug" --labels bug
+orbit gitlab issue close 595 1
 ```
 
-#### `gitlab mr create`
+#### `gitlab file`
 
-Create a merge request.
+View and update repository files.
 
 ```bash
-orbit gitlab mr create --project my-group/my-project \
-  --source feature-branch --target main \
-  --title "Add login feature" \
-  --description "Implements OAuth2 login flow"
+orbit gitlab file view 595 README.md --ref main
+orbit gitlab file update 595 config.yaml --branch main --content "..." --message "Update config"
 ```
 
-#### `gitlab pipeline list`
+#### `gitlab variable`
 
-List CI/CD pipelines.
+Manage CI/CD variables (list, view, create, update, delete).
 
 ```bash
-orbit gitlab pipeline list --project my-group/my-project
-orbit gitlab pipeline list --project my-group/my-project --status failed
+orbit gitlab variable list 595
+orbit gitlab variable view 595 MY_VAR
+orbit gitlab variable create 595 --key MY_VAR --value secret --protected --masked
+orbit gitlab variable update 595 --key MY_VAR --value new-secret
+orbit gitlab variable delete 595 MY_VAR
 ```
 
-#### `gitlab pipeline view`
+#### `gitlab member / user`
 
-View pipeline details and jobs.
+View members and users.
 
 ```bash
-orbit gitlab pipeline view --project my-group/my-project 12345
+orbit gitlab member list 595
+orbit gitlab user me
+orbit gitlab user list --search john
+```
+
+---
+
+### GitHub
+
+Connects to GitHub.com or GitHub Enterprise. `--base-url` defaults to `https://api.github.com` for cloud.
+
+Alias: `gh`
+
+#### `github repo / repos`
+
+View or list repositories.
+
+```bash
+orbit github repo octocat/hello-world
+orbit github repos
+orbit github repos --org kubernetes --limit 10
+```
+
+#### `github pr`
+
+Manage pull requests (list, view, create, merge, comment, comments).
+
+```bash
+orbit github pr list octocat/hello-world
+orbit github pr list octocat/hello-world --state closed
+orbit github pr view octocat/hello-world 42
+orbit github pr create octocat/hello-world --head feature/x --base main --title "Add feature"
+orbit github pr merge octocat/hello-world 42 --method squash
+orbit github pr comment octocat/hello-world 42 --body "LGTM!"
+orbit github pr comments octocat/hello-world 42
+```
+
+#### `github issue`
+
+Manage issues (list, view, create, close, comment).
+
+```bash
+orbit github issue list octocat/hello-world --state open --labels bug
+orbit github issue view octocat/hello-world 1
+orbit github issue create octocat/hello-world --title "Bug report" --labels bug
+orbit github issue close octocat/hello-world 1
+orbit github issue comment octocat/hello-world 1 --body "Working on this"
+```
+
+#### `github run`
+
+Manage GitHub Actions workflow runs (list, view, cancel, rerun). Alias: `actions`.
+
+```bash
+orbit github run list octocat/hello-world --branch main --status completed
+orbit github run view octocat/hello-world 12345
+orbit github run cancel octocat/hello-world 12345
+orbit github run rerun octocat/hello-world 12345
+```
+
+#### `github release`
+
+Manage releases (list, view, latest).
+
+```bash
+orbit github release list octocat/hello-world
+orbit github release view octocat/hello-world 12345
+orbit github release latest octocat/hello-world
+```
+
+#### `github branch / tag / commit`
+
+View branches, tags, and commits.
+
+```bash
+orbit github branch list octocat/hello-world
+orbit github branch view octocat/hello-world main
+
+orbit github tag list octocat/hello-world
+
+orbit github commit list octocat/hello-world --ref main
+orbit github commit view octocat/hello-world abc1234
+```
+
+#### `github user`
+
+View user information.
+
+```bash
+orbit github user me
+orbit github user view octocat
 ```
 
 ---
@@ -973,6 +1089,11 @@ profiles:
           method: basic
           username: admin
           password: "op://DevVault/gitlab/password"
+      - name: github-cloud
+        type: github
+        auth:
+          method: token
+          token: "op://DevVault/github-token/credential"
 ```
 
 ## Releasing
