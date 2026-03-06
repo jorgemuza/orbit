@@ -975,6 +975,19 @@ profiles:
           password: "op://DevVault/gitlab/password"
 ```
 
+## Releasing
+
+Releases are automated via GitHub Actions. When you push a tag, the CI workflow runs `goreleaser` to build binaries, create the GitHub release, and update the Homebrew tap and Scoop bucket.
+
+To create a release:
+
+```bash
+git tag -a v0.4.0 -m "v0.4.0: description"
+git push origin v0.4.0
+```
+
+> **Warning:** Do not run `goreleaser release` locally and then push the tag. The CI will fail because the release assets already exist. Always let CI handle the release by only pushing the tag.
+
 ## License
 
 MIT
