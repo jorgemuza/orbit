@@ -1,15 +1,16 @@
 package cmd
 
 import (
-	"github.com/paybook/aidlc-cli/cmd/profile"
-	cmdservice "github.com/paybook/aidlc-cli/cmd/service"
-	"github.com/paybook/aidlc-cli/cmd/version"
+	cmdjira "github.com/jorgemuza/aidlc-cli/cmd/jira"
+	"github.com/jorgemuza/aidlc-cli/cmd/profile"
+	cmdservice "github.com/jorgemuza/aidlc-cli/cmd/service"
+	"github.com/jorgemuza/aidlc-cli/cmd/version"
 
 	// Register all service types
-	_ "github.com/paybook/aidlc-cli/internal/service/bitbucket"
-	_ "github.com/paybook/aidlc-cli/internal/service/confluence"
-	_ "github.com/paybook/aidlc-cli/internal/service/gitlab"
-	_ "github.com/paybook/aidlc-cli/internal/service/jira"
+	_ "github.com/jorgemuza/aidlc-cli/internal/service/bitbucket"
+	_ "github.com/jorgemuza/aidlc-cli/internal/service/confluence"
+	_ "github.com/jorgemuza/aidlc-cli/internal/service/gitlab"
+	_ "github.com/jorgemuza/aidlc-cli/internal/service/jira"
 
 	"github.com/spf13/cobra"
 )
@@ -42,6 +43,7 @@ func init() {
 
 	rootCmd.AddCommand(profile.Command)
 	rootCmd.AddCommand(cmdservice.Command)
+	rootCmd.AddCommand(cmdjira.Command)
 	rootCmd.AddCommand(version.Command)
 
 	rootCmd.SilenceUsage = true

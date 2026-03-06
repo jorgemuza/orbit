@@ -2,3 +2,5 @@ aidlc
 dist/
 *.exe
 references/
+/CLAUDE.md
+.claude

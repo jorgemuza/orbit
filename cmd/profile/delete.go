@@ -3,7 +3,7 @@ package profile
 import (
 	"fmt"
 
-	"github.com/paybook/aidlc-cli/cmd/cmdutil"
+	"github.com/jorgemuza/aidlc-cli/cmd/cmdutil"
 	"github.com/spf13/cobra"
 )
 

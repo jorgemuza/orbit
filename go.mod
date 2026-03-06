@@ -1,4 +1,4 @@
-module github.com/paybook/aidlc-cli
+module github.com/jorgemuza/aidlc-cli
 
 go 1.25.0
 

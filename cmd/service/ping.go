@@ -3,9 +3,9 @@ package service
 import (
 	"fmt"
 
-	"github.com/paybook/aidlc-cli/cmd/cmdutil"
-	"github.com/paybook/aidlc-cli/internal/config"
-	"github.com/paybook/aidlc-cli/internal/service"
+	"github.com/jorgemuza/aidlc-cli/cmd/cmdutil"
+	"github.com/jorgemuza/aidlc-cli/internal/config"
+	"github.com/jorgemuza/aidlc-cli/internal/service"
 	"github.com/spf13/cobra"
 )
 

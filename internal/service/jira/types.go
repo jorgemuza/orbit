@@ -1,0 +1,252 @@
+package jira
+
+import "encoding/json"
+
+// SearchResult is the response from the Jira search API.
+type SearchResult struct {
+	StartAt    int     `json:"startAt"`
+	MaxResults int     `json:"maxResults"`
+	Total      int     `json:"total"`
+	Issues     []Issue `json:"issues"`
+}
+
+// Issue represents a Jira issue.
+type Issue struct {
+	Key    string      `json:"key"`
+	Self   string      `json:"self"`
+	Fields IssueFields `json:"fields"`
+}
+
+// IssueFields contains the fields of a Jira issue.
+type IssueFields struct {
+	Summary     string     `json:"summary"`
+	Description string     `json:"description"`
+	Status      NameField  `json:"status"`
+	IssueType   NameField  `json:"issuetype"`
+	Priority    NameField  `json:"priority"`
+	Resolution  *NameField `json:"resolution"`
+	Assignee    *UserField `json:"assignee"`
+	Reporter    *UserField `json:"reporter"`
+	Created     string     `json:"created"`
+	Updated     string     `json:"updated"`
+	Labels      []string   `json:"labels"`
+	Components  []NameField `json:"components"`
+	FixVersions []NameField `json:"fixVersions"`
+	Parent      *ParentField `json:"parent"`
+	Comment     *CommentList `json:"comment"`
+	Worklog     *WorklogList `json:"worklog"`
+	IssueLinks  []IssueLink  `json:"issuelinks"`
+	Subtasks    []Issue      `json:"subtasks"`
+	Epic        *Issue       `json:"epic"`
+	Sprint      *SprintField `json:"sprint"`
+	TimeTracking *TimeTracking `json:"timetracking"`
+}
+
+// NameField is a generic field with a name.
+type NameField struct {
+	Name string `json:"name"`
+	ID   string `json:"id,omitempty"`
+}
+
+// UserField represents a Jira user.
+type UserField struct {
+	DisplayName  string `json:"displayName"`
+	EmailAddress string `json:"emailAddress"`
+	Name         string `json:"name"`
+	AccountID    string `json:"accountId,omitempty"`
+}
+
+// ParentField represents a parent issue reference.
+type ParentField struct {
+	Key    string      `json:"key"`
+	Fields *IssueFields `json:"fields,omitempty"`
+}
+
+// CommentList is the comment container in an issue.
+type CommentList struct {
+	Total    int       `json:"total"`
+	Comments []Comment `json:"comments"`
+}
+
+// Comment represents a single comment.
+type Comment struct {
+	ID      string     `json:"id"`
+	Body    string     `json:"body"`
+	Author  *UserField `json:"author"`
+	Created string     `json:"created"`
+	Updated string     `json:"updated"`
+}
+
+// WorklogList is the worklog container in an issue.
+type WorklogList struct {
+	Total    int       `json:"total"`
+	Worklogs []Worklog `json:"worklogs"`
+}
+
+// Worklog represents a single worklog entry.
+type Worklog struct {
+	ID               string     `json:"id"`
+	TimeSpent        string     `json:"timeSpent"`
+	TimeSpentSeconds int        `json:"timeSpentSeconds"`
+	Comment          string     `json:"comment"`
+	Author           *UserField `json:"author"`
+	Started          string     `json:"started"`
+}
+
+// IssueLink represents a link between two issues.
+type IssueLink struct {
+	ID           string     `json:"id"`
+	Type         LinkType   `json:"type"`
+	InwardIssue  *Issue     `json:"inwardIssue,omitempty"`
+	OutwardIssue *Issue     `json:"outwardIssue,omitempty"`
+}
+
+// LinkType describes the link type.
+type LinkType struct {
+	Name    string `json:"name"`
+	Inward  string `json:"inward"`
+	Outward string `json:"outward"`
+}
+
+// Transition represents a workflow transition.
+type Transition struct {
+	ID   string    `json:"id"`
+	Name string    `json:"name"`
+	To   NameField `json:"to"`
+}
+
+// SprintField represents sprint info on an issue.
+type SprintField struct {
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	State string `json:"state"`
+}
+
+// Sprint represents a sprint from the Agile API.
+type Sprint struct {
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	State     string `json:"state"`
+	StartDate string `json:"startDate,omitempty"`
+	EndDate   string `json:"endDate,omitempty"`
+	Goal      string `json:"goal,omitempty"`
+}
+
+// Board represents a Jira board.
+type Board struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+// Project represents a Jira project.
+type Project struct {
+	Key  string    `json:"key"`
+	Name string    `json:"name"`
+	Lead *UserField `json:"lead,omitempty"`
+}
+
+// Version represents a project version/release.
+type Version struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Released    bool   `json:"released"`
+	ReleaseDate string `json:"releaseDate,omitempty"`
+}
+
+// TimeTracking holds time tracking info.
+type TimeTracking struct {
+	OriginalEstimate  string `json:"originalEstimate,omitempty"`
+	RemainingEstimate string `json:"remainingEstimate,omitempty"`
+	TimeSpent         string `json:"timeSpent,omitempty"`
+}
+
+// CreateIssueRequest is the payload for creating an issue.
+// It marshals Fields as a flat map, merging structured fields with custom fields.
+type CreateIssueRequest struct {
+	Fields CreateIssueFields
+}
+
+// MarshalJSON produces a flat {"fields": {...}} with custom fields merged in.
+func (r CreateIssueRequest) MarshalJSON() ([]byte, error) {
+	m := make(map[string]any)
+	m["project"] = r.Fields.Project
+	m["issuetype"] = r.Fields.IssueType
+	m["summary"] = r.Fields.Summary
+	if r.Fields.Description != "" {
+		m["description"] = r.Fields.Description
+	}
+	if len(r.Fields.Priority) > 0 {
+		m["priority"] = r.Fields.Priority
+	}
+	if len(r.Fields.Assignee) > 0 {
+		m["assignee"] = r.Fields.Assignee
+	}
+	if len(r.Fields.Reporter) > 0 {
+		m["reporter"] = r.Fields.Reporter
+	}
+	if len(r.Fields.Labels) > 0 {
+		m["labels"] = r.Fields.Labels
+	}
+	if len(r.Fields.Components) > 0 {
+		m["components"] = r.Fields.Components
+	}
+	if len(r.Fields.FixVersions) > 0 {
+		m["fixVersions"] = r.Fields.FixVersions
+	}
+	if len(r.Fields.Parent) > 0 {
+		m["parent"] = r.Fields.Parent
+	}
+	if r.Fields.TimeTracking != nil {
+		m["timetracking"] = r.Fields.TimeTracking
+	}
+	for k, v := range r.Fields.CustomFields {
+		m[k] = v
+	}
+	return json.Marshal(map[string]any{"fields": m})
+}
+
+// CreateIssueFields holds fields for issue creation.
+type CreateIssueFields struct {
+	Project      map[string]string   `json:"project"`
+	IssueType    map[string]string   `json:"issuetype"`
+	Summary      string              `json:"summary"`
+	Description  string              `json:"description,omitempty"`
+	Priority     map[string]string   `json:"priority,omitempty"`
+	Assignee     map[string]string   `json:"assignee,omitempty"`
+	Reporter     map[string]string   `json:"reporter,omitempty"`
+	Labels       []string            `json:"labels,omitempty"`
+	Components   []map[string]string `json:"components,omitempty"`
+	FixVersions  []map[string]string `json:"fixVersions,omitempty"`
+	Parent       map[string]string   `json:"parent,omitempty"`
+	TimeTracking *TimeTracking       `json:"timetracking,omitempty"`
+	CustomFields map[string]any      `json:"-"`
+}
+
+// EditIssueRequest is the payload for editing an issue.
+type EditIssueRequest struct {
+	Fields map[string]any `json:"fields,omitempty"`
+	Update map[string]any `json:"update,omitempty"`
+}
+
+// CreatedIssue is the response from creating an issue.
+type CreatedIssue struct {
+	ID   string `json:"id"`
+	Key  string `json:"key"`
+	Self string `json:"self"`
+}
+
+// TransitionRequest is the payload for transitioning an issue.
+type TransitionRequest struct {
+	Transition map[string]string `json:"transition"`
+	Update     map[string]any    `json:"update,omitempty"`
+	Fields     map[string]any    `json:"fields,omitempty"`
+}
+
+// LinkRequest is the payload for linking issues.
+type LinkRequest struct {
+	Type         map[string]string `json:"type"`
+	InwardIssue  map[string]string `json:"inwardIssue"`
+	OutwardIssue map[string]string `json:"outwardIssue"`
+}

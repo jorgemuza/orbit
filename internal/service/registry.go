@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/paybook/aidlc-cli/internal/config"
-	"github.com/paybook/aidlc-cli/internal/secrets"
+	"github.com/jorgemuza/aidlc-cli/internal/config"
+	"github.com/jorgemuza/aidlc-cli/internal/secrets"
 )
 
 // Service is the interface that all service integrations must implement.
@@ -120,4 +120,62 @@ func (b *BaseService) DoGet(path string, target any) error {
 		}
 	}
 	return nil
+}
+
+// DoRequest performs an HTTP request with a JSON body and decodes the response.
+func (b *BaseService) DoRequest(method, path string, body any, target any) error {
+	url := strings.TrimRight(b.Conn.BaseURL, "/") + path
+
+	var bodyReader io.Reader
+	if body != nil {
+		data, err := json.Marshal(body)
+		if err != nil {
+			return fmt.Errorf("marshaling request body: %w", err)
+		}
+		bodyReader = strings.NewReader(string(data))
+	}
+
+	req, err := http.NewRequest(method, url, bodyReader)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	resp, err := b.Client.Do(req)
+	if err != nil {
+		return fmt.Errorf("connection failed: %w", err)
+	}
+	defer func() {
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+	}()
+
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("unexpected status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	if target != nil && resp.StatusCode != http.StatusNoContent {
+		if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
+			return fmt.Errorf("failed to parse response: %w", err)
+		}
+	}
+	return nil
+}
+
+// DoPost performs a POST request with JSON body.
+func (b *BaseService) DoPost(path string, body any, target any) error {
+	return b.DoRequest(http.MethodPost, path, body, target)
+}
+
+// DoPut performs a PUT request with JSON body.
+func (b *BaseService) DoPut(path string, body any, target any) error {
+	return b.DoRequest(http.MethodPut, path, body, target)
+}
+
+// DoDelete performs a DELETE request.
+func (b *BaseService) DoDelete(path string) error {
+	return b.DoRequest(http.MethodDelete, path, nil, nil)
 }

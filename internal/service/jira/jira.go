@@ -3,21 +3,23 @@ package jira
 import (
 	"fmt"
 
-	"github.com/paybook/aidlc-cli/internal/config"
-	"github.com/paybook/aidlc-cli/internal/service"
+	"github.com/jorgemuza/aidlc-cli/internal/config"
+	"github.com/jorgemuza/aidlc-cli/internal/service"
 )
 
 func init() {
 	service.Register(config.ServiceTypeJira, newService)
 }
 
-type svc struct{ service.BaseService }
+type svc struct {
+	*Client
+}
 
 func newService(conn config.ServiceConnection) (service.Service, error) {
 	if conn.BaseURL == "" {
 		return nil, fmt.Errorf("jira: base_url is required")
 	}
-	return &svc{service.NewBaseService(conn)}, nil
+	return &svc{NewClient(service.NewBaseService(conn))}, nil
 }
 
 func (s *svc) Type() string { return config.ServiceTypeJira }
@@ -31,4 +33,13 @@ func (s *svc) Ping() (string, error) {
 		return "", fmt.Errorf("jira: %w", err)
 	}
 	return fmt.Sprintf("Jira %s (%s)", info.Version, info.ServerTitle), nil
+}
+
+// ClientFromService extracts the Jira Client from a Service interface.
+func ClientFromService(s service.Service) (*Client, error) {
+	js, ok := s.(*svc)
+	if !ok {
+		return nil, fmt.Errorf("service is not a Jira service")
+	}
+	return js.Client, nil
 }

@@ -3,8 +3,8 @@ package gitlab
 import (
 	"fmt"
 
-	"github.com/paybook/aidlc-cli/internal/config"
-	"github.com/paybook/aidlc-cli/internal/service"
+	"github.com/jorgemuza/aidlc-cli/internal/config"
+	"github.com/jorgemuza/aidlc-cli/internal/service"
 )
 
 func init() {

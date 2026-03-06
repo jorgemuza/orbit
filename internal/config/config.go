@@ -71,16 +71,13 @@ type Profile struct {
 }
 
 // configFilePath returns the default config file path (~/.config/aidlc/config.yaml).
+// We always use ~/.config to be consistent across platforms and match the documented path.
 func configFilePath() (string, error) {
-	configDir, err := os.UserConfigDir()
+	home, err := os.UserHomeDir()
 	if err != nil {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return "", fmt.Errorf("cannot determine config directory: %w", err)
-		}
-		configDir = filepath.Join(home, ".config")
+		return "", fmt.Errorf("cannot determine home directory: %w", err)
 	}
-	return filepath.Join(configDir, "aidlc", "config.yaml"), nil
+	return filepath.Join(home, ".config", "aidlc", "config.yaml"), nil
 }
 
 // Load reads the config from the default path or the given override path.

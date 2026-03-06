@@ -1,8 +1,10 @@
 package cmdutil
 
 import (
-	"github.com/paybook/aidlc-cli/internal/config"
-	"github.com/paybook/aidlc-cli/internal/output"
+	"fmt"
+
+	"github.com/jorgemuza/aidlc-cli/internal/config"
+	"github.com/jorgemuza/aidlc-cli/internal/output"
 	"github.com/spf13/cobra"
 )
 
@@ -45,4 +47,26 @@ func ResolveProfileWithOverride(cmd *cobra.Command, cfg *config.Config, localOve
 // OutputFormat reads the --output flag and parses it.
 func OutputFormat(cmd *cobra.Command) output.Format {
 	return output.FormatFromCmd(cmd)
+}
+
+// FindServiceByType finds the first service of the given type in a profile.
+func FindServiceByType(p *config.Profile, serviceType string) (*config.ServiceConnection, error) {
+	for i := range p.Services {
+		if p.Services[i].Type == serviceType {
+			return &p.Services[i], nil
+		}
+	}
+	return nil, fmt.Errorf("no %s service found in profile %q", serviceType, p.Name)
+}
+
+// FindServiceByTypeOrName finds a service by explicit name or falls back to the first of the given type.
+func FindServiceByTypeOrName(p *config.Profile, serviceType, serviceName string) (*config.ServiceConnection, error) {
+	if serviceName != "" {
+		s := p.FindService(serviceName)
+		if s == nil {
+			return nil, fmt.Errorf("service %q not found in profile %q", serviceName, p.Name)
+		}
+		return s, nil
+	}
+	return FindServiceByType(p, serviceType)
 }
