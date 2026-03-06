@@ -200,6 +200,26 @@ type WorkflowRun struct {
 	UpdatedAt    string `json:"updated_at"`
 }
 
+type WorkflowJob struct {
+	ID          int            `json:"id"`
+	RunID       int            `json:"run_id"`
+	Name        string         `json:"name"`
+	Status      string         `json:"status"`
+	Conclusion  string         `json:"conclusion"`
+	StartedAt   string         `json:"started_at"`
+	CompletedAt string         `json:"completed_at"`
+	Steps       []WorkflowStep `json:"steps"`
+}
+
+type WorkflowStep struct {
+	Name        string `json:"name"`
+	Status      string `json:"status"`
+	Conclusion  string `json:"conclusion"`
+	Number      int    `json:"number"`
+	StartedAt   string `json:"started_at"`
+	CompletedAt string `json:"completed_at"`
+}
+
 // --- Repository operations ---
 
 func (c *Client) GetRepo(owner, repo string) (*Repository, error) {
@@ -497,6 +517,16 @@ func (c *Client) CancelWorkflowRun(owner, repo string, runID int) error {
 		return fmt.Errorf("canceling workflow run: %w", err)
 	}
 	return nil
+}
+
+func (c *Client) ListWorkflowRunJobs(owner, repo string, runID, perPage int) ([]WorkflowJob, error) {
+	var result struct {
+		Jobs []WorkflowJob `json:"jobs"`
+	}
+	if err := c.DoGet(fmt.Sprintf("/repos/%s/%s/actions/runs/%d/jobs?per_page=%d", owner, repo, runID, perPage), &result); err != nil {
+		return nil, fmt.Errorf("listing workflow run jobs: %w", err)
+	}
+	return result.Jobs, nil
 }
 
 func (c *Client) RerunWorkflowRun(owner, repo string, runID int) error {

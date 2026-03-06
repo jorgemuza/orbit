@@ -196,6 +196,18 @@ View a workflow run.
 orbit github run view octocat/hello-world 12345
 ```
 
+### `github run watch [owner/repo] [run-id]`
+Watch a workflow run until it completes. Polls for status updates and displays job/step progress in real-time. If no run-id is provided, watches the most recent in-progress run.
+```
+orbit github run watch octocat/hello-world
+orbit github run watch octocat/hello-world 12345
+orbit github run watch octocat/hello-world --interval 10
+```
+Flags:
+- `--interval` — polling interval in seconds (default: 5)
+
+Exit behavior: exits 0 on success, non-zero if the run fails, is cancelled, or times out.
+
 ### `github run cancel [owner/repo] [run-id]`
 Cancel a workflow run.
 ```
@@ -206,6 +218,29 @@ orbit github run cancel octocat/hello-world 12345
 Re-run a workflow run.
 ```
 orbit github run rerun octocat/hello-world 12345
+```
+
+## Secrets (GitHub Actions)
+
+### `github secret list [owner/repo]`
+List repository secrets (names and timestamps only — values are never exposed).
+```
+orbit github secret list octocat/hello-world
+```
+Flags:
+- `--limit` — max results (default: 30)
+
+### `github secret set [owner/repo] [name] [value]`
+Create or update a repository secret. The value is encrypted client-side using the repository's public key before being sent to the API.
+```
+orbit github secret set octocat/hello-world MY_SECRET "secret-value"
+orbit github secret set octocat/hello-world DEPLOY_KEY "$(cat key.pem)"
+```
+
+### `github secret delete [owner/repo] [name]`
+Delete a repository secret.
+```
+orbit github secret delete octocat/hello-world MY_SECRET
 ```
 
 ## Users

@@ -1,11 +1,11 @@
 ---
 name: github
-description: "Create and manage GitHub repositories, pull requests, issues, releases, branches, and more using the orbit CLI. Use this skill whenever the user asks about GitHub repositories, PRs (pull requests), GitHub Actions workflow runs, branches, tags, commits, issues, releases, or organization repos. Trigger on phrases like 'list PRs', 'check the actions', 'create a branch', 'open a pull request', 'view the latest commits', 'list repos in org X', 'rerun the workflow', 'close the issue', 'latest release', or any GitHub-related task — even casual references like 'what's running in CI', 'show me the PRs', 'tag a release', 'check if it merged', or 'list repos'. The orbit CLI alias is `gh`."
+description: "Create and manage GitHub repositories, pull requests, issues, releases, branches, secrets, and more using the orbit CLI. Use this skill whenever the user asks about GitHub repositories, PRs (pull requests), GitHub Actions workflow runs, branches, tags, commits, issues, releases, secrets, or organization repos. Trigger on phrases like 'list PRs', 'check the actions', 'watch the workflow', 'create a secret', 'open a pull request', 'view the latest commits', 'list repos in org X', 'rerun the workflow', 'close the issue', 'latest release', 'set a GitHub secret', or any GitHub-related task — even casual references like 'what's running in CI', 'show me the PRs', 'tag a release', 'check if it merged', 'list repos', 'is the build passing', or 'add a deploy key secret'. Also trigger when the user wants to monitor CI/CD progress, manage Actions secrets for deployments, or debug failing workflows. The orbit CLI alias is `gh`."
 ---
 
 # GitHub with orbit CLI
 
-Manage GitHub repositories, pull requests, issues, releases, branches, tags, commits, workflow runs, and users through the `orbit` CLI. Works with both GitHub.com and GitHub Enterprise via REST API, with multi-profile support and 1Password secret resolution.
+Manage GitHub repositories, pull requests, issues, releases, branches, tags, commits, workflow runs, secrets, and users through the `orbit` CLI. Works with both GitHub.com and GitHub Enterprise via REST API, with multi-profile support and 1Password secret resolution.
 
 ## Prerequisites
 
@@ -23,7 +23,7 @@ All commands support `-o json` for JSON output. For full command details and all
 
 ## Repository Identification
 
-Repositories are referenced as `owner/repo`:
+Repositories are always referenced as `owner/repo`:
 - `orbit -p myprofile gh repo octocat/hello-world`
 - `orbit -p myprofile gh repo kubernetes/kubernetes`
 
@@ -83,6 +83,10 @@ orbit -p myprofile gh run list octocat/hello-world --branch main --status comple
 # View workflow run details
 orbit -p myprofile gh run view octocat/hello-world 12345
 
+# Watch a run in real-time (polls and shows job/step progress until completion)
+orbit -p myprofile gh run watch octocat/hello-world
+orbit -p myprofile gh run watch octocat/hello-world 12345 --interval 10
+
 # Cancel a running workflow
 orbit -p myprofile gh run cancel octocat/hello-world 12345
 
@@ -91,6 +95,23 @@ orbit -p myprofile gh run rerun octocat/hello-world 12345
 ```
 
 Run aliases: `run`, `actions` — so `orbit gh actions list octocat/hello-world` works too.
+
+The `watch` command auto-discovers the most recent in-progress run if no run-id is given. It shows live job and step status with elapsed time, and exits with an error if the run fails.
+
+### GitHub Actions Secrets
+
+```bash
+# List repository secrets
+orbit -p myprofile gh secret list octocat/hello-world
+
+# Create or update a secret
+orbit -p myprofile gh secret set octocat/hello-world MY_SECRET "secret-value"
+
+# Delete a secret
+orbit -p myprofile gh secret delete octocat/hello-world MY_SECRET
+```
+
+Secrets are encrypted client-side using the repository's public key before being sent to the API.
 
 ### Branches and Tags
 
@@ -174,6 +195,16 @@ orbit -p myprofile gh pr list octocat/hello-world -o json | jq '.[].title'
 **Check CI status for a branch:**
 ```bash
 orbit -p myprofile gh run list octocat/hello-world --branch main --limit 1
+```
+
+**Monitor a release pipeline:**
+```bash
+orbit -p myprofile gh run watch octocat/hello-world
+```
+
+**Set a deployment secret:**
+```bash
+orbit -p myprofile gh secret set octocat/hello-world DEPLOY_TOKEN "ghp_xxxxx"
 ```
 
 **Review a PR end-to-end:**
