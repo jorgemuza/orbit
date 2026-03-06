@@ -46,6 +46,9 @@ func Create(conn config.ServiceConnection) (Service, error) {
 
 func resolveAuth(auth config.AuthConfig) (config.AuthConfig, error) {
 	var err error
+	if auth.Username, err = secrets.Resolve(auth.Username); err != nil {
+		return auth, err
+	}
 	if auth.Token, err = secrets.Resolve(auth.Token); err != nil {
 		return auth, err
 	}

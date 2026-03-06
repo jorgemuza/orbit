@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	cmdconfluence "github.com/jorgemuza/aidlc-cli/cmd/confluence"
 	cmdjira "github.com/jorgemuza/aidlc-cli/cmd/jira"
 	"github.com/jorgemuza/aidlc-cli/cmd/profile"
 	cmdservice "github.com/jorgemuza/aidlc-cli/cmd/service"
@@ -44,6 +45,7 @@ func init() {
 	rootCmd.AddCommand(profile.Command)
 	rootCmd.AddCommand(cmdservice.Command)
 	rootCmd.AddCommand(cmdjira.Command)
+	rootCmd.AddCommand(cmdconfluence.Command)
 	rootCmd.AddCommand(version.Command)
 
 	rootCmd.SilenceUsage = true
