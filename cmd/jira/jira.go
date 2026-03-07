@@ -28,6 +28,7 @@ func init() {
 	Command.AddCommand(projectCmd)
 	Command.AddCommand(releaseCmd)
 	Command.AddCommand(fieldCmd)
+	Command.AddCommand(screenCmd)
 	Command.AddCommand(statusCmd)
 	Command.AddCommand(issueTypeListCmd)
 }

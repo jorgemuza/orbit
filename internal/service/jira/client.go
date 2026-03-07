@@ -500,3 +500,48 @@ func (c *Client) ListIssueTypes() ([]NameField, error) {
 	}
 	return issueTypes, nil
 }
+
+// ListScreens lists all screens.
+func (c *Client) ListScreens(maxResults int) ([]Screen, error) {
+	if maxResults <= 0 {
+		maxResults = 100
+	}
+	path := fmt.Sprintf(c.apiPrefix()+"/screens?maxResult=%d", maxResults)
+	var result struct {
+		Values []Screen `json:"values"`
+	}
+	if err := c.DoGet(path, &result); err != nil {
+		return nil, fmt.Errorf("listing screens: %w", err)
+	}
+	return result.Values, nil
+}
+
+// ListScreenTabs lists tabs for a screen.
+func (c *Client) ListScreenTabs(screenID int) ([]ScreenTab, error) {
+	path := fmt.Sprintf(c.apiPrefix()+"/screens/%d/tabs", screenID)
+	var tabs []ScreenTab
+	if err := c.DoGet(path, &tabs); err != nil {
+		return nil, fmt.Errorf("listing screen tabs for %d: %w", screenID, err)
+	}
+	return tabs, nil
+}
+
+// ListScreenTabFields lists fields on a screen tab.
+func (c *Client) ListScreenTabFields(screenID, tabID int) ([]ScreenField, error) {
+	path := fmt.Sprintf(c.apiPrefix()+"/screens/%d/tabs/%d/fields", screenID, tabID)
+	var fields []ScreenField
+	if err := c.DoGet(path, &fields); err != nil {
+		return nil, fmt.Errorf("listing screen tab fields: %w", err)
+	}
+	return fields, nil
+}
+
+// AddFieldToScreen adds a field to a screen tab.
+func (c *Client) AddFieldToScreen(screenID, tabID int, fieldID string) error {
+	path := fmt.Sprintf(c.apiPrefix()+"/screens/%d/tabs/%d/fields", screenID, tabID)
+	body := map[string]string{"fieldId": fieldID}
+	if err := c.DoPost(path, body, nil); err != nil {
+		return fmt.Errorf("adding field %s to screen %d tab %d: %w", fieldID, screenID, tabID, err)
+	}
+	return nil
+}

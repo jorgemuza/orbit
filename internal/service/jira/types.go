@@ -389,3 +389,22 @@ type StatusCategory struct {
 	Name      string `json:"name"`
 	ColorName string `json:"colorName"`
 }
+
+// Screen represents a Jira screen.
+type Screen struct {
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
+// ScreenTab represents a tab on a Jira screen.
+type ScreenTab struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// ScreenField represents a field on a screen tab.
+type ScreenField struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
