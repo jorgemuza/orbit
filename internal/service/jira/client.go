@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/jorgemuza/orbit/internal/config"
 	"github.com/jorgemuza/orbit/internal/service"
 )
 
@@ -18,17 +19,49 @@ func NewClient(base service.BaseService) *Client {
 	return &Client{BaseService: base}
 }
 
+// apiPrefix returns the REST API path prefix based on variant.
+// Cloud uses /rest/api/3, Server/Data Center uses /rest/api/2.
+func (c *Client) apiPrefix() string {
+	if c.Conn.Variant == config.VariantCloud {
+		return "/rest/api/3"
+	}
+	return "/rest/api/2"
+}
+
+// isCloud returns true if this is a Jira Cloud instance.
+func (c *Client) isCloud() bool {
+	return c.Conn.Variant == config.VariantCloud
+}
+
 // SearchIssues searches for issues using JQL.
+// Cloud uses POST /search/jql (v3); Server uses GET /search (v2).
 func (c *Client) SearchIssues(jql string, startAt, maxResults int) (*SearchResult, error) {
-	params := url.Values{}
-	params.Set("jql", jql)
-	params.Set("startAt", fmt.Sprintf("%d", startAt))
-	params.Set("maxResults", fmt.Sprintf("%d", maxResults))
-	params.Set("fields", "summary,status,issuetype,priority,assignee,reporter,created,updated,labels,components,fixVersions,parent,subtasks,issuelinks,timetracking,description,resolution")
+	fields := []string{"summary", "status", "issuetype", "priority", "assignee", "reporter", "created", "updated", "labels", "components", "fixVersions", "parent", "subtasks", "issuelinks", "timetracking", "description", "resolution"}
 
 	var result SearchResult
-	if err := c.DoGet("/rest/api/2/search?"+params.Encode(), &result); err != nil {
-		return nil, fmt.Errorf("searching issues: %w", err)
+	if c.isCloud() {
+		body := map[string]any{
+			"jql":        jql,
+			"maxResults": maxResults,
+			"fields":     fields,
+		}
+		if err := c.DoPost(c.apiPrefix()+"/search/jql", body, &result); err != nil {
+			return nil, fmt.Errorf("searching issues: %w", err)
+		}
+		result.Total = len(result.Issues)
+	} else {
+		params := url.Values{}
+		params.Set("jql", jql)
+		params.Set("startAt", fmt.Sprintf("%d", startAt))
+		params.Set("maxResults", fmt.Sprintf("%d", maxResults))
+		params.Set("fields", strings.Join(fields, ","))
+
+		if err := c.DoGet(c.apiPrefix()+"/search?"+params.Encode(), &result); err != nil {
+			return nil, fmt.Errorf("searching issues: %w", err)
+		}
+	}
+	for i := range result.Issues {
+		result.Issues[i].Fields.ResolveDescription()
 	}
 	return &result, nil
 }
@@ -38,18 +71,23 @@ func (c *Client) GetIssue(key string, commentCount int) (*Issue, error) {
 	expand := "renderedFields"
 	fields := "summary,status,issuetype,priority,assignee,reporter,created,updated,labels,components,fixVersions,parent,subtasks,issuelinks,timetracking,description,resolution,comment,worklog"
 
-	path := fmt.Sprintf("/rest/api/2/issue/%s?fields=%s&expand=%s", url.PathEscape(key), fields, expand)
+	path := fmt.Sprintf(c.apiPrefix()+"/issue/%s?fields=%s&expand=%s", url.PathEscape(key), fields, expand)
 	var issue Issue
 	if err := c.DoGet(path, &issue); err != nil {
 		return nil, fmt.Errorf("getting issue %s: %w", key, err)
 	}
+	issue.Fields.ResolveDescription()
 	return &issue, nil
 }
 
 // CreateIssue creates a new issue.
+// For Cloud (API v3), plain-text description is wrapped in ADF format.
 func (c *Client) CreateIssue(req *CreateIssueRequest) (*CreatedIssue, error) {
+	if c.isCloud() {
+		req.CloudMode = true
+	}
 	var result CreatedIssue
-	if err := c.DoPost("/rest/api/2/issue", req, &result); err != nil {
+	if err := c.DoPost(c.apiPrefix()+"/issue", req, &result); err != nil {
 		return nil, fmt.Errorf("creating issue: %w", err)
 	}
 	return &result, nil
@@ -57,7 +95,7 @@ func (c *Client) CreateIssue(req *CreateIssueRequest) (*CreatedIssue, error) {
 
 // EditIssue updates an existing issue.
 func (c *Client) EditIssue(key string, req *EditIssueRequest) error {
-	path := fmt.Sprintf("/rest/api/2/issue/%s", url.PathEscape(key))
+	path := fmt.Sprintf(c.apiPrefix()+"/issue/%s", url.PathEscape(key))
 	if err := c.DoPut(path, req, nil); err != nil {
 		return fmt.Errorf("editing issue %s: %w", key, err)
 	}
@@ -66,8 +104,13 @@ func (c *Client) EditIssue(key string, req *EditIssueRequest) error {
 
 // AssignIssue assigns an issue to a user.
 func (c *Client) AssignIssue(key, assignee string) error {
-	path := fmt.Sprintf("/rest/api/2/issue/%s/assignee", url.PathEscape(key))
-	body := map[string]string{"name": assignee}
+	path := fmt.Sprintf(c.apiPrefix()+"/issue/%s/assignee", url.PathEscape(key))
+	var body any
+	if c.isCloud() {
+		body = map[string]string{"accountId": assignee}
+	} else {
+		body = map[string]string{"name": assignee}
+	}
 	if err := c.DoPut(path, body, nil); err != nil {
 		return fmt.Errorf("assigning issue %s: %w", key, err)
 	}
@@ -76,8 +119,13 @@ func (c *Client) AssignIssue(key, assignee string) error {
 
 // UnassignIssue removes the assignee from an issue.
 func (c *Client) UnassignIssue(key string) error {
-	path := fmt.Sprintf("/rest/api/2/issue/%s/assignee", url.PathEscape(key))
-	body := map[string]*string{"name": nil}
+	path := fmt.Sprintf(c.apiPrefix()+"/issue/%s/assignee", url.PathEscape(key))
+	var body any
+	if c.isCloud() {
+		body = map[string]*string{"accountId": nil}
+	} else {
+		body = map[string]*string{"name": nil}
+	}
 	if err := c.DoPut(path, body, nil); err != nil {
 		return fmt.Errorf("unassigning issue %s: %w", key, err)
 	}
@@ -86,7 +134,7 @@ func (c *Client) UnassignIssue(key string) error {
 
 // GetTransitions returns available transitions for an issue.
 func (c *Client) GetTransitions(key string) ([]Transition, error) {
-	path := fmt.Sprintf("/rest/api/2/issue/%s/transitions", url.PathEscape(key))
+	path := fmt.Sprintf(c.apiPrefix()+"/issue/%s/transitions", url.PathEscape(key))
 	var result struct {
 		Transitions []Transition `json:"transitions"`
 	}
@@ -98,7 +146,7 @@ func (c *Client) GetTransitions(key string) ([]Transition, error) {
 
 // TransitionIssue moves an issue to a new state.
 func (c *Client) TransitionIssue(key string, req *TransitionRequest) error {
-	path := fmt.Sprintf("/rest/api/2/issue/%s/transitions", url.PathEscape(key))
+	path := fmt.Sprintf(c.apiPrefix()+"/issue/%s/transitions", url.PathEscape(key))
 	if err := c.DoPost(path, req, nil); err != nil {
 		return fmt.Errorf("transitioning issue %s: %w", key, err)
 	}
@@ -107,7 +155,7 @@ func (c *Client) TransitionIssue(key string, req *TransitionRequest) error {
 
 // DeleteIssue deletes an issue. If cascade is true, subtasks are deleted too.
 func (c *Client) DeleteIssue(key string, cascade bool) error {
-	path := fmt.Sprintf("/rest/api/2/issue/%s", url.PathEscape(key))
+	path := fmt.Sprintf(c.apiPrefix()+"/issue/%s", url.PathEscape(key))
 	if cascade {
 		path += "?deleteSubtasks=true"
 	}
@@ -118,9 +166,28 @@ func (c *Client) DeleteIssue(key string, cascade bool) error {
 }
 
 // AddComment adds a comment to an issue.
+// Cloud API v3 requires Atlassian Document Format (ADF); Server uses plain text.
 func (c *Client) AddComment(key, body string) error {
-	path := fmt.Sprintf("/rest/api/2/issue/%s/comment", url.PathEscape(key))
-	payload := map[string]string{"body": body}
+	path := fmt.Sprintf(c.apiPrefix()+"/issue/%s/comment", url.PathEscape(key))
+	var payload any
+	if c.isCloud() {
+		payload = map[string]any{
+			"body": map[string]any{
+				"type":    "doc",
+				"version": 1,
+				"content": []map[string]any{
+					{
+						"type": "paragraph",
+						"content": []map[string]any{
+							{"type": "text", "text": body},
+						},
+					},
+				},
+			},
+		}
+	} else {
+		payload = map[string]string{"body": body}
+	}
 	if err := c.DoPost(path, payload, nil); err != nil {
 		return fmt.Errorf("adding comment to %s: %w", key, err)
 	}
@@ -134,7 +201,7 @@ func (c *Client) LinkIssues(inwardKey, outwardKey, linkType string) error {
 		InwardIssue:  map[string]string{"key": inwardKey},
 		OutwardIssue: map[string]string{"key": outwardKey},
 	}
-	if err := c.DoPost("/rest/api/2/issueLink", req, nil); err != nil {
+	if err := c.DoPost(c.apiPrefix()+"/issueLink", req, nil); err != nil {
 		return fmt.Errorf("linking %s -> %s: %w", inwardKey, outwardKey, err)
 	}
 	return nil
@@ -156,7 +223,7 @@ func (c *Client) UnlinkIssues(inwardKey, outwardKey string) error {
 			target = link.InwardIssue.Key
 		}
 		if target == outwardKey {
-			path := fmt.Sprintf("/rest/api/2/issueLink/%s", link.ID)
+			path := fmt.Sprintf(c.apiPrefix()+"/issueLink/%s", link.ID)
 			return c.DoDelete(path)
 		}
 	}
@@ -165,7 +232,7 @@ func (c *Client) UnlinkIssues(inwardKey, outwardKey string) error {
 
 // AddWorklog adds a worklog entry to an issue.
 func (c *Client) AddWorklog(key, timeSpent, comment string) error {
-	path := fmt.Sprintf("/rest/api/2/issue/%s/worklog", url.PathEscape(key))
+	path := fmt.Sprintf(c.apiPrefix()+"/issue/%s/worklog", url.PathEscape(key))
 	payload := map[string]string{"timeSpent": timeSpent}
 	if comment != "" {
 		payload["comment"] = comment
@@ -299,7 +366,7 @@ func (c *Client) RemoveIssuesFromEpic(issueKeys []string) error {
 // ListProjects lists all accessible projects.
 func (c *Client) ListProjects() ([]Project, error) {
 	var projects []Project
-	if err := c.DoGet("/rest/api/2/project", &projects); err != nil {
+	if err := c.DoGet(c.apiPrefix()+"/project", &projects); err != nil {
 		return nil, fmt.Errorf("listing projects: %w", err)
 	}
 	return projects, nil
@@ -307,7 +374,7 @@ func (c *Client) ListProjects() ([]Project, error) {
 
 // ListVersions lists versions for a project.
 func (c *Client) ListVersions(projectKey string) ([]Version, error) {
-	path := fmt.Sprintf("/rest/api/2/project/%s/versions", url.PathEscape(projectKey))
+	path := fmt.Sprintf(c.apiPrefix()+"/project/%s/versions", url.PathEscape(projectKey))
 	var versions []Version
 	if err := c.DoGet(path, &versions); err != nil {
 		return nil, fmt.Errorf("listing versions for %s: %w", projectKey, err)

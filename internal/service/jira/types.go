@@ -1,13 +1,19 @@
 package jira
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strings"
+)
 
 // SearchResult is the response from the Jira search API.
+// Server uses startAt/maxResults/total; Cloud v3 search/jql uses nextPageToken/isLast.
 type SearchResult struct {
-	StartAt    int     `json:"startAt"`
-	MaxResults int     `json:"maxResults"`
-	Total      int     `json:"total"`
-	Issues     []Issue `json:"issues"`
+	StartAt       int     `json:"startAt"`
+	MaxResults    int     `json:"maxResults"`
+	Total         int     `json:"total"`
+	Issues        []Issue `json:"issues"`
+	NextPageToken string  `json:"nextPageToken,omitempty"`
+	IsLast        bool    `json:"isLast,omitempty"`
 }
 
 // Issue represents a Jira issue.
@@ -19,8 +25,9 @@ type Issue struct {
 
 // IssueFields contains the fields of a Jira issue.
 type IssueFields struct {
-	Summary     string     `json:"summary"`
-	Description string     `json:"description"`
+	Summary        string          `json:"summary"`
+	Description    string          `json:"-"`
+	RawDescription json.RawMessage `json:"description"`
 	Status      NameField  `json:"status"`
 	IssueType   NameField  `json:"issuetype"`
 	Priority    NameField  `json:"priority"`
@@ -40,6 +47,52 @@ type IssueFields struct {
 	Epic        *Issue       `json:"epic"`
 	Sprint      *SprintField `json:"sprint"`
 	TimeTracking *TimeTracking `json:"timetracking"`
+}
+
+// ResolveDescription populates the Description string from RawDescription.
+// Handles both plain text (Server API v2) and ADF (Cloud API v3).
+func (f *IssueFields) ResolveDescription() {
+	if f.RawDescription == nil {
+		return
+	}
+	// Try plain string first (Server)
+	var s string
+	if err := json.Unmarshal(f.RawDescription, &s); err == nil {
+		f.Description = s
+		return
+	}
+	// Try ADF object (Cloud) — extract text nodes
+	var doc map[string]any
+	if err := json.Unmarshal(f.RawDescription, &doc); err == nil {
+		f.Description = extractADFText(doc)
+	}
+}
+
+// extractADFText recursively extracts plain text from an ADF document.
+func extractADFText(node map[string]any) string {
+	if node["type"] == "text" {
+		if text, ok := node["text"].(string); ok {
+			return text
+		}
+	}
+	content, ok := node["content"].([]any)
+	if !ok {
+		return ""
+	}
+	var parts []string
+	for _, item := range content {
+		if child, ok := item.(map[string]any); ok {
+			text := extractADFText(child)
+			if text != "" {
+				parts = append(parts, text)
+			}
+		}
+	}
+	sep := ""
+	if node["type"] == "doc" || node["type"] == "paragraph" || node["type"] == "bulletList" || node["type"] == "orderedList" || node["type"] == "listItem" {
+		sep = "\n"
+	}
+	return strings.Join(parts, sep)
 }
 
 // NameField is a generic field with a name.
@@ -165,7 +218,24 @@ type TimeTracking struct {
 // CreateIssueRequest is the payload for creating an issue.
 // It marshals Fields as a flat map, merging structured fields with custom fields.
 type CreateIssueRequest struct {
-	Fields CreateIssueFields
+	Fields    CreateIssueFields
+	CloudMode bool // When true, description is wrapped in ADF for Cloud API v3
+}
+
+// textToADF converts plain text to Atlassian Document Format (ADF).
+func textToADF(text string) map[string]any {
+	return map[string]any{
+		"type":    "doc",
+		"version": 1,
+		"content": []map[string]any{
+			{
+				"type": "paragraph",
+				"content": []map[string]any{
+					{"type": "text", "text": text},
+				},
+			},
+		},
+	}
 }
 
 // MarshalJSON produces a flat {"fields": {...}} with custom fields merged in.
@@ -175,7 +245,11 @@ func (r CreateIssueRequest) MarshalJSON() ([]byte, error) {
 	m["issuetype"] = r.Fields.IssueType
 	m["summary"] = r.Fields.Summary
 	if r.Fields.Description != "" {
-		m["description"] = r.Fields.Description
+		if r.CloudMode {
+			m["description"] = textToADF(r.Fields.Description)
+		} else {
+			m["description"] = r.Fields.Description
+		}
 	}
 	if len(r.Fields.Priority) > 0 {
 		m["priority"] = r.Fields.Priority
