@@ -545,3 +545,31 @@ func (c *Client) AddFieldToScreen(screenID, tabID int, fieldID string) error {
 	}
 	return nil
 }
+
+// CreateScreenTab creates a new tab on a screen.
+func (c *Client) CreateScreenTab(screenID int, name string) (*ScreenTab, error) {
+	path := fmt.Sprintf(c.apiPrefix()+"/screens/%d/tabs", screenID)
+	body := map[string]string{"name": name}
+	var tab ScreenTab
+	if err := c.DoPost(path, body, &tab); err != nil {
+		return nil, fmt.Errorf("creating tab on screen %d: %w", screenID, err)
+	}
+	return &tab, nil
+}
+
+// RemoveFieldFromScreen removes a field from a screen tab.
+func (c *Client) RemoveFieldFromScreen(screenID, tabID int, fieldID string) error {
+	path := fmt.Sprintf(c.apiPrefix()+"/screens/%d/tabs/%d/fields/%s", screenID, tabID, url.PathEscape(fieldID))
+	if err := c.DoDelete(path); err != nil {
+		return fmt.Errorf("removing field %s from screen %d tab %d: %w", fieldID, screenID, tabID, err)
+	}
+	return nil
+}
+
+// MoveFieldToTab moves a field from one tab to another on the same screen.
+func (c *Client) MoveFieldToTab(screenID, sourceTabID, targetTabID int, fieldID string) error {
+	if err := c.RemoveFieldFromScreen(screenID, sourceTabID, fieldID); err != nil {
+		return err
+	}
+	return c.AddFieldToScreen(screenID, targetTabID, fieldID)
+}
