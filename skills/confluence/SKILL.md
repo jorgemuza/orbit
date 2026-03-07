@@ -1,5 +1,5 @@
 ---
-name: confluence-skill
+name: confluence
 description: "Manage Confluence pages using the orbit CLI — create, update, view, publish markdown directories, and control page width. Use this skill whenever the user asks about Confluence pages, wiki content, publishing documentation, uploading markdown to Confluence, syncing docs, or managing page hierarchies using orbit. Trigger on phrases like 'create a Confluence page', 'update the wiki', 'publish these docs to Confluence', 'upload markdown', 'set page width', 'view page', 'list child pages', or any Confluence-related task — even casual references like 'push this to Confluence', 'sync the docs', or 'check what pages are under X'. Also trigger when the user needs to convert markdown to Confluence storage format or wants to track which markdown files map to which Confluence pages via frontmatter metadata (confluence_page_id, confluence_url)."
 ---
 
@@ -131,14 +131,117 @@ orbit -p myprofile confluence create --space FO --parent 473677299713 \
 # Then update the frontmatter with the returned page ID and URL
 ```
 
+## Page Properties & Labels
+
+The `publish` command supports Confluence Page Properties macros and labels via frontmatter, enabling dynamic Page Properties Report tables (like the ISMS Policies page pattern).
+
+### Labels (Tags)
+
+Add `confluence_labels` to frontmatter to tag pages. Labels are applied after each page is created or updated during `publish`.
+
+```yaml
+---
+title: "My Policy"
+confluence_labels:
+  - ai-process
+  - foundation
+---
+```
+
+### Page Properties (details macro)
+
+Add `confluence_properties` to frontmatter to generate a Confluence Page Properties macro at the top of the page. This creates a structured metadata block that can be queried by Page Properties Report macros on other pages.
+
+```yaml
+---
+title: "Compounding Engineering & System Evolution"
+confluence_properties:
+  id: status
+  fields:
+    Owner: AI Tooling Guild
+    Classification: Internal
+    Status: "{status:Green|approved}"
+    Reviewed on: 2026-03-06
+    Approved on: 2026-03-06
+---
+```
+
+- `id` -- sets the macro ID (used by `detailssummary` reports to target specific property blocks)
+- `fields` -- ordered key-value pairs rendered as a two-column table inside the macro
+- Values matching `{status:Color|Text}` are converted to status badge macros
+- Values matching `YYYY-MM-DD` are converted to Confluence `<time>` date macros
+- Other values are rendered as plain text
+
+### Page Properties Report (detailssummary macro)
+
+Add a directive in your markdown to generate a dynamic table that pulls Page Properties from labeled pages. Two formats are supported:
+
+**HTML comment format (full control):**
+```markdown
+<!-- confluence:properties-report cql="label = 'ai-process' and space = currentSpace()" firstcolumn="Document" headings="Status, Classification, Reviewed on" -->
+```
+
+**Shorthand format:**
+```markdown
+{properties-report: label="ai-process", columns="Status, Classification, Reviewed on"}
+```
+
+Parameters:
+- `cql` -- CQL query to find pages (e.g., `label = "policy" and space = currentSpace()`)
+- `label` -- shorthand for CQL: generates `label = "value" and space = currentSpace()`
+- `firstcolumn` -- name of the first column (defaults to "Title")
+- `columns` / `headings` -- comma-separated list of property names to show as columns
+- `sortBy` -- optional column to sort by
+
+### Complete Example
+
+**Child page (e.g., `overview.md`):**
+```yaml
+---
+title: Overview & Philosophy
+confluence_labels:
+  - ai-process
+confluence_properties:
+  id: status
+  fields:
+    Owner: AI Tooling Guild
+    Classification: Internal
+    Status: "{status:Green|approved}"
+    Reviewed on: 2026-03-06
+---
+```
+
+**Index page (e.g., `INDEX.md`):**
+```markdown
+---
+title: AI Development Process
+confluence_labels:
+  - ai-process
+---
+
+# AI Development Process
+
+<!-- confluence:properties-report cql="label = 'ai-process' and space = currentSpace()" firstcolumn="Document" headings="Status, Classification, Owner, Reviewed on" -->
+
+<!-- confluence:ignore-start -->
+
+| Document | Version | Summary |
+|----------|---------|---------|
+| [Overview & Philosophy](./overview.md) | v2.0 | Core principles, four layers |
+
+<!-- confluence:ignore-end -->
+```
+
+On Confluence, only the Properties Report macro is rendered (the static table is ignored). In markdown viewers (GitHub, local), the static table is shown alongside the HTML comment directives (which are invisible).
+
 ## Markdown-to-Confluence Conversion
 
 The converter handles the following transformations:
 
 | Markdown | Confluence Storage Format |
 |----------|--------------------------|
-| `# Heading` (first one) | Skipped — Confluence shows the page title |
-| `## Heading` → `###### Heading` | `<h2>` → `<h6>` |
+| `# Heading` (first one) | Skipped -- Confluence shows the page title |
+| `## Heading` to `###### Heading` | `<h2>` to `<h6>` |
 | `**bold**` | `<strong>` |
 | `` `code` `` | `<code>` |
 | `~~strike~~` | `<del>` |
@@ -148,31 +251,32 @@ The converter handles the following transformations:
 | ` ```lang ` code blocks | Code macro with language |
 | `\| table \| rows \|` | `<table>` with `<thead>` |
 | `![alt](url)` | `<ac:image>` |
-| `[text](url)` | `<a href>` (relative .md links stripped) |
-| `---` horizontal rules | Ignored (not rendered in Confluence) |
+| `[text](url)` | `<a href>` (relative .md links resolved to Confluence page links) |
+| `---` horizontal rules | `<hr />` |
 | YAML frontmatter | Stripped |
 | `**Key**: Value` metadata lines | Two-column table (gray label column) |
 | `## Table of Contents` section | Replaced with Confluence `toc` macro (no bullets) |
+| `confluence_properties` frontmatter | Page Properties (`details`) macro |
+| `<!-- confluence:properties-report -->` | Page Properties Report (`detailssummary`) macro |
+| `{properties-report: ...}` | Page Properties Report (`detailssummary`) macro |
+| `<!-- confluence:ignore-start/end -->` | Content between markers is skipped (not sent to Confluence) |
 
 **Key behaviors to communicate to users:**
 - The first `# heading` is always skipped because Confluence already displays the page title
-- Relative markdown links (`.md`, `./`) are converted to plain text since they'll be separate Confluence pages
+- Relative markdown links (`.md`, `./`) are resolved to Confluence internal page links when publishing a directory (using the `publish` command). The link map maps relative paths to page titles, generating `<ac:link>` macros. When converting a single file without a link map, relative links fall back to plain text
 - A "Table of Contents" heading (or "Contents" / "TOC") replaces the entire section with Confluence's built-in TOC macro (bullet style: none)
 - Code blocks and tables use full-width layout
-- Horizontal rules (`---`) are ignored
-- Document metadata lines (`**Key**: Value`) right after frontmatter are converted to a styled two-column table with gray labels. Example in markdown:
-  ```
-  **Document Version**: 2.0
-  **Status**: Published
-  **Classification**: Internal
-  **Last Updated**: March 5, 2026
-  ```
+- Document metadata lines (`**Key**: Value`) right after frontmatter are converted to a styled two-column table with gray labels
 - Code blocks with language hints get syntax highlighting via the code macro
+- `confluence_labels` in frontmatter applies labels/tags to pages during `publish`
+- `confluence_properties` in frontmatter generates a Page Properties macro prepended to page content
+- Properties Report directives generate dynamic tables querying labeled pages
+- `<!-- confluence:ignore-start -->` / `<!-- confluence:ignore-end -->` blocks are stripped during conversion — content inside is completely skipped. This is useful for INDEX pages that need static markdown tables for GitHub/local rendering alongside dynamic Properties Report macros for Confluence. Ignore directives inside code blocks are treated as literal text (not processed)
 
 ## Important Notes
 
-- **Wide width by default** — All pages created via `orbit` are automatically set to full-width layout. Use `set-width --width fixed` to revert.
-- **Cloud vs Server** — Use service type `confluence-cloud` for Atlassian Cloud (requires `/wiki/` prefix in API paths, handled automatically). Use `confluence-server` for Data Center.
-- **Auth for Cloud** — Basic auth with your email as username and an API token (not your password) as the password field.
-- **1Password integration** — Credentials in config can use `op://vault/item/field` and are resolved at runtime.
-- **Dry run before publish** — Always use `--dry-run` first when publishing a directory to preview the page hierarchy before making API calls.
+- **Wide width by default** -- All pages created via `orbit` are automatically set to full-width layout. Use `set-width --width fixed` to revert.
+- **Cloud vs Server** -- Use service type `confluence-cloud` for Atlassian Cloud (requires `/wiki/` prefix in API paths, handled automatically). Use `confluence-server` for Data Center.
+- **Auth for Cloud** -- Basic auth with your email as username and an API token (not your password) as the password field.
+- **1Password integration** -- Credentials in config can use `op://vault/item/field` and are resolved at runtime.
+- **Dry run before publish** -- Always use `--dry-run` first when publishing a directory to preview the page hierarchy before making API calls.

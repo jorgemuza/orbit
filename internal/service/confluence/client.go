@@ -87,6 +87,18 @@ type SearchResult struct {
 	Size    int    `json:"size"`
 }
 
+// Label represents a Confluence label.
+type Label struct {
+	Prefix string `json:"prefix"`
+	Name   string `json:"name"`
+}
+
+// LabelResult is the response from getting page labels.
+type LabelResult struct {
+	Results []Label `json:"results"`
+	Size    int     `json:"size"`
+}
+
 // FindPageByTitle searches for a page by exact title within a space.
 // Returns nil if no page is found.
 func (c *Client) FindPageByTitle(spaceKey, title string) (*Page, error) {
@@ -213,6 +225,33 @@ func (c *Client) DeletePage(id string) error {
 		return fmt.Errorf("deleting page %s: %w", id, err)
 	}
 	return nil
+}
+
+// AddLabels adds labels to a page.
+func (c *Client) AddLabels(pageID string, labels []string) error {
+	path := fmt.Sprintf("%s/content/%s/label", c.apiPrefix(), url.PathEscape(pageID))
+	var body []Label
+	for _, name := range labels {
+		body = append(body, Label{Prefix: "global", Name: name})
+	}
+	if err := c.DoPost(path, body, nil); err != nil {
+		return fmt.Errorf("adding labels to page %s: %w", pageID, err)
+	}
+	return nil
+}
+
+// GetLabels returns the label names for a page.
+func (c *Client) GetLabels(pageID string) ([]string, error) {
+	path := fmt.Sprintf("%s/content/%s/label", c.apiPrefix(), url.PathEscape(pageID))
+	var result LabelResult
+	if err := c.DoGet(path, &result); err != nil {
+		return nil, fmt.Errorf("getting labels for page %s: %w", pageID, err)
+	}
+	names := make([]string, len(result.Results))
+	for i, l := range result.Results {
+		names[i] = l.Name
+	}
+	return names, nil
 }
 
 // UpdatePage updates an existing page.

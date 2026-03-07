@@ -205,11 +205,97 @@ docs/
 2. First `# heading` in the file
 3. Filename converted to title case (e.g., `quick-ref.md` → "Quick Ref")
 
+**Frontmatter Fields:**
+
+The `publish` command recognizes the following YAML frontmatter fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `title` | string | Page title (overrides filename) |
+| `confluence_page_id` | string | Existing page ID for updates |
+| `confluence_url` | string | Page URL (set after publish) |
+| `confluence_labels` | list | Labels/tags applied to the page after create/update |
+| `confluence_properties` | map | Page Properties macro prepended to page content |
+
+### Labels
+
+Add `confluence_labels` to frontmatter to tag pages with Confluence labels. Labels are applied via a POST to `/content/{id}/label` after each page is created or updated.
+
+```yaml
+---
+title: "My Policy"
+confluence_labels:
+  - ai-process
+  - foundation
+---
+```
+
+### Page Properties (details macro)
+
+Add `confluence_properties` to frontmatter to generate a Page Properties macro (`ac:structured-macro ac:name="details"`) prepended to the page content. This creates a structured metadata block that can be queried by Page Properties Report macros on other pages.
+
+```yaml
+---
+title: "Compounding Engineering & System Evolution"
+confluence_properties:
+  id: status
+  fields:
+    Owner: AI Tooling Guild
+    Classification: Internal
+    Status: "{status:Green|approved}"
+    Reviewed on: 2026-03-06
+    Approved on: 2026-03-06
+---
+```
+
+**Sub-keys:**
+
+| Key | Description |
+|-----|-------------|
+| `id` | Macro ID used by `detailssummary` reports to target specific property blocks |
+| `fields` | Ordered key-value pairs rendered as a two-column table inside the macro |
+
+**Field value formats:**
+
+| Format | Rendered As |
+|--------|-------------|
+| `{status:Color\|Text}` | Status badge macro (e.g., `{status:Green\|approved}`) |
+| `YYYY-MM-DD` | Confluence `<time>` date macro |
+| Plain text | Plain text |
+
+### Page Properties Report (detailssummary macro)
+
+Use either directive format in markdown to generate a dynamic table that pulls Page Properties from child or labeled pages.
+
+**HTML comment format (full control):**
+```markdown
+<!-- confluence:properties-report cql="label = 'ai-process' and space = currentSpace()" firstcolumn="Document" headings="Status, Classification, Reviewed on" -->
+```
+
+**Shorthand format:**
+```markdown
+{properties-report: label="ai-process", columns="Status, Classification, Reviewed on"}
+```
+
+**Parameters:**
+
+| Parameter | Description |
+|-----------|-------------|
+| `cql` | CQL query to find pages (e.g., `label = "policy" and space = currentSpace()`) |
+| `label` | Shorthand for CQL: generates `label = "value" and space = currentSpace()` |
+| `firstcolumn` | Name of the first column (defaults to "Title") |
+| `columns` / `headings` | Comma-separated list of property names to show as columns |
+| `sortBy` | Optional column to sort by |
+
 **Notes:**
 - Subdirectories are processed before sibling files
 - Hidden directories (starting with `.`) are skipped
 - Only `.md` files are processed
 - Each `INDEX.md` creates a parent page; other `.md` files create child pages under it
+- Labels are applied after page creation/update via the Confluence REST API
+- Page Properties macros are prepended to the converted page body before upload
+- Properties Report directives are converted inline during markdown-to-storage-format conversion
+- `<!-- confluence:ignore-start -->` / `<!-- confluence:ignore-end -->` blocks are stripped — content between the markers is completely skipped during conversion, useful for static markdown tables that should not appear on Confluence
 
 ---
 

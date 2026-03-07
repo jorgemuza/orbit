@@ -128,11 +128,18 @@ func publishDir(client *conflsvc.Client, dir, space, parentID, baseURL string, l
 				return fmt.Errorf("converting %s: %w", indexPath, err)
 			}
 
+			// Prepend Page Properties macro if defined in frontmatter
+			content = prependPageProperties(indexPath, content)
+
 			page, err := upsertPage(client, space, currentParentID, title, content, pageID)
 			if err != nil {
 				return fmt.Errorf("publishing page from %s: %w", indexPath, err)
 			}
 			currentParentID = page.ID
+
+			// Apply labels if defined in frontmatter
+			applyLabels(client, page.ID, indexPath)
+
 			if pageID != "" {
 				fmt.Printf("%s📝 Updated: %s — %s (ID: %s)\n", indent, filepath.Base(dir), title, page.ID)
 			} else {
@@ -181,10 +188,17 @@ func publishDir(client *conflsvc.Client, dir, space, parentID, baseURL string, l
 				return fmt.Errorf("converting %s: %w", filePath, err)
 			}
 
+			// Prepend Page Properties macro if defined in frontmatter
+			content = prependPageProperties(filePath, content)
+
 			page, err := upsertPage(client, space, currentParentID, title, content, pageID)
 			if err != nil {
 				return fmt.Errorf("publishing page from %s: %w", filePath, err)
 			}
+
+			// Apply labels if defined in frontmatter
+			applyLabels(client, page.ID, filePath)
+
 			if pageID != "" {
 				fmt.Printf("%s  📝 Updated: %s — %s (ID: %s)\n", indent, entry.Name(), title, page.ID)
 			} else {
@@ -417,6 +431,148 @@ func updateFrontmatter(path, pageID, pageURL string) {
 
 	newContent := "---" + frontmatter + "\n---" + afterFrontmatter
 	_ = os.WriteFile(path, []byte(newContent), 0644)
+}
+
+// frontmatterLabels extracts confluence_labels from YAML frontmatter.
+// Supports the YAML list format:
+//
+//	confluence_labels:
+//	  - label1
+//	  - label2
+func frontmatterLabels(path string) []string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	content := string(data)
+	if !strings.HasPrefix(content, "---") {
+		return nil
+	}
+	rest := content[3:]
+	idx := strings.Index(rest, "\n---")
+	if idx == -1 {
+		return nil
+	}
+	frontmatter := rest[:idx]
+
+	var labels []string
+	inLabels := false
+	for _, line := range strings.Split(frontmatter, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "confluence_labels:" {
+			inLabels = true
+			continue
+		}
+		if inLabels {
+			if strings.HasPrefix(trimmed, "- ") {
+				label := strings.TrimSpace(strings.TrimPrefix(trimmed, "- "))
+				label = strings.Trim(label, `"'`)
+				if label != "" {
+					labels = append(labels, label)
+				}
+			} else {
+				break
+			}
+		}
+	}
+	return labels
+}
+
+// frontmatterProperties extracts confluence_properties from YAML frontmatter.
+// Returns the property ID and ordered list of properties.
+// Supports:
+//
+//	confluence_properties:
+//	  id: status
+//	  fields:
+//	    Owner: AI Tooling Guild
+//	    Status: "{status:Green|approved}"
+//	    Reviewed on: 2026-03-06
+func frontmatterProperties(path string) (string, []conflsvc.PageProperty) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", nil
+	}
+	content := string(data)
+	if !strings.HasPrefix(content, "---") {
+		return "", nil
+	}
+	rest := content[3:]
+	idx := strings.Index(rest, "\n---")
+	if idx == -1 {
+		return "", nil
+	}
+	frontmatter := rest[:idx]
+
+	inProps := false
+	inFields := false
+	propID := ""
+	var properties []conflsvc.PageProperty
+
+	for _, line := range strings.Split(frontmatter, "\n") {
+		trimmed := strings.TrimSpace(line)
+		indent := len(line) - len(strings.TrimLeft(line, " "))
+
+		if trimmed == "confluence_properties:" {
+			inProps = true
+			continue
+		}
+		if !inProps {
+			continue
+		}
+		// Exit properties block when we hit a non-indented line
+		if indent == 0 && trimmed != "" {
+			break
+		}
+
+		if strings.HasPrefix(trimmed, "id:") {
+			propID = strings.TrimSpace(strings.TrimPrefix(trimmed, "id:"))
+			propID = strings.Trim(propID, `"'`)
+			continue
+		}
+		if trimmed == "fields:" {
+			inFields = true
+			continue
+		}
+		if inFields && strings.Contains(trimmed, ":") {
+			// Parse "Key: Value" — split on first colon only
+			colonIdx := strings.Index(trimmed, ":")
+			key := strings.TrimSpace(trimmed[:colonIdx])
+			value := strings.TrimSpace(trimmed[colonIdx+1:])
+			value = strings.Trim(value, `"'`)
+			if key != "" {
+				properties = append(properties, conflsvc.PageProperty{Key: key, Value: value})
+			}
+		}
+	}
+
+	if len(properties) == 0 {
+		return "", nil
+	}
+	return propID, properties
+}
+
+// prependPageProperties prepends a Page Properties macro to content if
+// confluence_properties is defined in the file's frontmatter.
+func prependPageProperties(path, content string) string {
+	propID, properties := frontmatterProperties(path)
+	if len(properties) == 0 {
+		return content
+	}
+	macro := conflsvc.BuildPagePropertiesMacro(propID, properties)
+	return macro + "\n" + content
+}
+
+// applyLabels sets labels on a Confluence page if confluence_labels
+// is defined in the file's frontmatter.
+func applyLabels(client *conflsvc.Client, pageID, path string) {
+	labels := frontmatterLabels(path)
+	if len(labels) == 0 {
+		return
+	}
+	if err := client.AddLabels(pageID, labels); err != nil {
+		fmt.Printf("    ⚠️  Failed to set labels on %s: %v\n", pageID, err)
+	}
 }
 
 // buildPageURL constructs a Confluence page URL.

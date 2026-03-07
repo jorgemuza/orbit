@@ -45,6 +45,7 @@ func MarkdownToStorageWithLinks(md string, linkMap map[string]string) string {
 	var codeLines []string
 	firstH1Skipped := false
 	inTocSection := false
+	inIgnoreBlock := false
 	inTable := false
 	var tableAlignments []string
 
@@ -89,6 +90,23 @@ func MarkdownToStorageWithLinks(md string, linkMap map[string]string) string {
 		}
 		if inCodeBlock {
 			codeLines = append(codeLines, line)
+			i++
+			continue
+		}
+
+		// --- Ignore blocks (confluence:ignore-start / confluence:ignore-end) ---
+		if strings.Contains(trimmed, "confluence:ignore-start") {
+			flushTable()
+			inIgnoreBlock = true
+			i++
+			continue
+		}
+		if strings.Contains(trimmed, "confluence:ignore-end") {
+			inIgnoreBlock = false
+			i++
+			continue
+		}
+		if inIgnoreBlock {
 			i++
 			continue
 		}
@@ -215,6 +233,22 @@ func MarkdownToStorageWithLinks(md string, linkMap map[string]string) string {
 			items, end := collectListItems(lines, i)
 			out = append(out, buildNestedList(items, inline))
 			i = end
+			continue
+		}
+
+		// --- Properties Report (HTML comment) ---
+		if m := rePropertiesReportComment.FindStringSubmatch(trimmed); m != nil {
+			params := parseDirectiveParams(m[1])
+			out = append(out, buildPropertiesReportMacro(params))
+			i++
+			continue
+		}
+
+		// --- Properties Report (shorthand) ---
+		if m := rePropertiesReportShort.FindStringSubmatch(trimmed); m != nil {
+			params := parseDirectiveParams(m[1])
+			out = append(out, buildPropertiesReportMacro(params))
+			i++
 			continue
 		}
 
@@ -662,6 +696,29 @@ func convertInline(text string, linkMap map[string]string) string {
 			return label
 		}
 		if strings.HasSuffix(href, ".md") || strings.HasPrefix(href, "./") || strings.HasPrefix(href, "../") {
+			// Try to resolve relative .md link to a Confluence page link
+			if linkMap != nil {
+				// Try the href as-is, then normalized variants
+				candidates := []string{href}
+				// Strip ./ prefix
+				if strings.HasPrefix(href, "./") {
+					candidates = append(candidates, href[2:])
+				}
+				// Strip .md and add it back (normalize path)
+				cleaned := strings.TrimSuffix(href, ".md")
+				cleaned = strings.TrimPrefix(cleaned, "./")
+				cleaned = strings.TrimPrefix(cleaned, "../")
+				candidates = append(candidates, cleaned+".md")
+				// Just the filename
+				parts := strings.Split(href, "/")
+				candidates = append(candidates, parts[len(parts)-1])
+
+				for _, candidate := range candidates {
+					if pageTitle, ok := linkMap[candidate]; ok {
+						return fmt.Sprintf(`<ac:link><ri:page ri:content-title="%s" /><ac:plain-text-link-body><![CDATA[%s]]></ac:plain-text-link-body></ac:link>`, pageTitle, label)
+					}
+				}
+			}
 			return label
 		}
 		return fmt.Sprintf(`<a href="%s">%s</a>`, href, label)
@@ -774,6 +831,100 @@ func convertMetadataBlock(md string) string {
 	result = append(result, tbl.String())
 	result = append(result, after...)
 	return strings.Join(result, "\n")
+}
+
+// ---------------------------------------------------------------------------
+// Page Properties macro (details)
+// ---------------------------------------------------------------------------
+
+// PageProperty represents a single key-value property for the Page Properties macro.
+type PageProperty struct {
+	Key   string
+	Value string
+}
+
+var reDate = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
+
+// BuildPagePropertiesMacro generates a Confluence "details" (Page Properties) macro.
+// The id parameter sets the macro's ID for Page Properties Report queries.
+// Properties are rendered as a two-column table inside the macro.
+func BuildPagePropertiesMacro(id string, properties []PageProperty) string {
+	var sb strings.Builder
+	sb.WriteString(`<ac:structured-macro ac:name="details">`)
+	if id != "" {
+		sb.WriteString(fmt.Sprintf(`<ac:parameter ac:name="id">%s</ac:parameter>`, id))
+	}
+	sb.WriteString(`<ac:rich-text-body><table data-layout="align-start"><tbody>`)
+	for _, prop := range properties {
+		sb.WriteString(fmt.Sprintf(`<tr><th><p><strong>%s</strong></p></th><td><p>%s</p></td></tr>`, prop.Key, renderPropertyValue(prop.Value)))
+	}
+	sb.WriteString(`</tbody></table></ac:rich-text-body></ac:structured-macro>`)
+	return sb.String()
+}
+
+// renderPropertyValue converts a property value string to Confluence storage format.
+// It handles status badges ({status:Color|Text}) and dates (YYYY-MM-DD).
+func renderPropertyValue(value string) string {
+	// Status badge
+	if m := reStatus.FindStringSubmatch(value); m != nil {
+		colour, title := m[1], m[2]
+		return fmt.Sprintf(`<ac:structured-macro ac:name="status"><ac:parameter ac:name="title">%s</ac:parameter><ac:parameter ac:name="colour">%s</ac:parameter></ac:structured-macro>`, title, colour)
+	}
+	// Date
+	if reDate.MatchString(value) {
+		return fmt.Sprintf(`<time datetime="%s" />`, value)
+	}
+	return value
+}
+
+// ---------------------------------------------------------------------------
+// Properties Report directive (detailssummary)
+// ---------------------------------------------------------------------------
+
+var (
+	rePropertiesReportComment = regexp.MustCompile(`<!--\s*confluence:properties-report\s+(.+?)\s*-->`)
+	rePropertiesReportShort   = regexp.MustCompile(`^\{properties-report:\s*(.+?)\}$`)
+	reDirectiveParam          = regexp.MustCompile(`(\w+)\s*=\s*"([^"]*)"`)
+)
+
+// buildPropertiesReportMacro generates a Confluence "detailssummary" macro from parameters.
+func buildPropertiesReportMacro(params map[string]string) string {
+	var sb strings.Builder
+	sb.WriteString(`<ac:structured-macro ac:name="detailssummary">`)
+
+	firstcolumn := params["firstcolumn"]
+	if firstcolumn == "" {
+		firstcolumn = "Title"
+	}
+	sb.WriteString(fmt.Sprintf(`<ac:parameter ac:name="firstcolumn">%s</ac:parameter>`, firstcolumn))
+
+	if headings, ok := params["headings"]; ok && headings != "" {
+		sb.WriteString(fmt.Sprintf(`<ac:parameter ac:name="headings">%s</ac:parameter>`, headings))
+	} else if columns, ok := params["columns"]; ok && columns != "" {
+		sb.WriteString(fmt.Sprintf(`<ac:parameter ac:name="headings">%s</ac:parameter>`, columns))
+	}
+
+	if cql, ok := params["cql"]; ok && cql != "" {
+		sb.WriteString(fmt.Sprintf(`<ac:parameter ac:name="cql">%s</ac:parameter>`, cql))
+	} else if label, ok := params["label"]; ok && label != "" {
+		sb.WriteString(fmt.Sprintf(`<ac:parameter ac:name="cql">label = "%s" and space = currentSpace()</ac:parameter>`, label))
+	}
+
+	if sortBy, ok := params["sortBy"]; ok && sortBy != "" {
+		sb.WriteString(fmt.Sprintf(`<ac:parameter ac:name="sortBy">%s</ac:parameter>`, sortBy))
+	}
+
+	sb.WriteString(`</ac:structured-macro>`)
+	return sb.String()
+}
+
+// parseDirectiveParams extracts key="value" pairs from a directive string.
+func parseDirectiveParams(s string) map[string]string {
+	params := make(map[string]string)
+	for _, m := range reDirectiveParam.FindAllStringSubmatch(s, -1) {
+		params[m[1]] = m[2]
+	}
+	return params
 }
 
 // ---------------------------------------------------------------------------

@@ -502,6 +502,149 @@ func TestParseTableAlignments(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// Page Properties macro
+// ---------------------------------------------------------------------------
+
+func TestBuildPagePropertiesMacro(t *testing.T) {
+	props := []PageProperty{
+		{Key: "Owner", Value: "AI Tooling Guild"},
+		{Key: "Classification", Value: "Internal"},
+		{Key: "Status", Value: "{status:Green|approved}"},
+		{Key: "Reviewed on", Value: "2026-03-06"},
+	}
+	got := BuildPagePropertiesMacro("status", props)
+
+	checks := []struct {
+		desc     string
+		contains string
+	}{
+		{"details macro", `ac:name="details"`},
+		{"id param", `ac:name="id">status`},
+		{"owner label", `<strong>Owner</strong>`},
+		{"owner value", `AI Tooling Guild`},
+		{"classification", `Internal`},
+		{"status macro", `ac:name="status"`},
+		{"status title", `ac:name="title">approved`},
+		{"status colour", `ac:name="colour">Green`},
+		{"date tag", `<time datetime="2026-03-06" />`},
+		{"table wrapper", `<table data-layout="align-start">`},
+	}
+
+	for _, c := range checks {
+		if !strings.Contains(got, c.contains) {
+			t.Errorf("BuildPagePropertiesMacro: should contain %q (%s)\ngot: %s", c.contains, c.desc, got)
+		}
+	}
+}
+
+func TestBuildPagePropertiesMacroNoID(t *testing.T) {
+	props := []PageProperty{
+		{Key: "Owner", Value: "Team"},
+	}
+	got := BuildPagePropertiesMacro("", props)
+	if strings.Contains(got, `ac:name="id"`) {
+		t.Errorf("should not contain id param when empty, got: %s", got)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Properties Report (HTML comment)
+// ---------------------------------------------------------------------------
+
+func TestPropertiesReportHTMLComment(t *testing.T) {
+	md := `## Report
+
+<!-- confluence:properties-report cql="label = 'ai-process' and space = currentSpace()" firstcolumn="Document" headings="Status, Classification, Reviewed on" -->
+
+## Next Section`
+
+	got := MarkdownToStorage(md)
+
+	checks := []struct {
+		desc     string
+		contains string
+	}{
+		{"detailssummary macro", `ac:name="detailssummary"`},
+		{"firstcolumn", `ac:name="firstcolumn">Document`},
+		{"headings", `ac:name="headings">Status, Classification, Reviewed on`},
+		{"cql", `ac:name="cql">label = 'ai-process' and space = currentSpace()`},
+	}
+
+	for _, c := range checks {
+		if !strings.Contains(got, c.contains) {
+			t.Errorf("PropertiesReportHTMLComment: should contain %q (%s)\ngot: %s", c.contains, c.desc, got)
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Properties Report (shorthand)
+// ---------------------------------------------------------------------------
+
+func TestPropertiesReportShorthand(t *testing.T) {
+	md := `## Report
+
+{properties-report: label="ai-process", columns="Status, Classification, Reviewed on"}
+
+## Next Section`
+
+	got := MarkdownToStorage(md)
+
+	checks := []struct {
+		desc     string
+		contains string
+	}{
+		{"detailssummary macro", `ac:name="detailssummary"`},
+		{"default firstcolumn", `ac:name="firstcolumn">Title`},
+		{"headings from columns", `ac:name="headings">Status, Classification, Reviewed on`},
+		{"cql from label", `ac:name="cql">label = "ai-process" and space = currentSpace()`},
+	}
+
+	for _, c := range checks {
+		if !strings.Contains(got, c.contains) {
+			t.Errorf("PropertiesReportShorthand: should contain %q (%s)\ngot: %s", c.contains, c.desc, got)
+		}
+	}
+}
+
+func TestPropertiesReportShorthandWithSortBy(t *testing.T) {
+	md := `{properties-report: label="docs", columns="Status", sortBy="title"}`
+	got := MarkdownToStorage(md)
+	if !strings.Contains(got, `ac:name="sortBy">title`) {
+		t.Errorf("expected sortBy parameter, got: %s", got)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Ignore blocks
+// ---------------------------------------------------------------------------
+
+func TestIgnoreBlock(t *testing.T) {
+	md := "# Title\n\nVisible paragraph\n\n<!-- confluence:ignore-start -->\n\n| Col1 | Col2 |\n|------|------|\n| a | b |\n\n<!-- confluence:ignore-end -->\n\nAfter ignore"
+	got := MarkdownToStorage(md)
+	if strings.Contains(got, "<table") {
+		t.Errorf("Table inside ignore block should be skipped, got: %s", got)
+	}
+	if !strings.Contains(got, "Visible paragraph") {
+		t.Errorf("Content before ignore block should be preserved, got: %s", got)
+	}
+	if !strings.Contains(got, "After ignore") {
+		t.Errorf("Content after ignore block should be preserved, got: %s", got)
+	}
+}
+
+func TestIgnoreBlockDoesNotAffectCodeBlocks(t *testing.T) {
+	md := "# Title\n\n```\n<!-- confluence:ignore-start -->\ncode\n<!-- confluence:ignore-end -->\n```\n\nVisible"
+	got := MarkdownToStorage(md)
+	if !strings.Contains(got, "confluence:ignore-start") {
+		t.Errorf("Ignore directives inside code blocks should be literal, got: %s", got)
+	}
+	if !strings.Contains(got, "Visible") {
+		t.Errorf("Content after code block should be preserved, got: %s", got)
+	}
+}
+
+// ---------------------------------------------------------------------------
 // Complex integration tests
 // ---------------------------------------------------------------------------
 

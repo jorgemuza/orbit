@@ -1,5 +1,5 @@
 ---
-name: jira-skill
+name: jira
 description: "Interact with Jira using the orbit CLI to create, list, view, edit, and transition issues, manage sprints and epics, and write properly formatted descriptions using Jira wiki markup. Use this skill whenever the user asks about Jira tasks, tickets, issues, sprints, epics, or needs to manage project work items using orbit. Also trigger when the user says things like 'create a ticket', 'create epics', 'move this to done', 'assign the issue', 'update the description', 'format for Jira', or any Jira-related workflow — even casual references like 'update Jira', 'what tickets are in this sprint', or 'add a comment to PROJ-123'. Trigger especially when descriptions need proper formatting (headings, bullets, tables, links) since Jira Server uses wiki markup, not markdown."
 ---
 
