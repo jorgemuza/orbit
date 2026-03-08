@@ -175,7 +175,7 @@ orbit -p myprofile bb repo list L3SUP
 - **Profile required** — Always pass `-p <profile>` to select the Bitbucket connection. The profile must have a service of type `bitbucket` configured.
 - **Service flag** — If a profile has multiple Bitbucket services, use `--service <name>` to disambiguate.
 - **Server vs Cloud** — The service variant (`server` or `cloud`) in config determines the API prefix. Server uses `/rest/api/latest/`, Cloud uses `/2.0/`.
-- **1Password integration** — Auth tokens in config can use `op://vault/item/field` and are resolved at runtime.
+- **1Password integration** — Auth tokens in config can use `op://vault/item/field` and are resolved at runtime. Run `orbit auth` once to resolve and cache all secrets for 8 hours (single biometric prompt). Use `orbit auth clear` to wipe the cache.
 - **PR states are uppercase** — Use `OPEN`, `MERGED`, `DECLINED`, or `ALL` (case-insensitive input is accepted).
 - **Pagination** — Most list commands default to 25-50 results. Use `--limit N` to adjust.
 - **URL parsing** — When a user provides a Bitbucket Server URL like `https://host/projects/KEY/repos/SLUG/...`, extract the project key and repo slug from the URL path to use with orbit commands.

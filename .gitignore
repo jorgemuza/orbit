@@ -5,3 +5,4 @@ references/
 !skills/**/references/
 /CLAUDE.md
 .claude
+.secret-cache

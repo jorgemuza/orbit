@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	cmdauth "github.com/jorgemuza/orbit/cmd/auth"
 	cmdbitbucket "github.com/jorgemuza/orbit/cmd/bitbucket"
 	cmdconfluence "github.com/jorgemuza/orbit/cmd/confluence"
 	cmdgithub "github.com/jorgemuza/orbit/cmd/github"
@@ -46,6 +47,7 @@ func init() {
 	rootCmd.PersistentFlags().StringP("profile", "p", "", "profile to use (overrides default)")
 	rootCmd.PersistentFlags().StringP("output", "o", "table", "output format: table, json, yaml")
 
+	rootCmd.AddCommand(cmdauth.Command)
 	rootCmd.AddCommand(profile.Command)
 	rootCmd.AddCommand(cmdservice.Command)
 	rootCmd.AddCommand(cmdjira.Command)

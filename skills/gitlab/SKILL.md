@@ -204,6 +204,6 @@ orbit -p myprofile gl mr comment 595 42 --body "Approved, looks good"
 - **Profile required** — Always pass `-p <profile>` to select the GitLab connection. The profile must have a service of type `gitlab` configured.
 - **Service flag** — If a profile has multiple GitLab services, use `--service <name>` to disambiguate.
 - **Cloud vs Self-hosted** — Works with both. The base URL in your profile config determines the GitLab instance.
-- **1Password integration** — Auth tokens in config can use `op://vault/item/field` and are resolved at runtime.
+- **1Password integration** — Auth tokens in config can use `op://vault/item/field` and are resolved at runtime. Run `orbit auth` once to resolve and cache all secrets for 8 hours (single biometric prompt). Use `orbit auth clear` to wipe the cache.
 - **MR = PR** — If a user says "pull request" or "PR" in a GitLab context, they mean merge request.
 - **Pagination** — Most list commands default to 20-50 results. Use `--limit N` to adjust.

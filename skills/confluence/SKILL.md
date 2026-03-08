@@ -278,5 +278,5 @@ The converter handles the following transformations:
 - **Wide width by default** -- All pages created via `orbit` are automatically set to full-width layout. Use `set-width --width fixed` to revert.
 - **Cloud vs Server** -- Use service type `confluence-cloud` for Atlassian Cloud (requires `/wiki/` prefix in API paths, handled automatically). Use `confluence-server` for Data Center.
 - **Auth for Cloud** -- Basic auth with your email as username and an API token (not your password) as the password field.
-- **1Password integration** -- Credentials in config can use `op://vault/item/field` and are resolved at runtime.
+- **1Password integration** -- Credentials in config can use `op://vault/item/field` and are resolved at runtime. Run `orbit auth` once to resolve and cache all secrets for 8 hours (single biometric prompt). Use `orbit auth clear` to wipe the cache.
 - **Dry run before publish** -- Always use `--dry-run` first when publishing a directory to preview the page hierarchy before making API calls.

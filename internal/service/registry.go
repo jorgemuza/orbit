@@ -45,19 +45,14 @@ func Create(conn config.ServiceConnection) (Service, error) {
 }
 
 func resolveAuth(auth config.AuthConfig) (config.AuthConfig, error) {
-	var err error
-	if auth.Username, err = secrets.Resolve(auth.Username); err != nil {
+	resolved, err := secrets.ResolveAll(auth.Username, auth.Token, auth.Password, auth.ClientSecret)
+	if err != nil {
 		return auth, err
 	}
-	if auth.Token, err = secrets.Resolve(auth.Token); err != nil {
-		return auth, err
-	}
-	if auth.Password, err = secrets.Resolve(auth.Password); err != nil {
-		return auth, err
-	}
-	if auth.ClientSecret, err = secrets.Resolve(auth.ClientSecret); err != nil {
-		return auth, err
-	}
+	auth.Username = resolved[0]
+	auth.Token = resolved[1]
+	auth.Password = resolved[2]
+	auth.ClientSecret = resolved[3]
 	return auth, nil
 }
 

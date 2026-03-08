@@ -60,9 +60,7 @@ func ServiceTable(services []config.ServiceConnection) ([]string, func() [][]str
 		var rows [][]string
 		for _, svc := range services {
 			opRef := ""
-			if secrets.IsSecretReference(svc.Auth.Token) ||
-				secrets.IsSecretReference(svc.Auth.Password) ||
-				secrets.IsSecretReference(svc.Auth.ClientSecret) {
+			if secrets.HasSecretReferences(svc.Auth.Token, svc.Auth.Username, svc.Auth.Password, svc.Auth.ClientSecret) {
 				opRef = "yes"
 			}
 			rows = append(rows, []string{svc.Name, svc.Type, svc.Variant, svc.BaseURL, svc.Auth.Method, opRef})

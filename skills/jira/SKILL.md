@@ -1,17 +1,18 @@
 ---
 name: jira
-description: "Interact with Jira using the orbit CLI to create, list, view, edit, and transition issues, manage sprints and epics, and write properly formatted descriptions using Jira wiki markup. Use this skill whenever the user asks about Jira tasks, tickets, issues, sprints, epics, or needs to manage project work items using orbit. Also trigger when the user says things like 'create a ticket', 'create epics', 'move this to done', 'assign the issue', 'update the description', 'format for Jira', or any Jira-related workflow — even casual references like 'update Jira', 'what tickets are in this sprint', or 'add a comment to PROJ-123'. Trigger especially when descriptions need proper formatting (headings, bullets, tables, links) since Jira Server uses wiki markup, not markdown."
+description: "Interact with Jira using the orbit CLI to create, list, view, edit, and transition issues, manage sprints and epics, manage custom fields and screen configurations, list statuses and issue types, and write properly formatted descriptions using Jira wiki markup. Use this skill whenever the user asks about Jira tasks, tickets, issues, sprints, epics, or needs to manage project work items using orbit. Also trigger when the user says things like 'create a ticket', 'create epics', 'move this to done', 'assign the issue', 'update the description', 'format for Jira', 'create a custom field', 'add field to screen', 'list statuses', 'configure Jira', or any Jira-related workflow — even casual references like 'update Jira', 'what tickets are in this sprint', 'add a comment to PROJ-123', or 'set up AI tracking fields'. Trigger especially when descriptions need proper formatting (headings, bullets, tables, links) since Jira Server uses wiki markup, not markdown."
 ---
 
 # Jira with orbit CLI
 
-Manage Jira issues, epics, sprints, boards, projects, and releases using the `orbit` CLI. This tool connects to Jira Server/Data Center via REST API with multi-profile support and 1Password secret resolution.
+Manage Jira issues, epics, sprints, boards, projects, releases, custom fields, screens, statuses, and issue types using the `orbit` CLI. Supports both Jira Cloud (REST API v3) and Jira Server/Data Center (REST API v2) with multi-profile support and 1Password secret resolution.
 
 ## Prerequisites
 
 1. `orbit` binary built and accessible
-2. A profile with a `jira-onprem` service configured in `~/.config/orbit/config.yaml`
-3. A valid Jira personal access token (can be stored in 1Password with `op://` prefix)
+2. A profile with a `jira-cloud` or `jira-onprem` service configured in `~/.config/orbit/config.yaml`
+3. Valid credentials — API token for Cloud (basic auth with email + token), PAT for Server
+4. Credentials can be stored in 1Password with `op://` prefix for automatic resolution
 
 ## Quick Reference
 
@@ -20,7 +21,7 @@ All commands follow the pattern: `orbit -p <profile> jira <resource> <action> [f
 The `-o` flag controls output format: `table` (default), `json`, `yaml`.
 
 For full command details and flags, see `references/commands.md`.
-For Jira wiki markup formatting, see `references/wiki-markup.md`.
+For Jira wiki markup formatting (Server only), see `references/wiki-markup.md`.
 
 ## Core Workflows
 
@@ -55,11 +56,11 @@ orbit -p myprofile jira issue create --type Epic --project PROJ \
   --priority Highest
 ```
 
-The `--field` flag sets arbitrary custom fields as `key=value`. Use `jira field-list` to discover field IDs.
+The `--field` flag sets arbitrary custom fields as `key=value`. Use `jira field list` to discover field IDs.
 
 ### Editing Issues with Formatted Descriptions
 
-Jira Server uses **wiki markup**, not Markdown. Always format `--body` values using wiki markup syntax.
+Jira Server uses **wiki markup**, not Markdown. Jira Cloud uses ADF (handled automatically by orbit for plain text). Always format `--body` values using wiki markup syntax for Server instances.
 
 ```bash
 orbit -p myprofile jira issue edit PRT-123 --body "h2. Value Statement
@@ -70,27 +71,17 @@ h2. User Stories
 
 * *Story 1:* As a platform admin, I want all API requests to require a valid Okta JWT.
 ** Okta custom AS configured with epsilon_claims claim
-** AUTH_BYPASS removed from all Terraform task definitions
-** Unauthenticated requests return 401
-
-h2. Functional Requirements
-
-||Req ID||Description||Priority||
-|FR-001|Okta custom authorization server setup|Must|
-|FR-002|AWS Secrets Manager wiring|Must|"
+** AUTH_BYPASS removed from all Terraform task definitions"
 ```
 
-### Discovering Custom Fields
+### Editing Custom Field Values
 
 ```bash
-# List all fields, filter by name
-orbit -p myprofile jira field-list --filter "parent"
-orbit -p myprofile jira field-list --filter "epic"
+# Set a select field value
+orbit -p myprofile jira issue edit PROJ-123 --field customfield_10397="Yes"
 
-# Common custom field IDs (vary by Jira instance):
-# customfield_11523 = Epic Name (auto-set for Epic type)
-# customfield_27521 = Parent Link (links epics to initiatives/capabilities)
-# customfield_11522 = Epic Link (links stories to epics)
+# Set a number field
+orbit -p myprofile jira issue edit PROJ-123 --field customfield_10399="3"
 ```
 
 ### Transitioning Issues
@@ -119,27 +110,123 @@ orbit -p myprofile jira issue list --jql "project = PROJ AND sprint in openSprin
 orbit -p myprofile jira issue list --project PROJ -o json
 ```
 
-### Bulk Epic Creation Pattern
+## Field Management (Cloud Only)
 
-When creating multiple epics under a parent (Initiative/Capability), use this pattern:
+Manage custom fields, their contexts, and options programmatically.
+
+### Listing Fields
 
 ```bash
-# Create epics with Parent Link and formatted descriptions
-for epic in "Epic 1 Name" "Epic 2 Name" "Epic 3 Name"; do
-  orbit -p myprofile jira issue create --type Epic --project PROJ \
-    --summary "$epic" \
-    --field "customfield_27521=PROJ-100" \
-    --priority Highest
-done
+# List all fields
+orbit -p myprofile jira field list
 
-# Then update descriptions with wiki markup formatting
-orbit -p myprofile jira issue edit PROJ-201 --body "h2. Value Statement
-..."
+# List only custom fields
+orbit -p myprofile jira field list --custom
+
+# Filter by name or ID
+orbit -p myprofile jira field list --filter "AI"
+```
+
+### Creating Custom Fields
+
+```bash
+# Create a select field (shorthand types: select, multiselect, number, checkbox, text, textarea)
+orbit -p myprofile jira field create --name "AI Assisted" --type select \
+  --description "Was AI used on this ticket?"
+
+# Create a number field
+orbit -p myprofile jira field create --name "AI Prompt Iterations" --type number \
+  --description "How many prompt cycles to get working output"
+
+# Create a checkbox field
+orbit -p myprofile jira field create --name "Human Review Confirmed" --type checkbox \
+  --description "Engineer confirms AI output was reviewed"
+```
+
+### Managing Field Contexts and Options
+
+```bash
+# List field contexts
+orbit -p myprofile jira field context-list customfield_10397
+
+# List existing options
+orbit -p myprofile jira field option-list customfield_10397 10817
+
+# Add options to a select/multiselect field
+orbit -p myprofile jira field option-add customfield_10397 10817 \
+  --values "Yes,No,Partial"
+```
+
+## Screen Management
+
+Control which fields appear on issue create/edit/view forms by managing screen tabs and field assignments.
+
+### Listing Screens and Tabs
+
+```bash
+# List all screens
+orbit -p myprofile jira screen list
+
+# Filter screens by name
+orbit -p myprofile jira screen list --filter "PYMT"
+
+# List tabs on a screen
+orbit -p myprofile jira screen tab-list 10089
+
+# List fields on a screen tab
+orbit -p myprofile jira screen field-list 10089 10189
+```
+
+### Creating Tabs
+
+```bash
+# Create a new tab to group related fields
+orbit -p myprofile jira screen tab-create 10089 "AI Workflow"
+```
+
+### Adding and Removing Fields
+
+```bash
+# Add fields to a screen tab
+orbit -p myprofile jira screen field-add 10089 10868 \
+  --fields "customfield_10397,customfield_10398,customfield_10399"
+
+# Remove fields from a screen tab
+orbit -p myprofile jira screen field-remove 10089 10189 \
+  --fields "customfield_10397,customfield_10398"
+```
+
+### Moving Fields Between Tabs
+
+```bash
+# Move fields from General tab to AI Workflow tab
+orbit -p myprofile jira screen field-move 10089 10189 10868 \
+  --fields "customfield_10397,customfield_10398,customfield_10399"
+```
+
+## Status and Issue Type Management
+
+### Listing Workflow Statuses
+
+```bash
+# List all statuses with their categories
+orbit -p myprofile jira status list
+
+# Filter with grep
+orbit -p myprofile jira status list | grep -i "review"
+```
+
+### Listing Issue Types
+
+```bash
+orbit -p myprofile jira issuetype-list
 ```
 
 ## Important Notes
 
+- **Cloud vs Server** — Use service type `jira-cloud` for Atlassian Cloud (uses API v3 with ADF for descriptions). Use `jira-onprem` for Server/Data Center (uses API v2 with wiki markup).
+- **Description formatting** — For Server instances, always use Jira wiki markup for `--body` values. For Cloud, orbit auto-converts plain text to ADF. See `references/wiki-markup.md` for wiki markup syntax.
+- **Field management** — `field create`, `field context-list`, `field option-list`, and `field option-add` are Cloud-only features.
+- **Screen management** — Adding fields to screens makes them appear on issue create/edit forms. Use `tab-create` to group related fields into a dedicated tab.
 - **Epic type cannot use `--parent` flag** — Jira rejects it because Epic is not a sub-task type. Use the `--field "customfield_27521=KEY"` (Parent Link) instead.
-- **Description formatting** — Always use Jira wiki markup for `--body` values. Markdown will render as plain text. See `references/wiki-markup.md` for the full syntax.
-- **Custom field values** — Most custom fields accept string values. For option/multi-select fields, you may need JSON values via the REST API directly.
-- **1Password integration** — Token fields in config can use `op://vault/item/field` and are resolved at runtime.
+- **1Password integration** — Credentials in config can use `op://vault/item/field` and are resolved at runtime. Run `orbit auth` once to resolve and cache all secrets for 8 hours (single biometric prompt). Use `orbit auth clear` to wipe the cache. Without `orbit auth`, secrets are still resolved on each command but may trigger repeated biometric prompts.

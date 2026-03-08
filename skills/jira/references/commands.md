@@ -24,6 +24,23 @@ Complete reference for all `orbit jira` commands with flags and examples.
 - [Project Commands](#project-commands)
 - [Release Commands](#release-commands)
 - [Field Commands](#field-commands)
+  - [field list](#field-list)
+  - [field create](#field-create)
+  - [field context-list](#field-context-list)
+  - [field option-list](#field-option-list)
+  - [field option-add](#field-option-add)
+- [Screen Commands](#screen-commands)
+  - [screen list](#screen-list)
+  - [screen tab-list](#screen-tab-list)
+  - [screen tab-create](#screen-tab-create)
+  - [screen field-list](#screen-field-list)
+  - [screen field-add](#screen-field-add)
+  - [screen field-remove](#screen-field-remove)
+  - [screen field-move](#screen-field-move)
+- [Status Commands](#status-commands)
+  - [status list](#status-list)
+- [Issue Type Commands](#issue-type-commands)
+  - [issuetype-list](#issuetype-list)
 
 ---
 
@@ -80,10 +97,10 @@ orbit -p profile jira issue list [flags]
 **Examples:**
 
 ```bash
-orbit -p epsilon jira issue list --project PRT
-orbit -p epsilon jira issue list --assignee me --status "In Progress"
-orbit -p epsilon jira issue list --jql "project = PRT AND issuetype = Epic"
-orbit -p epsilon jira issue list --project PRT --type Epic -o json
+orbit -p paybook jira issue list --project PYMT
+orbit -p paybook jira issue list --assignee me --status "In Progress"
+orbit -p paybook jira issue list --jql "project = PYMT AND issuetype = Epic"
+orbit -p paybook jira issue list --project PYMT --type Epic -o json
 ```
 
 ---
@@ -107,9 +124,9 @@ orbit -p profile jira issue view <issue-key> [flags]
 **Examples:**
 
 ```bash
-orbit -p epsilon jira issue view PRT-4373
-orbit -p epsilon jira issue view PRT-4373 --comments 5
-orbit -p epsilon jira issue view PRT-4373 -o json
+orbit -p paybook jira issue view PYMT-123
+orbit -p paybook jira issue view PYMT-123 --comments 5
+orbit -p paybook jira issue view PYMT-123 -o json
 ```
 
 ---
@@ -129,9 +146,9 @@ orbit -p profile jira issue create [flags]
 | `--project` | string | Project key (**required**) |
 | `-t, --type` | string | Issue type (**required**) |
 | `-s, --summary` | string | Issue summary (**required**) |
-| `-b, --body` | string | Issue description (use wiki markup!) |
+| `-b, --body` | string | Issue description (wiki markup for Server, plain text for Cloud) |
 | `-y, --priority` | string | Priority |
-| `-a, --assignee` | string | Assignee username |
+| `-a, --assignee` | string | Assignee username (Server) or accountId (Cloud) |
 | `-r, --reporter` | string | Reporter username |
 | `-P, --parent` | string | Parent issue key (for sub-tasks only) |
 | `-l, --label` | []string | Labels (repeatable) |
@@ -146,24 +163,25 @@ orbit -p profile jira issue create [flags]
 
 ```bash
 # Simple story
-orbit -p epsilon jira issue create --project PRT --type Story \
+orbit -p paybook jira issue create --project PYMT --type Story \
   --summary "Add login page"
 
 # Epic with Parent Link
-orbit -p epsilon jira issue create --type Epic --project PRT \
+orbit -p paybook jira issue create --type Epic --project PYMT \
   --summary "Okta Authentication Foundation" \
   --priority Highest \
-  --field "customfield_27521=PRT-4378"
+  --field "customfield_27521=PYMT-100"
 
 # Bug with labels and components
-orbit -p epsilon jira issue create --project PRT --type Bug \
+orbit -p paybook jira issue create --project PYMT --type Bug \
   --summary "Fix timeout" --priority High \
   --label backend --label urgent --component api
 ```
 
 **Notes:**
 - `--parent` only works for Sub-task types. For linking Epics to Initiatives, use `--field "customfield_27521=KEY"` (Parent Link).
-- When `--type Epic` is used, the Epic Name custom field (`customfield_11523`) is auto-set from `--summary`. Override with `--epic-name`.
+- When `--type Epic` is used, the Epic Name custom field is auto-set from `--summary`. Override with `--epic-name`.
+- For Cloud, plain-text description is automatically wrapped in ADF format.
 
 ---
 
@@ -182,22 +200,21 @@ orbit -p profile jira issue edit <issue-key> [flags]
 | Flag | Type | Description |
 |------|------|-------------|
 | `-s, --summary` | string | New summary |
-| `-b, --body` | string | New description (use wiki markup!) |
+| `-b, --body` | string | New description |
 | `-y, --priority` | string | New priority |
 | `-l, --label` | []string | Add/remove labels (prefix with `-` to remove) |
 | `-C, --component` | []string | Add/remove components (prefix with `-` to remove) |
 | `--fix-version` | []string | Add/remove fix versions (prefix with `-` to remove) |
+| `-F, --field` | []string | Custom fields as key=value (repeatable) |
 
 **Examples:**
 
 ```bash
-orbit -p epsilon jira issue edit PRT-123 --summary "Updated title"
-orbit -p epsilon jira issue edit PRT-123 --priority Critical
-orbit -p epsilon jira issue edit PRT-123 --label new-label --label -old-label
-orbit -p epsilon jira issue edit PRT-123 --body "h2. Updated Description
-
-* New bullet point
-* Another point"
+orbit -p paybook jira issue edit PYMT-123 --summary "Updated title"
+orbit -p paybook jira issue edit PYMT-123 --priority Critical
+orbit -p paybook jira issue edit PYMT-123 --label new-label --label -old-label
+orbit -p paybook jira issue edit PYMT-123 --field customfield_10397="Yes"
+orbit -p paybook jira issue edit PYMT-123 --field customfield_10403="Dev"
 ```
 
 ---
@@ -215,8 +232,8 @@ Use `x` as assignee to unassign.
 **Examples:**
 
 ```bash
-orbit -p epsilon jira issue assign PRT-123 john.doe
-orbit -p epsilon jira issue assign PRT-123 x    # unassign
+orbit -p paybook jira issue assign PYMT-123 john.doe
+orbit -p paybook jira issue assign PYMT-123 x    # unassign
 ```
 
 ---
@@ -241,9 +258,11 @@ orbit -p profile jira issue move <issue-key> <state> [flags]
 **Examples:**
 
 ```bash
-orbit -p epsilon jira issue move PRT-123 "In Progress"
-orbit -p epsilon jira issue move PRT-123 Done --comment "Fixed in v2.1"
-orbit -p epsilon jira issue move PRT-123 Done --resolution Fixed
+orbit -p paybook jira issue move PYMT-123 "In Progress"
+orbit -p paybook jira issue move PYMT-123 "AI Review"
+orbit -p paybook jira issue move PYMT-123 "In Code Review"
+orbit -p paybook jira issue move PYMT-123 "In QA"
+orbit -p paybook jira issue move PYMT-123 Done --comment "Fixed in v2.1" --resolution Fixed
 ```
 
 ---
@@ -271,13 +290,13 @@ orbit -p profile jira issue delete <issue-key> [flags]
 Add a comment to an issue.
 
 ```bash
-orbit -p profile jira issue comment <issue-key> <body...>
+orbit -p profile jira issue comment <issue-key> -b <body>
 ```
 
 **Examples:**
 
 ```bash
-orbit -p epsilon jira issue comment PRT-123 "This is fixed now"
+orbit -p paybook jira issue comment PYMT-123 -b "This is fixed now"
 ```
 
 ---
@@ -293,8 +312,8 @@ orbit -p profile jira issue link <inward-key> <outward-key> <link-type>
 **Examples:**
 
 ```bash
-orbit -p epsilon jira issue link PRT-100 PRT-200 Blocks
-orbit -p epsilon jira issue link PRT-100 PRT-200 Duplicates
+orbit -p paybook jira issue link PYMT-100 PYMT-200 Blocks
+orbit -p paybook jira issue link PYMT-100 PYMT-200 "is caused by"
 ```
 
 ---
@@ -326,8 +345,8 @@ orbit -p profile jira issue worklog <issue-key> <time-spent> [flags]
 **Examples:**
 
 ```bash
-orbit -p epsilon jira issue worklog PRT-123 "2h 30m"
-orbit -p epsilon jira issue worklog PRT-123 "1d" --comment "Code review"
+orbit -p paybook jira issue worklog PYMT-123 "2h 30m"
+orbit -p paybook jira issue worklog PYMT-123 "1d" --comment "Code review"
 ```
 
 ---
@@ -350,9 +369,9 @@ orbit -p profile jira issue clone <issue-key> [flags]
 **Examples:**
 
 ```bash
-orbit -p epsilon jira issue clone PRT-123
-orbit -p epsilon jira issue clone PRT-123 --summary "Cloned: new title"
-orbit -p epsilon jira issue clone PRT-123 --replace "v1:v2"
+orbit -p paybook jira issue clone PYMT-123
+orbit -p paybook jira issue clone PYMT-123 --summary "Cloned: new title"
+orbit -p paybook jira issue clone PYMT-123 --replace "v1:v2"
 ```
 
 ---
@@ -380,8 +399,8 @@ orbit -p profile jira epic list [epic-key] [flags]
 **Examples:**
 
 ```bash
-orbit -p epsilon jira epic list --project PRT
-orbit -p epsilon jira epic list PRT-50    # issues in epic PRT-50
+orbit -p paybook jira epic list --project PYMT
+orbit -p paybook jira epic list PYMT-50    # issues in epic PYMT-50
 ```
 
 ### epic create
@@ -399,7 +418,7 @@ orbit -p profile jira epic create [flags]
 | `--project` | string | Project key (**required**) |
 | `-n, --name` | string | Epic name (**required**) |
 | `-s, --summary` | string | Epic summary (defaults to name) |
-| `-b, --body` | string | Epic description (use wiki markup!) |
+| `-b, --body` | string | Epic description |
 | `-y, --priority` | string | Priority |
 | `-l, --label` | []string | Labels |
 | `-C, --component` | []string | Components |
@@ -494,32 +513,329 @@ orbit -p profile jira release list --project <key>
 
 ## Field Commands
 
-### field-list
+Manage Jira fields — list system/custom fields, create new custom fields, manage field contexts and options. Field creation and option management are **Cloud only**.
 
-List Jira fields. Essential for discovering custom field IDs.
+### field list
+
+List Jira fields (system and custom).
 
 ```bash
-orbit -p profile jira field-list [flags]
+orbit -p profile jira field list [flags]
 ```
 
 **Flags:**
 
 | Flag | Type | Description |
 |------|------|-------------|
-| `--filter` | string | Filter fields by name (case-insensitive) |
+| `--filter` | string | Filter fields by name or ID (case-insensitive) |
+| `--custom` | bool | Show only custom fields |
 
 **Examples:**
 
 ```bash
-orbit -p epsilon jira field-list --filter "parent"
-orbit -p epsilon jira field-list --filter "epic"
-orbit -p epsilon jira field-list --filter "client"
+orbit -p paybook jira field list --filter "AI"
+orbit -p paybook jira field list --custom
+orbit -p paybook jira field list --filter "customfield_10397"
 ```
 
-**Common custom fields (instance-specific):**
+---
 
-| Field | Typical ID | Usage |
-|-------|-----------|-------|
-| Epic Name | customfield_11523 | Required for Epic creation (auto-set by orbit) |
-| Parent Link | customfield_27521 | Links epics to initiatives/capabilities |
-| Epic Link | customfield_11522 | Links stories to epics |
+### field create
+
+Create a custom field (Cloud only).
+
+```bash
+orbit -p profile jira field create [flags]
+```
+
+**Flags:**
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--name` | string | Field name (**required**) |
+| `--type` | string | Field type or shorthand (**required**) |
+| `--description` | string | Field description |
+| `--searcher` | string | Searcher key (auto-resolved if omitted) |
+
+**Shorthand types:**
+
+| Shorthand | Full Type |
+|-----------|-----------|
+| `select` | `com.atlassian.jira.plugin.system.customfieldtypes:select` |
+| `multiselect` | `com.atlassian.jira.plugin.system.customfieldtypes:multiselect` |
+| `number` / `float` | `com.atlassian.jira.plugin.system.customfieldtypes:float` |
+| `checkbox` / `checkboxes` | `com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes` |
+| `text` | `com.atlassian.jira.plugin.system.customfieldtypes:textfield` |
+| `textarea` | `com.atlassian.jira.plugin.system.customfieldtypes:textarea` |
+
+**Examples:**
+
+```bash
+orbit -p paybook jira field create --name "AI Assisted" --type select \
+  --description "Was AI used on this ticket?"
+
+orbit -p paybook jira field create --name "AI Prompt Iterations" --type number \
+  --description "How many prompt cycles to get working output"
+
+orbit -p paybook jira field create --name "Human Review Confirmed" --type checkbox \
+  --description "Engineer confirms AI output was reviewed"
+```
+
+---
+
+### field context-list
+
+List contexts for a custom field (Cloud only).
+
+```bash
+orbit -p profile jira field context-list <field-id>
+```
+
+**Examples:**
+
+```bash
+orbit -p paybook jira field context-list customfield_10397
+# Output: 10817  Default Configuration Scheme for AI Assisted [global] [any-issue-type]
+```
+
+---
+
+### field option-list
+
+List options for a select/multi-select field context (Cloud only).
+
+```bash
+orbit -p profile jira field option-list <field-id> <context-id>
+```
+
+**Examples:**
+
+```bash
+orbit -p paybook jira field option-list customfield_10397 10817
+# Output: 10424  Yes
+#         10425  No
+#         10426  Partial
+```
+
+---
+
+### field option-add
+
+Add options to a select/multi-select field context (Cloud only).
+
+```bash
+orbit -p profile jira field option-add <field-id> <context-id> --values <values>
+```
+
+**Flags:**
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--values` | []string | Option values to add (comma-separated) |
+
+**Examples:**
+
+```bash
+orbit -p paybook jira field option-add customfield_10397 10817 --values "Yes,No,Partial"
+orbit -p paybook jira field option-add customfield_10398 10818 \
+  --values "Architect,Developer,QA,Reviewer,Simplifier,None"
+```
+
+---
+
+## Screen Commands
+
+Manage Jira screens — list screens, create tabs, add/remove/move fields on screen tabs. Screens control which fields appear on issue create, edit, and view forms.
+
+### screen list
+
+List all screens, optionally filtered by name.
+
+```bash
+orbit -p profile jira screen list [flags]
+```
+
+**Flags:**
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--filter` | string | Filter screens by name (case-insensitive) |
+
+**Examples:**
+
+```bash
+orbit -p paybook jira screen list
+orbit -p paybook jira screen list --filter "PYMT"
+orbit -p paybook jira screen list --filter "Scrum Default"
+```
+
+---
+
+### screen tab-list
+
+List tabs on a screen.
+
+```bash
+orbit -p profile jira screen tab-list <screen-id>
+```
+
+**Examples:**
+
+```bash
+orbit -p paybook jira screen tab-list 10089
+# Output: 10189  General
+#         10868  AI Workflow
+```
+
+---
+
+### screen tab-create
+
+Create a new tab on a screen.
+
+```bash
+orbit -p profile jira screen tab-create <screen-id> <tab-name>
+```
+
+**Examples:**
+
+```bash
+orbit -p paybook jira screen tab-create 10089 "AI Workflow"
+# Output: Created tab 10868 (AI Workflow) on screen 10089
+```
+
+---
+
+### screen field-list
+
+List fields on a screen tab.
+
+```bash
+orbit -p profile jira screen field-list <screen-id> <tab-id>
+```
+
+**Examples:**
+
+```bash
+orbit -p paybook jira screen field-list 10089 10868
+# Output: customfield_10397  AI Assisted
+#         customfield_10398  Agent Role Used
+#         ...
+```
+
+---
+
+### screen field-add
+
+Add fields to a screen tab.
+
+```bash
+orbit -p profile jira screen field-add <screen-id> <tab-id> --fields <field-ids>
+```
+
+**Flags:**
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--fields` | []string | Field IDs to add (comma-separated) |
+
+**Examples:**
+
+```bash
+orbit -p paybook jira screen field-add 10089 10868 \
+  --fields "customfield_10397,customfield_10398,customfield_10399"
+```
+
+---
+
+### screen field-remove
+
+Remove fields from a screen tab.
+
+```bash
+orbit -p profile jira screen field-remove <screen-id> <tab-id> --fields <field-ids>
+```
+
+**Flags:**
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--fields` | []string | Field IDs to remove (comma-separated) |
+
+**Examples:**
+
+```bash
+orbit -p paybook jira screen field-remove 10089 10189 \
+  --fields "customfield_10397,customfield_10398"
+```
+
+---
+
+### screen field-move
+
+Move fields from one tab to another on the same screen. This removes the field from the source tab and adds it to the target tab.
+
+```bash
+orbit -p profile jira screen field-move <screen-id> <source-tab-id> <target-tab-id> --fields <field-ids>
+```
+
+**Flags:**
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--fields` | []string | Field IDs to move (comma-separated) |
+
+**Examples:**
+
+```bash
+# Move AI fields from General tab to AI Workflow tab
+orbit -p paybook jira screen field-move 10089 10189 10868 \
+  --fields "customfield_10397,customfield_10398,customfield_10399,customfield_10400,customfield_10401,customfield_10402,customfield_10403"
+```
+
+---
+
+## Status Commands
+
+### status list
+
+List all workflow statuses with their categories (To Do, In Progress, Done).
+
+```bash
+orbit -p profile jira status list
+```
+
+**Examples:**
+
+```bash
+orbit -p paybook jira status list
+# Output: 10062  In Code Review  [In Progress]
+#         10022  In QA           [In Progress]
+#         ...
+
+# Filter for specific statuses
+orbit -p paybook jira status list | grep -iE "ai review|ready to deploy|blocked"
+```
+
+---
+
+## Issue Type Commands
+
+### issuetype-list
+
+List all issue types available in the Jira instance.
+
+```bash
+orbit -p profile jira issuetype-list
+```
+
+**Examples:**
+
+```bash
+orbit -p paybook jira issuetype-list
+# Output: 10001  Story
+#         10002  Task
+#         10003  Sub-task
+#         10004  Bug
+#         10000  Epic
+```
