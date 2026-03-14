@@ -1,0 +1,675 @@
+# Confluence Command Reference
+
+Command reference for `orbit confluence` -- manage Confluence pages from the terminal.
+
+## Table of Contents
+
+- [Global Flags](#global-flags)
+- [page](#page) -- View a Confluence page
+- [children](#children) -- List child pages
+- [create](#create) -- Create a new page
+- [update](#update) -- Update an existing page
+- [delete](#delete) -- Delete a page
+- [publish](#publish) -- Publish a directory of markdown files
+- [set-width](#set-width) -- Set page width
+- [Notes](#notes)
+- [Markdown Authoring Guide](#markdown-authoring-guide) -- Best practices for structuring docs
+  - [GitHub Alerts](#github-alerts)
+  - [MkDocs Admonitions](#mkdocs-admonitions)
+  - [Task Lists](#task-lists)
+  - [Collapsible Sections](#collapsible-sections)
+  - [Code Block Titles](#code-block-titles)
+  - [Status Badges](#status-badges)
+  - [Properties Report Macro](#properties-report-macro)
+
+---
+
+## Global Flags
+
+| Flag | Description |
+|------|-------------|
+| `-p, --profile` | Profile to use (applies to all `orbit` commands) |
+| `--service` | Confluence service name, when a profile has multiple Confluence services configured |
+
+---
+
+## page
+
+View a Confluence page. Outputs the page title, space, version number, URL, and body content.
+
+```
+orbit confluence page [page-id] [flags]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `page-id` | The numeric ID of the Confluence page |
+
+### Examples
+
+```bash
+# View a page by ID
+orbit confluence page 123456789 -p myprofile
+
+# View a page using a specific service
+orbit confluence page 123456789 -p myprofile --service wiki-prod
+```
+
+---
+
+## children
+
+List the child pages of a given Confluence page.
+
+```
+orbit confluence children [page-id] [flags]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `page-id` | The numeric ID of the parent Confluence page |
+
+### Examples
+
+```bash
+# List all child pages
+orbit confluence children 123456789 -p myprofile
+```
+
+---
+
+## create
+
+Create a new Confluence page. Pages created via `orbit` are automatically set to wide width.
+
+```
+orbit confluence create [flags]
+```
+
+### Flags
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--title` | Yes | Title for the new page |
+| `--space` | Yes | Space key where the page will be created |
+| `--parent` | No | Parent page ID to nest the new page under |
+| `-b, --body` | No | Page body content as a string (Confluence storage format / XHTML) |
+| `-f, --file` | No | Path to a markdown file to convert and upload as the page body |
+
+### Examples
+
+```bash
+# Create a page with inline body content
+orbit confluence create --title "Sprint Retrospective" --space DEV --parent 123456789 -p myprofile
+
+# Create a page from a markdown file
+orbit confluence create --title "Architecture Overview" --space ENG --parent 123456789 -f ./docs/architecture.md -p myprofile
+
+# Create a top-level page in a space (no parent)
+orbit confluence create --title "Project Home" --space PROJ -b "<p>Welcome to the project.</p>" -p myprofile
+```
+
+---
+
+## update
+
+Update an existing Confluence page. You can change its title, body, or both.
+
+```
+orbit confluence update [page-id] [flags]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `page-id` | The numeric ID of the page to update |
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--title` | New title for the page |
+| `-b, --body` | New body content as a string |
+| `-f, --file` | Path to a markdown file to convert and use as the new body |
+
+### Examples
+
+```bash
+# Update a page title
+orbit confluence update 123456789 --title "Updated Title" -p myprofile
+
+# Update a page body from a markdown file
+orbit confluence update 123456789 -f ./docs/revised-design.md -p myprofile
+
+# Update both title and body
+orbit confluence update 123456789 --title "Q2 Plan (Final)" -b "<p>Finalized plan.</p>" -p myprofile
+```
+
+---
+
+## delete
+
+Delete a Confluence page. The page is moved to the Confluence trash.
+
+```
+orbit confluence delete [page-id] [flags]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `page-id` | The numeric ID of the page to delete |
+
+### Examples
+
+```bash
+# Delete a page (moves to trash)
+orbit confluence delete 123456789 -p myprofile
+```
+
+---
+
+## publish
+
+Publish an entire directory of markdown files to Confluence. This command creates or updates a tree of pages that mirrors the directory structure.
+
+```
+orbit confluence publish [directory] [flags]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `directory` | Path to the directory containing markdown files |
+
+### Flags
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--space` | Yes | Confluence space key |
+| `--parent` | Yes | Parent page ID under which the pages will be published |
+| `--dry-run` | No | Preview what would be published without making any changes |
+
+### Directory Structure Rules
+
+- **`INDEX.md`** files become the parent page for their directory.
+- Other **`.md`** files become child pages under that parent.
+- **Subdirectories** are processed recursively, maintaining the hierarchy.
+- Files with **`confluence_ignore: true`** in frontmatter are skipped. If the file was previously published (has a `confluence_page_id`), the Confluence page is deleted. When an `INDEX.md` is ignored, the entire subdirectory is skipped.
+
+### Page Title Resolution
+
+Page titles are determined in the following order of precedence:
+
+1. YAML frontmatter `title:` field
+2. First `# heading` in the file
+3. Filename (without `.md` extension)
+
+### Frontmatter Tracking
+
+After a successful publish, each markdown file has `confluence_page_id` and `confluence_url` added to its YAML frontmatter. These fields are used on subsequent runs to update existing pages rather than creating duplicates.
+
+### Upsert Behavior
+
+When a page has no `confluence_page_id` in frontmatter, orbit searches by title (CQL) first. If create fails because a page with the same title already exists (common with special characters like `&` in titles), orbit falls back to listing the parent's children and matching by title. All pages are set to full-width layout on every create and update.
+
+### Examples
+
+```bash
+# Publish a docs directory
+orbit confluence publish ./docs --space ENG --parent 123456789 -p myprofile
+
+# Preview what would be published (no changes made)
+orbit confluence publish ./docs --space ENG --parent 123456789 --dry-run -p myprofile
+```
+
+Given this directory:
+
+```
+docs/
+  INDEX.md
+  getting-started.md
+  api/
+    INDEX.md
+    endpoints.md
+    authentication.md
+```
+
+The resulting Confluence page tree would be:
+
+```
+Parent Page (123456789)
+  +-- docs (from INDEX.md)
+        +-- Getting Started (from getting-started.md)
+        +-- api (from api/INDEX.md)
+              +-- Endpoints (from endpoints.md)
+              +-- Authentication (from authentication.md)
+```
+
+---
+
+## set-width
+
+Set the display width of one or more Confluence pages. Accepts multiple page IDs and can optionally apply the change recursively to all child pages.
+
+```
+orbit confluence set-width [page-id...] [flags]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `page-id...` | One or more page IDs to update |
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--width` | `wide` | Width setting: `wide` or `fixed` |
+| `--recursive` | `false` | Apply the width setting to all descendant pages |
+
+### Examples
+
+```bash
+# Set a single page to wide width
+orbit confluence set-width 123456789 -p myprofile
+
+# Set multiple pages to fixed width
+orbit confluence set-width 111111111 222222222 --width fixed -p myprofile
+
+# Set a page and all its children to wide width
+orbit confluence set-width 123456789 --recursive -p myprofile
+```
+
+---
+
+## Notes
+
+### Confluence API Variants
+
+Orbit automatically selects the correct API path based on the configured instance type:
+
+| Variant | API Prefix |
+|---------|------------|
+| Cloud | `/wiki/rest/api` |
+| Server / Data Center | `/rest/api` |
+
+### Markdown Conversion
+
+When a markdown file is provided via `--file` / `-f` (or through `publish`), Orbit converts it to Confluence storage format (XHTML). The converter handles:
+
+- Headings (`#`, `##`, etc.)
+- Ordered, unordered, and nested lists
+- Task lists (`- [ ]` / `- [x]`)
+- Tables with column alignment
+- Fenced code blocks with language hints and optional titles
+- GitHub Alerts (`> [!NOTE]`, `> [!WARNING]`, `> [!TIP]`, `> [!CAUTION]`, `> [!IMPORTANT]`)
+- MkDocs admonitions (`!!! type "Title"`)
+- Blockquotes (converted to info panels)
+- Collapsible sections (`<details>` / `<summary>`)
+- Inline formatting (bold, italic, strikethrough, code, links)
+- Status badges (`{status:Color|Text}`)
+- Images
+- Horizontal rules
+- Table of Contents directive (`<!-- confluence:toc-start -->` / `<!-- confluence:toc-end -->`)
+- Page Properties macro (from `confluence_properties` frontmatter)
+- Properties Report macro (from HTML comments or shorthand syntax)
+- Metadata lines
+
+Additional conversion rules:
+
+- The first `# heading` is **skipped** because Confluence already displays the page title.
+- YAML frontmatter is **stripped** during conversion.
+- Relative `.md` links between published files are resolved to Confluence `<ac:link>` macros during `publish`.
+
+### Confluence HTML Comments
+
+Use HTML comments to control Confluence-specific behavior inside markdown files:
+
+| Comment | Purpose |
+|---------|---------|
+| `<!-- confluence:ignore-start -->` / `<!-- confluence:ignore-end -->` | Exclude a section from Confluence publishing |
+| `<!-- confluence:toc-start -->` / `<!-- confluence:toc-end -->` | Replace the wrapped TOC section with a Confluence TOC macro |
+| `<!-- confluence:properties-report cql="..." -->` | Generate a Page Properties Report table |
+
+The TOC directive supports parameters to customize the macro:
+
+```markdown
+<!-- confluence:toc-start maxLevel=2 minLevel=2 style="none" -->
+
+## Table of Contents
+
+1. [Section One](#section-one)
+2. [Section Two](#section-two)
+
+<!-- confluence:toc-end -->
+```
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `maxLevel` / `maxHeadingLevel` | `3` | Maximum heading depth to include |
+| `minLevel` / `minHeadingLevel` | `2` | Minimum heading depth to include |
+| `style` | `none` | List style (`none`, `circle`, `disc`, `square`, `decimal`) |
+| `outline` | `false` | Show section numbers (set `true` to enable numbered outline) |
+| `printable` | `true` | Whether the TOC is included in print view |
+
+These comments are invisible in standard markdown renderers and only affect the Confluence conversion.
+
+---
+
+## Markdown Authoring Guide
+
+Best practices for structuring markdown documents that publish cleanly to Confluence via `orbit confluence publish`.
+
+### Frontmatter
+
+Every markdown file should include YAML frontmatter. Orbit uses it for page title resolution and Confluence sync tracking.
+
+```yaml
+---
+title: Agent Roles and Responsibilities
+subtitle: "Workflow — AI Development Process v2.0"
+date: "March 5, 2026"
+author: "AI Tooling Guild"
+confluence_ignore: false
+confluence_page_id: "329383962"
+confluence_url: "https://wiki.example.com/display/ENG/Agent+Roles"
+confluence_labels:
+  - ai-process
+  - workflow
+confluence_properties:
+  - id: status
+    fields:
+      Owner: "AI Tooling Guild"
+      Classification: "Internal"
+      Status: "{status:Green|Published}"
+      Reviewed on: "2026-03-05"
+---
+```
+
+| Field | Required | Purpose |
+|-------|----------|---------|
+| `title` | Yes | Page title in Confluence (takes precedence over `# heading`) |
+| `subtitle` | No | Section context and version — useful for readers, stripped during conversion |
+| `date` | No | Last updated date — helps readers gauge freshness |
+| `author` | No | Accountability — who owns this document |
+| `confluence_ignore` | No | When `true`, skip publishing; delete page if previously published (default: `false`) |
+| `confluence_page_id` | Auto | Set by `orbit confluence publish` after first publish — used for updates |
+| `confluence_url` | Auto | Set by `orbit confluence publish` — direct link to the page |
+| `confluence_labels` | No | Labels applied to the Confluence page for search and filtering |
+| `confluence_properties` | No | Confluence page properties macro — renders as a metadata table at the top |
+
+> **Tip:** Do not manually set `confluence_page_id` or `confluence_url`. Let `orbit confluence publish` manage them automatically.
+
+### Directory Structure
+
+Organize documents into topic directories with `INDEX.md` files as the parent page for each group.
+
+```
+docs/
+  INDEX.md                    ← Root parent page
+  foundations/
+    INDEX.md                  ← "Foundations" parent page
+    overview.md
+    context-engineering.md
+  workflow/
+    INDEX.md                  ← "Workflow" parent page
+    agent-roles.md
+    piv-loops.md
+  process/
+    INDEX.md
+    jira-configuration.md
+    sprint-ceremonies.md
+  reference/
+    INDEX.md
+    quick-reference.md
+```
+
+Guidelines:
+
+- **One level of nesting** — keep directories flat within each topic group. Avoid deeply nested subdirectories; they produce hard-to-navigate Confluence trees.
+- **`INDEX.md` in every directory** — acts as the landing page and links to its child pages.
+- **Hyphenated lowercase filenames** — `ai-layer-setup.md`, not `AI Layer Setup.md`. Avoids URL encoding issues.
+- **No version numbers in filenames** — track versions in frontmatter and revision history instead.
+
+### INDEX.md Files
+
+Each `INDEX.md` serves as a table of contents for its directory. Structure it as a brief introduction followed by a table linking to child pages.
+
+```markdown
+---
+title: Workflow
+subtitle: "How engineers work with AI agents"
+---
+
+# Workflow
+
+How the team uses AI agents in day-to-day development.
+
+| Document | Description |
+|----------|-------------|
+| [Agent Roles](./agent-roles.md) | The 5 agent roles and their responsibilities |
+| [PIV Loops](./piv-loops.md) | Plan → Implement → Validate execution cycle |
+| [Parallelization](./parallelization.md) | Running multiple agents concurrently |
+```
+
+### Document Structure
+
+Follow this consistent structure within each document:
+
+```markdown
+---
+(frontmatter)
+---
+
+# Document Title
+
+> **One-line summary** of what this document covers and who it's for.
+
+## Table of Contents
+
+1. [Section One](#section-one)
+2. [Section Two](#section-two)
+3. [Cross-References](#cross-references)
+4. [Revision History](#revision-history)
+
+---
+
+## Section One
+
+Content...
+
+---
+
+## Section Two
+
+Content...
+
+---
+
+## Cross-References
+
+| Document | Relevance |
+|----------|-----------|
+| [Related Doc](../category/related-doc.md) | Why it's relevant |
+
+---
+
+## Revision History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 2.0 | 2026-03-05 | Restructured into modular format |
+| 1.0 | 2026-01-15 | Initial document |
+```
+
+Key patterns:
+
+- **Opening blockquote** — one-line summary at the top, sets context immediately.
+- **Numbered TOC** — helps readers navigate long documents. Use anchor links.
+- **Horizontal rules** (`---`) — separate major sections visually.
+- **Cross-References section** — every document links to related docs with a short relevance note. This creates a navigable web across the Confluence space.
+- **Revision History** — append-only table at the bottom tracks document evolution.
+
+### Markdown Features That Convert Well
+
+These elements convert cleanly to Confluence storage format:
+
+| Element | Markdown | Notes |
+|---------|----------|-------|
+| Headings | `##`, `###`, `####` | H1 is skipped (used as page title) |
+| Tables | Pipe tables | Supports column alignment (`:---`, `:---:`, `---:`) |
+| Code blocks | ` ```bash ` | Language hint enables syntax highlighting |
+| Code block titles | ` ```python title="example.py" ` | Adds a title header to the code block |
+| Inline code | `` `field_name` `` | Use for field names, commands, paths |
+| Bold / Italic | `**bold**` / `*italic*` | Standard inline formatting |
+| Strikethrough | `~~text~~` | Renders as struck-through text |
+| Links | `[text](url)` | Both relative and absolute URLs work |
+| Ordered lists | `1. 2. 3.` | For procedures and sequential steps |
+| Unordered lists | `- item` | For guidelines, options, checklists |
+| Nested lists | Indented `- item` | Supports multiple levels of nesting |
+| Task lists | `- [ ]` / `- [x]` | Renders as status badges (incomplete / complete) |
+| Blockquotes | `> text` | Converts to Confluence info panel |
+| GitHub Alerts | `> [!NOTE]`, `> [!WARNING]`, etc. | Converts to styled Confluence panels (see below) |
+| MkDocs admonitions | `!!! note "Title"` | Indented content block — converts to panel macro |
+| Collapsible sections | `<details><summary>` | Converts to Confluence expand macro |
+| Status badges | `{status:Green\|Text}` | Renders as colored Confluence status lozenge |
+| Horizontal rules | `---`, `***`, `___` | Visual section separators |
+| Images | `![alt](path)` | Relative paths resolved during publish |
+
+### Tips for Clean Conversion
+
+1. **Use `##` as your top-level section heading** — since `#` is skipped (it becomes the page title), start your content sections at `##`.
+
+2. **Keep tables simple** — avoid merged cells or multi-line cell content. If a table gets complex, split it into multiple tables or use a list instead.
+
+3. **Prefer fenced code blocks with language hints** — ` ```bash `, ` ```json `, ` ```markdown ` enable syntax highlighting in Confluence.
+
+4. **Use ASCII diagrams for simple flows** — they render in Confluence as preformatted text:
+   ```
+   Plan → Implement → Validate
+     |                    |
+     +--- codify <-------+
+   ```
+
+5. **Cross-link with relative paths** — `[PIV Loops](../workflow/piv-loops.md)` works both locally and in Confluence (resolved during publish).
+
+6. **Avoid HTML in markdown** — Confluence has its own storage format. Raw HTML may not convert correctly. Exception: `<!-- confluence: -->` comments for publish control.
+
+7. **One idea per file** — if a document exceeds ~500 lines, consider splitting it into a subdirectory with its own `INDEX.md`.
+
+### GitHub Alerts
+
+GitHub-style alert blockquotes are converted to styled Confluence panels with matching colors and icons.
+
+```markdown
+> [!NOTE]
+> Useful information that users should know.
+
+> [!TIP]
+> Helpful advice for doing things better.
+
+> [!IMPORTANT]
+> Key information users need to know.
+
+> [!WARNING]
+> Urgent info that needs immediate attention.
+
+> [!CAUTION]
+> Advises about risks or negative outcomes.
+```
+
+| Alert Type | Confluence Panel | Color |
+|------------|-----------------|-------|
+| `[!NOTE]` | Info panel | Blue |
+| `[!TIP]` | Tip panel | Green |
+| `[!IMPORTANT]` | Note panel | Yellow |
+| `[!WARNING]` | Warning panel | Yellow |
+| `[!CAUTION]` | Warning panel | Red |
+
+### MkDocs Admonitions
+
+MkDocs-style admonitions (`!!! type "Title"`) are also supported. Content must be indented with 4 spaces.
+
+```markdown
+!!! note "Important Note"
+    This is the admonition content.
+    It can span multiple lines.
+
+!!! warning "Deprecation Warning"
+    This API will be removed in v3.0.
+```
+
+### Task Lists
+
+Task lists render as status badges in Confluence:
+
+```markdown
+- [x] Completed task
+- [ ] Pending task
+- [x] Another completed task
+```
+
+Checked items render as a green `DONE` status badge, unchecked items render as a grey `TO DO` badge.
+
+### Collapsible Sections
+
+HTML `<details>` / `<summary>` blocks convert to Confluence expand macros:
+
+```markdown
+<details>
+<summary>Click to expand</summary>
+
+Hidden content goes here. Supports full markdown inside.
+
+</details>
+```
+
+### Code Block Titles
+
+Add a `title` attribute to fenced code blocks for a descriptive header:
+
+````markdown
+```python title="example.py"
+def hello():
+    print("Hello, world!")
+```
+````
+
+### Status Badges
+
+Inline status lozenges using the `{status:Color|Text}` syntax:
+
+```markdown
+Current status: {status:Green|Approved}
+Risk level: {status:Red|High}
+Phase: {status:Blue|In Progress}
+```
+
+This is particularly useful inside `confluence_properties` fields and table cells.
+
+### Properties Report Macro
+
+Aggregate page properties across child pages using either syntax:
+
+**HTML comment syntax:**
+
+```markdown
+<!-- confluence:properties-report cql="label = 'team-status'" firstcolumn="Owner" headings="Status,Classification" -->
+```
+
+**Shorthand syntax:**
+
+```markdown
+{properties-report: label="team-status", columns="Owner,Status,Classification", sortBy="Owner"}
+```
+
+Both generate a Confluence `detailssummary` macro that pulls data from Page Properties macros on child pages matching the query.
