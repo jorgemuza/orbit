@@ -1,0 +1,8 @@
+orbit
+dist/
+*.exe
+references/
+!skills/**/references/
+/CLAUDE.md
+.claude
+.secret-cache
