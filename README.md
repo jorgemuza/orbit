@@ -8,11 +8,19 @@ Secrets can be stored as [1Password](https://1password.com/) references (`op://v
 
 ## Install
 
-### macOS — Homebrew
+### macOS / Linux — Homebrew
 
 ```bash
 brew install jorgemuza/tap/orbit
 ```
+
+### Linux / macOS — Install script
+
+```bash
+curl -sSfL https://raw.githubusercontent.com/jorgemuza/orbit/main/install.sh | sh
+```
+
+This detects your OS and architecture, downloads the correct binary from GitHub Releases, and installs it to `/usr/local/bin`.
 
 ### Windows — Scoop
 
@@ -21,15 +29,9 @@ scoop bucket add jorgemuza https://github.com/jorgemuza/scoop-bucket
 scoop install orbit
 ```
 
-### From source
-
-```bash
-go install github.com/jorgemuza/orbit@latest
-```
-
 ### Binary releases
 
-Download from [GitHub Releases](https://github.com/jorgemuza/orbit/releases).
+Download pre-built binaries for all platforms from [GitHub Releases](https://github.com/jorgemuza/orbit/releases).
 
 ## Quick Start
 
@@ -283,17 +285,6 @@ Skills are installed into `.claude/skills/` in your current project directory. O
 | `gitlab` | Projects, MRs, pipelines, branches, tags, variables (alias: `gl`) |
 | `bitbucket` | Projects, repos, PRs, branches, tags, pipelines (alias: `bb`) |
 | `format-docs` | Prepare and restructure markdown for Confluence publishing |
-
-## Releasing
-
-Releases are automated via GitHub Actions. Push a tag to trigger `goreleaser`:
-
-```bash
-git tag -a v0.4.0 -m "v0.4.0: description"
-git push origin v0.4.0
-```
-
-> **Warning:** Do not run `goreleaser release` locally and then push the tag. The CI will fail because the release assets already exist. Always let CI handle the release by only pushing the tag.
 
 ## License
 
