@@ -62,10 +62,13 @@ The `orbit draxarp` (or `orbit dx`) command manages the Draxarp Development Inte
 ### Projects
 ```bash
 orbit dx proj ls                              # List projects
-orbit dx proj view <id>                       # View project details
+orbit dx proj view <id-or-slug>               # View project details
 orbit dx proj create --name "My Project"      # Create project
 orbit dx proj delete <id>                     # Delete project
 ```
+
+> **Slugs everywhere:** All `--project` flags and resource IDs accept either UUIDs or slugs.
+> Use slugs for readability: `--project draxarp-portal` instead of `--project 019cf38c-...`
 
 ### Tasks — Core CRUD
 ```bash
@@ -279,7 +282,11 @@ profiles:
         auth:
           method: token
           token: "your-api-token"
+        headers:                              # Optional custom headers
+          X-Tenant: my-tenant-slug            # Required for tenant-scoped access
 ```
+
+For multi-tenant setups, the `X-Tenant` header scopes all API responses to that tenant's workspaces and projects. Tokens can be either platform admin (Sanctum) or tenant user (PAT) tokens.
 
 ## Profile Selection
 
@@ -304,7 +311,9 @@ orbit dx graph nodes --project <id> -o json
 ## API Details
 
 The orbit CLI communicates with the Draxarp API at:
-- Base path: `/api/v1/intelligence`
-- Auth: `Authorization: Bearer <token>` (jwt, platform-api, or tenant-api guard)
+- Intelligence resources: `/api/admin/v1/intelligence/*` (tasks, memories, specs, docs, sprints, graph, captures, decompose)
+- Platform resources: `/api/admin/v1/*` (projects, workspaces)
+- Auth: `Authorization: Bearer <token>` (platform-api or tenant-api Sanctum guard)
+- Tenant scoping: `X-Tenant: <slug>` header (required for tenant-bound tokens)
 - Pagination: `{ "success": true, "data": [...], "meta": { "current_page", "last_page", "per_page", "total" } }`
 - Single resource: `{ "success": true, "data": { ... } }`
