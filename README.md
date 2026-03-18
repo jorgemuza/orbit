@@ -2,7 +2,7 @@
 
 A unified CLI for managing connections to development lifecycle services.
 
-Supports **Jira**, **Confluence**, **GitLab**, **GitHub**, **Bitbucket**, and **GoCD** (cloud and self-hosted). Organize connections into profiles to switch between projects seamlessly.
+Supports **Jira**, **Confluence**, **GitLab**, **GitHub**, **Bitbucket**, and **GoCD** (cloud and self-hosted). Includes **build provenance attestation** verification via Sigstore. Organize connections into profiles to switch between projects seamlessly.
 
 Secrets can be stored as [1Password](https://1password.com/) references (`op://vault/item/field`) and are resolved at runtime using the 1Password CLI.
 
@@ -177,22 +177,36 @@ orbit bb branch list MY-PROJ my-repo
 
 ### GoCD
 
-Manage pipelines, pipeline groups, agents, environments, config repos, server administration, users, roles, authorization, plugins, backups, materials, artifact stores, elastic agent profiles, cluster profiles, stages, jobs, and server configuration. Alias: `cd`.
+Manage pipelines, pipeline groups, agents, environments, config repos, server administration, users, roles, authorization, plugins, backups, materials, artifact stores, elastic agent profiles, cluster profiles, stages, jobs, server configuration, templates, packages, notification filters, access tokens, secret configs, and dashboard. Alias: `cd`.
 
 ```bash
 orbit cd pipeline list
 orbit cd pipeline status my-pipeline
-orbit cd pipeline history my-pipeline --limit 5
 orbit cd pipeline trigger my-pipeline
-orbit cd pipeline pause my-pipeline --reason "Maintenance"
+orbit cd pipeline compare my-pipeline --from 1 --to 5
 orbit cd agent list
 orbit cd env list
-orbit cd cr list
-orbit cd server health
-orbit cd server maintenance
+orbit cd dashboard
+orbit cd template list
+orbit cd access-token list
+orbit cd secret-config list
+orbit cd version
 ```
 
 **[Full GoCD reference →](docs/gocd.md)**
+
+### Attestation
+
+Verify build provenance attestations using Sigstore bundles with in-toto format and SLSA provenance predicates.
+
+```bash
+orbit attestation verify ./my-binary --bundle attestation.jsonl
+orbit attestation verify ./artifact --bundle bundle.json --owner my-org --signer-identity "github.com/my-org/repo"
+orbit attestation inspect attestation.jsonl
+orbit attestation download sha256:abc123... --repo owner/repo
+```
+
+**[Full Attestation reference →](docs/attestation.md)**
 
 ## Supported Services
 

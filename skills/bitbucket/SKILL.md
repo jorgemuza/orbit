@@ -1,6 +1,6 @@
 ---
 name: bitbucket
-description: "Manage Bitbucket repositories, pull requests, branches, tags, commits, and projects using the orbit CLI. Use this skill whenever the user asks about Bitbucket repos, PRs (pull requests), branches, tags, commits, code review, or project management on Bitbucket Server/Data Center or Bitbucket Cloud. Trigger on phrases like 'list PRs', 'show pull requests', 'create a branch', 'open a PR', 'view the latest commits', 'list repos in project X', 'merge the PR', 'decline the PR', 'check PR activity', or any Bitbucket-related task — even casual references like 'what PRs are open', 'show me the repos', 'tag a release', 'check if it merged', 'who approved it', or 'list branches'. Also trigger when the user provides a Bitbucket Server URL (e.g., https://git.example.com/projects/PROJ/repos/my-repo/) or mentions Bitbucket Data Center. The orbit CLI alias is `bb`."
+description: "Manage Bitbucket repositories, pull requests, branches, tags, commits, projects, and admin settings using the orbit CLI. Use this skill whenever the user asks about Bitbucket repos, PRs (pull requests), branches, tags, commits, code review, project management, default reviewer conditions, required approvals, merge restrictions, or PR approvals on Bitbucket Server/Data Center or Bitbucket Cloud. Trigger on phrases like 'list PRs', 'show pull requests', 'create a branch', 'open a PR', 'view the latest commits', 'list repos in project X', 'merge the PR', 'decline the PR', 'approve the PR', 'unapprove', 'check PR activity', 'bypass merge check', 'required approvals', 'reviewer conditions', 'who needs to approve', or any Bitbucket-related task — even casual references like 'what PRs are open', 'show me the repos', 'tag a release', 'check if it merged', 'who approved it', 'list branches', or 'why can't I merge'. Also trigger when the user provides a Bitbucket Server URL (e.g., https://git.example.com/projects/PROJ/repos/my-repo/) or mentions Bitbucket Data Center. The orbit CLI alias is `bb`."
 ---
 
 # Bitbucket with orbit CLI
@@ -91,6 +91,12 @@ orbit -p myprofile bb pr merge L3SUP agents-sre 42
 # Merge a PR bypassing review checks (requires repo admin)
 orbit -p myprofile bb pr merge L3SUP agents-sre 42 --bypass-review
 
+# Approve a PR
+orbit -p myprofile bb pr approve L3SUP agents-sre 42
+
+# Remove approval from a PR
+orbit -p myprofile bb pr unapprove L3SUP agents-sre 42
+
 # Decline a PR
 orbit -p myprofile bb pr decline L3SUP agents-sre 42
 
@@ -151,6 +157,34 @@ orbit -p myprofile bb user list
 orbit -p myprofile bb user list --filter john
 ```
 
+### Default Reviewer Conditions (Admin)
+
+Manage project-level default reviewer conditions that auto-assign reviewers and enforce required approvals on PRs. Alias: `rc`.
+
+```bash
+# List all default reviewer conditions for a project
+orbit -p myprofile bb reviewer-condition list EPCAP
+orbit -p myprofile bb rc list EPCAP -o json
+
+# Update required approvals (e.g., temporarily set to 0 to bypass)
+orbit -p myprofile bb rc update EPCAP 1063 --required-approvals 0
+
+# Restore required approvals
+orbit -p myprofile bb rc update EPCAP 1063 --required-approvals 2
+
+# Delete a condition
+orbit -p myprofile bb rc delete EPCAP 1063
+```
+
+**Bypass merge block from required reviewers:**
+
+When a PR merge is blocked by "Not all required reviewers have approved yet", this is enforced by a project-level default reviewer condition (not a repo merge hook). Use `--bypass-review` on `pr merge` which automatically handles both merge hooks AND default reviewer conditions:
+```bash
+orbit -p myprofile bb pr merge EPCAP my-repo 42 --bypass-review
+```
+
+Or manually: list conditions to find the blocking one, set its required approvals to 0, merge, then restore.
+
 ## Common Patterns
 
 **Get JSON for scripting:**
@@ -160,14 +194,16 @@ orbit -p myprofile bb pr list L3SUP agents-sre -o json | jq '.[].title'
 
 **Review a PR end-to-end:**
 ```bash
-# View PR details and reviewers
+# View PR details and reviewers (can run in parallel with activity)
 orbit -p myprofile bb pr view L3SUP agents-sre 42
-# Get the full diff for code review
-orbit -p myprofile bb pr diff L3SUP agents-sre 42
-# Check activity (approvals, comments)
 orbit -p myprofile bb pr activity L3SUP agents-sre 42
-# Add your review comment
-orbit -p myprofile bb pr comment L3SUP agents-sre 42 --body "Approved, looks good"
+
+# Get the full diff for code review (run SEPARATELY, not in parallel)
+orbit -p myprofile bb pr diff L3SUP agents-sre 42
+
+# Approve and comment
+orbit -p myprofile bb pr approve L3SUP agents-sre 42
+orbit -p myprofile bb pr comment L3SUP agents-sre 42 --body "LGTM!"
 ```
 
 **Extract project key and repo slug from a URL:**
@@ -183,6 +219,7 @@ orbit -p myprofile bb repo list L3SUP
 
 ## Important Notes
 
+- **Do NOT run `pr diff` in parallel with other commands.** The diff endpoint returns raw text (not JSON) and can interfere with parallel JSON-based commands. Always run `pr diff` sequentially — never in the same parallel Bash block as other orbit commands.
 - **Profile required** — Always pass `-p <profile>` to select the Bitbucket connection. The profile must have a service of type `bitbucket` configured.
 - **Service flag** — If a profile has multiple Bitbucket services, use `--service <name>` to disambiguate.
 - **Server vs Cloud** — The service variant (`server` or `cloud`) in config determines the API prefix. Server uses `/rest/api/latest/`, Cloud uses `/2.0/`.

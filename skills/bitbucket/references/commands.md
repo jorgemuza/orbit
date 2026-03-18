@@ -11,6 +11,7 @@ Complete reference for all `orbit bitbucket` (alias: `bb`) commands and flags.
 - [commit](#commit)
 - [pr (pull request)](#pr-pull-request)
 - [user](#user)
+- [reviewer-condition (admin)](#reviewer-condition-admin)
 
 ## Global Flags
 
@@ -207,12 +208,20 @@ Merge a pull request. Automatically handles version for optimistic locking.
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--bypass-review` | `false` | Temporarily disable PRE_PULL_REQUEST_MERGE hooks before merging and re-enable after. Requires repo admin permissions. |
+| `--bypass-review` | `false` | Temporarily disable PRE_PULL_REQUEST_MERGE hooks AND set project-level default reviewer conditions to 0 required approvals before merging, then restore all settings after. Requires project/repo admin permissions. |
 
 ```
 orbit -p myprofile bb pr merge L3SUP agents-sre 42
 orbit -p myprofile bb pr merge L3SUP agents-sre 42 --bypass-review
 ```
+
+### `bitbucket pr approve <project-key> <repo-slug> <pr-id>`
+
+Approve a pull request as the current user.
+
+### `bitbucket pr unapprove <project-key> <repo-slug> <pr-id>`
+
+Remove your approval from a pull request.
 
 ### `bitbucket pr decline <project-key> <repo-slug> <pr-id>`
 
@@ -248,3 +257,49 @@ List users.
 |------|---------|-------------|
 | `--filter <text>` | | Filter by username or display name |
 | `--limit <n>` | 25 | Max results |
+
+---
+
+## reviewer-condition (admin)
+
+Alias: `rc`
+
+Manage project-level default reviewer conditions. These conditions auto-assign reviewers to PRs and can enforce a minimum number of required approvals before merging.
+
+### `bitbucket reviewer-condition list <project-key>`
+
+List all default reviewer conditions for a project. Shows condition ID, scope, source/target branch matchers, required approvals count, and reviewer names.
+
+```
+orbit -p myprofile bb rc list EPCAP
+orbit -p myprofile bb rc list EPCAP -o json
+```
+
+**Output fields:** ID, Scope (PROJECT/REPOSITORY), Source, Target, Required Approvals, Reviewers
+
+### `bitbucket reviewer-condition update <project-key> <condition-id>`
+
+Update the required approvals count for a default reviewer condition. Preserves all reviewers and branch matchers — only changes the approval requirement.
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--required-approvals <n>` | Yes | Number of required approvals (0 = no requirement) |
+
+```
+# Temporarily bypass required approvals
+orbit -p myprofile bb rc update EPCAP 1063 --required-approvals 0
+
+# Restore to 2 required approvals
+orbit -p myprofile bb rc update EPCAP 1063 --required-approvals 2
+```
+
+**Common use case — bypass merge block:**
+When `pr merge` fails with "Not all required reviewers have approved yet", this is caused by a project-level condition. Set required approvals to 0, merge, then restore. The `--bypass-review` flag on `pr merge` does this automatically.
+
+### `bitbucket reviewer-condition delete <project-key> <condition-id>`
+
+Delete a default reviewer condition permanently.
+
+```
+orbit -p myprofile bb rc delete EPCAP 1063
+```
