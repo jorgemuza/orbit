@@ -16,6 +16,7 @@ Manage Bitbucket resources from the command line.
 - [Commits](#commit)
 - [Pull Requests](#pr)
 - [Users](#user)
+- [Reviewer Conditions](#reviewer-condition)
 
 ---
 
@@ -24,6 +25,7 @@ Manage Bitbucket resources from the command line.
 | Flag | Description |
 |------|-------------|
 | `--service` | Bitbucket service name. Required only when a profile has multiple Bitbucket services configured. |
+| `--debug` | Print HTTP request/response details to stderr for troubleshooting. |
 
 All examples below use `-p myprofile` to specify the Orbit profile.
 
@@ -415,6 +417,53 @@ Add a comment to a pull request.
 orbit bb pr comment TEAM my-service 42 --body "LGTM, approved." -p myprofile
 ```
 
+### `pr diff`
+
+View the unified diff for a pull request.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `repo-slug` | 2 | The repository slug. |
+| `pr-id` | 3 | The pull request ID. |
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--context` | int | 3 | Number of context lines around changes. |
+
+```bash
+orbit bb pr diff TEAM my-service 42 -p myprofile
+orbit bb pr diff TEAM my-service 42 --context 10 -p myprofile
+```
+
+### `pr approve`
+
+Approve a pull request as the current user.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `repo-slug` | 2 | The repository slug. |
+| `pr-id` | 3 | The pull request ID. |
+
+```bash
+orbit bb pr approve TEAM my-service 42 -p myprofile
+```
+
+### `pr unapprove`
+
+Remove your approval from a pull request.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `repo-slug` | 2 | The repository slug. |
+| `pr-id` | 3 | The pull request ID. |
+
+```bash
+orbit bb pr unapprove TEAM my-service 42 -p myprofile
+```
+
 ### `pr activity`
 
 View the activity feed of a pull request (comments, approvals, status changes).
@@ -448,4 +497,59 @@ List users.
 ```bash
 orbit bb user list -p myprofile
 orbit bb user ls -p myprofile --limit 100
+```
+
+---
+
+## reviewer-condition
+
+Manage project-level default reviewer conditions. These auto-assign reviewers to PRs and enforce required approvals.
+
+**Alias:** `rc`
+
+### `reviewer-condition list`
+
+List all default reviewer conditions for a project.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+
+```bash
+orbit bb reviewer-condition list TEAM -p myprofile
+orbit bb rc list TEAM -p myprofile -o json
+```
+
+### `reviewer-condition update`
+
+Update the required approvals count for a condition.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `condition-id` | 2 | The condition ID. |
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--required-approvals` | int | Yes | Number of required approvals (0 = no requirement). |
+
+```bash
+# Temporarily bypass required approvals
+orbit bb rc update TEAM 1063 --required-approvals 0 -p myprofile
+
+# Restore required approvals
+orbit bb rc update TEAM 1063 --required-approvals 2 -p myprofile
+```
+
+### `reviewer-condition delete`
+
+Delete a default reviewer condition permanently.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `condition-id` | 2 | The condition ID. |
+
+```bash
+orbit bb rc delete TEAM 1063 -p myprofile
 ```
