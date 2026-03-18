@@ -98,6 +98,24 @@ Export pipeline configuration.
 |------|---------|-------------|
 | `--plugin-id` | `""` | Config repo plugin ID (optional) |
 
+### `orbit gocd pipeline compare <name> --from <N> --to <N>`
+Compare two pipeline instances. Shows material changes (commits) between the two counters.
+
+| Argument | Description |
+|----------|-------------|
+| `name` | Pipeline name |
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from` | Yes | From pipeline counter |
+| `--to` | Yes | To pipeline counter |
+
+### `orbit gocd pipeline lock <name>`
+Lock a pipeline to prevent further scheduling.
+
+### `orbit gocd pipeline unlock <name>`
+Unlock a locked pipeline.
+
 ## Pipeline Group Commands
 
 Aliases: `pipeline-group`, `pg`
@@ -309,6 +327,16 @@ Delete multiple users at once.
 |------|-------------|
 | `--user` | User login name to delete (repeatable) |
 | `--from-file` | Path to JSON or YAML file with bulk delete request |
+
+### `orbit gocd user current`
+Show the current authenticated user's details (login name, display name, email, enabled, admin).
+
+### `orbit gocd user update-current --from-file <file>`
+Update the current authenticated user.
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with user fields to update |
 
 ## Plugin Commands
 
@@ -670,6 +698,230 @@ Delete mail server configuration.
 
 ### `orbit gocd encrypt <value>`
 Encrypt a plain-text value using GoCD's cipher. Returns the encrypted value for use in GoCD configuration files.
+
+## Pipeline Template Commands
+
+Aliases: `template`, `tmpl`
+
+### `orbit gocd template list`
+List all pipeline templates with name and associated pipelines.
+
+### `orbit gocd template get <name>`
+Get a pipeline template.
+
+| Argument | Description |
+|----------|-------------|
+| `name` | Template name |
+
+### `orbit gocd template create --from-file <file>`
+Create a pipeline template from a file.
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with template definition |
+
+### `orbit gocd template update <name> --from-file <file>`
+Update a pipeline template from a file. Automatically fetches the current ETag.
+
+| Argument | Description |
+|----------|-------------|
+| `name` | Template name |
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with template definition |
+
+### `orbit gocd template delete <name>`
+Delete a pipeline template.
+
+## Package Repository Commands
+
+Aliases: `package-repo`, `pkg-repo`
+
+### `orbit gocd package-repo list`
+List all package repositories with ID, name, and plugin.
+
+### `orbit gocd package-repo get <id>`
+Get package repository details.
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Package repository ID |
+
+### `orbit gocd package-repo create --from-file <file>`
+Create a package repository from a file.
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with repository definition |
+
+### `orbit gocd package-repo update <id> --from-file <file>`
+Update a package repository from a file. Automatically fetches the current ETag.
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Package repository ID |
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with repository definition |
+
+### `orbit gocd package-repo delete <id>`
+Delete a package repository.
+
+## Package Commands
+
+Aliases: `package`, `pkg`
+
+### `orbit gocd package list`
+List all packages with ID, name, auto-update status, and repository.
+
+### `orbit gocd package get <id>`
+Get package details.
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Package ID |
+
+### `orbit gocd package create --from-file <file>`
+Create a package from a file.
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with package definition |
+
+### `orbit gocd package update <id> --from-file <file>`
+Update a package from a file. Automatically fetches the current ETag.
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Package ID |
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with package definition |
+
+### `orbit gocd package delete <id>`
+Delete a package.
+
+### `orbit gocd package usage <id>`
+Show pipelines using a package.
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Package ID |
+
+## Notification Filter Commands
+
+Aliases: `notification-filter`, `nf`
+
+### `orbit gocd notification-filter list`
+List all notification filters with ID, pipeline, stage, and event.
+
+### `orbit gocd notification-filter get <id>`
+Get a notification filter.
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Notification filter ID (integer) |
+
+### `orbit gocd notification-filter create --from-file <file>`
+Create a notification filter from a file.
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with filter definition |
+
+### `orbit gocd notification-filter delete <id>`
+Delete a notification filter.
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Notification filter ID (integer) |
+
+## Dashboard Command
+
+### `orbit gocd dashboard`
+Show the GoCD dashboard overview. Displays pipeline groups with their pipelines, locked state, latest instance counter/label, and stage statuses.
+
+## Version Command
+
+### `orbit gocd version`
+Show GoCD server version including version number, build number, git SHA, full version string, and commit URL.
+
+## Access Token Commands
+
+Aliases: `access-token`, `token`
+
+### `orbit gocd access-token list`
+List your access tokens with ID, description, revoked status, creation date, and last used date.
+
+### `orbit gocd access-token create --description <desc>`
+Create a new access token. The token value is shown only once upon creation.
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--description` | Yes | Description for the access token |
+
+### `orbit gocd access-token revoke <id>`
+Revoke one of your access tokens.
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Access token ID (integer) |
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--cause` | `""` | Reason for revoking the token |
+
+### `orbit gocd access-token list-all`
+List all access tokens across all users (admin only). Includes username in output.
+
+### `orbit gocd access-token revoke-admin <id>`
+Revoke any user's access token (admin only).
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Access token ID (integer) |
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--cause` | `""` | Reason for revoking the token |
+
+## Secret Config Commands
+
+Aliases: `secret-config`, `secret`
+
+### `orbit gocd secret-config list`
+List all secret configurations with ID, plugin ID, and description.
+
+### `orbit gocd secret-config get <id>`
+Get a secret configuration.
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Secret configuration ID |
+
+### `orbit gocd secret-config create --from-file <file>`
+Create a secret configuration from a file.
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with secret config definition |
+
+### `orbit gocd secret-config update <id> --from-file <file>`
+Update a secret configuration from a file. Automatically fetches the current ETag.
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Secret configuration ID |
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with secret config definition |
+
+### `orbit gocd secret-config delete <id>`
+Delete a secret configuration.
 
 ## Global Flags
 

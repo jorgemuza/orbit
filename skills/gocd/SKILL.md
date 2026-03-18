@@ -1,11 +1,11 @@
 ---
 name: gocd
-description: "Manage GoCD pipelines, pipeline groups, agents, environments, config repos, server administration, users, roles, authorization configs, plugins, backups, materials, artifact stores, elastic agent profiles, cluster profiles, stages, jobs, and server configuration using the orbit CLI. Use this skill whenever the user asks about GoCD pipelines, agents, environments, config repos, server health, maintenance mode, CI/CD operations, pipeline groups, users, roles, auth configs, plugins, backups, materials, artifact stores, elastic agents, stages, or jobs on GoCD. Trigger on phrases like 'list pipelines', 'create pipeline', 'delete pipeline', 'pipeline status', 'trigger a build', 'pause pipeline', 'list agents', 'enable agent', 'disable agent', 'kill running tasks', 'agent job history', 'list environments', 'create environment', 'patch environment', 'config repo status', 'create config repo', 'preflight check', 'server health', 'maintenance mode', 'encrypt a value', 'list users', 'create user', 'list roles', 'auth config', 'list plugins', 'schedule backup', 'list materials', 'artifact store', 'elastic agent profile', 'cluster profile', 'cancel stage', 'run stage', 'run job', 'site url', 'job timeout', 'mail server config', 'pipeline group', or any GoCD-related task — even casual references like 'what pipelines are running', 'is the agent idle', 'check the build', 'schedule a run', 'put server in maintenance', 'check config repo sync', 'who has access', 'what plugins are installed', or 'GoCD status'. The orbit CLI alias is `cd`."
+description: "Manage GoCD pipelines, pipeline groups, agents, environments, config repos, server administration, users, roles, authorization configs, plugins, backups, materials, artifact stores, elastic agent profiles, cluster profiles, stages, jobs, server configuration, templates, packages, package repositories, notification filters, dashboard, access tokens, secret configs, and server version using the orbit CLI. Use this skill whenever the user asks about GoCD pipelines, agents, environments, config repos, server health, maintenance mode, CI/CD operations, pipeline groups, users, roles, auth configs, plugins, backups, materials, artifact stores, elastic agents, stages, jobs, templates, packages, package repositories, notification filters, dashboard, access tokens, secret configs, or server version on GoCD. Trigger on phrases like 'list pipelines', 'create pipeline', 'delete pipeline', 'pipeline status', 'trigger a build', 'pause pipeline', 'list agents', 'enable agent', 'disable agent', 'kill running tasks', 'agent job history', 'list environments', 'create environment', 'patch environment', 'config repo status', 'create config repo', 'preflight check', 'server health', 'maintenance mode', 'encrypt a value', 'list users', 'create user', 'list roles', 'auth config', 'list plugins', 'schedule backup', 'list materials', 'artifact store', 'elastic agent profile', 'cluster profile', 'cancel stage', 'run stage', 'run job', 'site url', 'job timeout', 'mail server config', 'pipeline group', 'list templates', 'create template', 'dashboard', 'access tokens', 'secret config', 'compare pipelines', 'lock pipeline', 'unlock pipeline', 'server version', 'notification filters', 'list packages', 'package repository', 'current user', or any GoCD-related task — even casual references like 'what pipelines are running', 'is the agent idle', 'check the build', 'schedule a run', 'put server in maintenance', 'check config repo sync', 'who has access', 'what plugins are installed', or 'GoCD status'. The orbit CLI alias is `cd`."
 ---
 
 # GoCD with orbit CLI
 
-Comprehensive GoCD management through the `orbit` CLI. Covers pipelines, pipeline groups, agents, environments, config repos, server administration, users, roles, authorization, plugins, backups, materials, artifact stores, elastic agent profiles, cluster profiles, stages, jobs, and server configuration. Works with self-hosted GoCD instances via the REST API, with multi-profile support and 1Password secret resolution.
+Comprehensive GoCD management through the `orbit` CLI. Covers pipelines, pipeline groups, agents, environments, config repos, server administration, users, roles, authorization, plugins, backups, materials, artifact stores, elastic agent profiles, cluster profiles, stages, jobs, server configuration, templates, packages, package repositories, notification filters, dashboard, access tokens, secret configs, and server version. Works with self-hosted GoCD instances via the REST API, with multi-profile support and 1Password secret resolution.
 
 ## Prerequisites
 
@@ -26,14 +26,14 @@ All commands support `-o json` and `-o yaml` for structured output. For full com
 
 | Group | Alias | Description |
 |-------|-------|-------------|
-| `pipeline` | | Pipeline CRUD, status, history, trigger, pause/unpause, comment, export |
+| `pipeline` | | Pipeline CRUD, status, history, trigger, pause/unpause, comment, export, compare, lock/unlock |
 | `pipeline-group` | `pg` | Pipeline group CRUD |
 | `agent` | | Agent list, get, enable, disable, delete, kill-task, update, job-history |
 | `environment` | `env` | Environment CRUD, patch |
 | `config-repo` | `cr`, `configrepo` | Config repo CRUD, status, trigger, definitions, preflight |
 | `server` | | Server health, maintenance mode |
 | `server-config` | `sc` | Site URL, artifact config, job timeout, mail server |
-| `user` | | User CRUD, bulk delete |
+| `user` | | User CRUD, bulk delete, current user |
 | `role` | | Security role CRUD |
 | `authorization` | `auth-config` | Authorization config CRUD |
 | `plugin` | | Plugin info, settings CRUD |
@@ -45,6 +45,14 @@ All commands support `-o json` and `-o yaml` for structured output. For full com
 | `stage` | | Stage cancel, run |
 | `job` | | Job run |
 | `encrypt` | | Encrypt values |
+| `template` | `tmpl` | Pipeline template CRUD |
+| `package-repo` | `pkg-repo` | Package repository CRUD |
+| `package` | `pkg` | Package CRUD, usage |
+| `notification-filter` | `nf` | Notification filter CRUD |
+| `dashboard` | | Dashboard overview |
+| `version` | | Server version info |
+| `access-token` | `token` | Access token CRUD (user and admin) |
+| `secret-config` | `secret` | Secret configuration CRUD |
 
 ## Core Workflows
 
@@ -84,6 +92,13 @@ orbit -p myprofile cd pipeline comment my-pipeline --counter 42 --message "Deplo
 
 # Export pipeline configuration
 orbit -p myprofile cd pipeline export my-pipeline --plugin-id yaml.config.plugin
+
+# Compare two pipeline instances
+orbit -p myprofile cd pipeline compare my-pipeline --from 1 --to 5
+
+# Lock/unlock a pipeline
+orbit -p myprofile gocd pipeline lock my-pipeline
+orbit -p myprofile gocd pipeline unlock my-pipeline
 ```
 
 ### Pipeline Group Management
@@ -193,6 +208,12 @@ orbit -p myprofile cd user delete admin
 
 # Bulk delete users
 orbit -p myprofile cd user delete-bulk --user user1 --user user2
+
+# View current authenticated user
+orbit -p myprofile cd user current
+
+# Update current user
+orbit -p myprofile cd user update-current --from-file user.yaml
 ```
 
 ### Security: Roles & Authorization
@@ -337,6 +358,106 @@ orbit -p myprofile cd sc mail-server delete
 
 # Encryption
 orbit -p myprofile gocd encrypt my-secret-password
+```
+
+### Pipeline Template Management
+
+```bash
+# List templates
+orbit -p myprofile gocd template list
+orbit -p myprofile cd tmpl list
+
+# Get template details
+orbit -p myprofile cd tmpl get my-template
+
+# Create/update/delete templates
+orbit -p myprofile cd tmpl create --from-file template.yaml
+orbit -p myprofile cd tmpl update my-template --from-file template.yaml
+orbit -p myprofile cd tmpl delete my-template
+```
+
+### Package Repository & Package Management
+
+```bash
+# List package repositories
+orbit -p myprofile gocd package-repo list
+orbit -p myprofile cd pkg-repo list
+
+# CRUD package repositories
+orbit -p myprofile cd pkg-repo get repo-id
+orbit -p myprofile cd pkg-repo create --from-file repo.yaml
+orbit -p myprofile cd pkg-repo update repo-id --from-file repo.yaml
+orbit -p myprofile cd pkg-repo delete repo-id
+
+# List packages
+orbit -p myprofile gocd package list
+orbit -p myprofile cd pkg list
+
+# CRUD packages
+orbit -p myprofile cd pkg get pkg-id
+orbit -p myprofile cd pkg create --from-file package.yaml
+orbit -p myprofile cd pkg update pkg-id --from-file package.yaml
+orbit -p myprofile cd pkg delete pkg-id
+
+# View package usage (which pipelines use it)
+orbit -p myprofile cd pkg usage pkg-id
+```
+
+### Notification Filter Management
+
+```bash
+# List notification filters
+orbit -p myprofile gocd notification-filter list
+orbit -p myprofile cd nf list
+
+# Get/create/delete notification filters
+orbit -p myprofile cd nf get 1
+orbit -p myprofile cd nf create --from-file filter.yaml
+orbit -p myprofile cd nf delete 1
+```
+
+### Dashboard & Version
+
+```bash
+# View dashboard overview
+orbit -p myprofile gocd dashboard
+
+# Check server version
+orbit -p myprofile gocd version
+```
+
+### Access Token Management
+
+```bash
+# List your access tokens
+orbit -p myprofile gocd access-token list
+orbit -p myprofile cd token list
+
+# Create a new token
+orbit -p myprofile cd token create --description "CI token"
+
+# Revoke a token
+orbit -p myprofile cd token revoke 42 --cause "No longer needed"
+
+# Admin: list all tokens across users
+orbit -p myprofile cd token list-all
+
+# Admin: revoke any user's token
+orbit -p myprofile cd token revoke-admin 42 --cause "Security review"
+```
+
+### Secret Configuration Management
+
+```bash
+# List secret configurations
+orbit -p myprofile gocd secret-config list
+orbit -p myprofile cd secret list
+
+# CRUD secret configurations
+orbit -p myprofile cd secret get my-secret
+orbit -p myprofile cd secret create --from-file secret.yaml
+orbit -p myprofile cd secret update my-secret --from-file secret.yaml
+orbit -p myprofile cd secret delete my-secret
 ```
 
 ## Common Patterns

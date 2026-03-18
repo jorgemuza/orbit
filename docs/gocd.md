@@ -33,12 +33,21 @@ Manage GoCD pipelines, agents, environments, config repos, server administration
   - [pipeline delete](#pipeline-delete)
   - [pipeline comment](#pipeline-comment)
   - [pipeline export](#pipeline-export)
+  - [pipeline compare](#pipeline-compare)
+  - [pipeline lock](#pipeline-lock)
+  - [pipeline unlock](#pipeline-unlock)
 - [pipeline-group -- Pipeline group commands](#pipeline-group)
   - [pipeline-group list](#pipeline-group-list)
   - [pipeline-group get](#pipeline-group-get)
   - [pipeline-group create](#pipeline-group-create)
   - [pipeline-group update](#pipeline-group-update)
   - [pipeline-group delete](#pipeline-group-delete)
+- [access-token -- Access token commands](#access-token)
+  - [access-token list](#access-token-list)
+  - [access-token create](#access-token-create)
+  - [access-token revoke](#access-token-revoke)
+  - [access-token list-all](#access-token-list-all)
+  - [access-token revoke-admin](#access-token-revoke-admin)
 - [agent -- Agent commands](#agent)
   - [agent list](#agent-list)
   - [agent get](#agent-get)
@@ -72,6 +81,8 @@ Manage GoCD pipelines, agents, environments, config repos, server administration
   - [user update](#user-update)
   - [user delete](#user-delete)
   - [user delete-bulk](#user-delete-bulk)
+  - [user current](#user-current)
+  - [user update-current](#user-update-current)
 - [plugin -- Plugin commands](#plugin)
   - [plugin list](#plugin-list)
   - [plugin get](#plugin-get)
@@ -101,6 +112,7 @@ Manage GoCD pipelines, agents, environments, config repos, server administration
   - [cluster-profile create](#cluster-profile-create)
   - [cluster-profile update](#cluster-profile-update)
   - [cluster-profile delete](#cluster-profile-delete)
+- [dashboard -- Dashboard](#dashboard)
 - [elastic-agent-profile -- Elastic agent profile commands](#elastic-agent-profile)
   - [elastic-agent-profile list](#elastic-agent-profile-list)
   - [elastic-agent-profile get](#elastic-agent-profile-get)
@@ -113,12 +125,36 @@ Manage GoCD pipelines, agents, environments, config repos, server administration
   - [material get](#material-get)
   - [material usage](#material-usage)
   - [material trigger-update](#material-trigger-update)
+- [notification-filter -- Notification filter commands](#notification-filter)
+  - [notification-filter list](#notification-filter-list)
+  - [notification-filter get](#notification-filter-get)
+  - [notification-filter create](#notification-filter-create)
+  - [notification-filter delete](#notification-filter-delete)
+- [package -- Package commands](#package)
+  - [package list](#package-list)
+  - [package get](#package-get)
+  - [package create](#package-create)
+  - [package update](#package-update)
+  - [package delete](#package-delete)
+  - [package usage](#package-usage)
+- [package-repo -- Package repository commands](#package-repo)
+  - [package-repo list](#package-repo-list)
+  - [package-repo get](#package-repo-get)
+  - [package-repo create](#package-repo-create)
+  - [package-repo update](#package-repo-update)
+  - [package-repo delete](#package-repo-delete)
 - [artifact -- Artifact store commands](#artifact)
   - [artifact list-store](#artifact-list-store)
   - [artifact get-store](#artifact-get-store)
   - [artifact create-store](#artifact-create-store)
   - [artifact update-store](#artifact-update-store)
   - [artifact delete-store](#artifact-delete-store)
+- [secret-config -- Secret configuration commands](#secret-config)
+  - [secret-config list](#secret-config-list)
+  - [secret-config get](#secret-config-get)
+  - [secret-config create](#secret-config-create)
+  - [secret-config update](#secret-config-update)
+  - [secret-config delete](#secret-config-delete)
 - [stage -- Stage commands](#stage)
   - [stage cancel](#stage-cancel)
   - [stage run](#stage-run)
@@ -139,6 +175,13 @@ Manage GoCD pipelines, agents, environments, config repos, server administration
   - [server-config mail-server get](#server-config-mail-server-get)
   - [server-config mail-server update](#server-config-mail-server-update)
   - [server-config mail-server delete](#server-config-mail-server-delete)
+- [template -- Template commands](#template)
+  - [template list](#template-list)
+  - [template get](#template-get)
+  - [template create](#template-create)
+  - [template update](#template-update)
+  - [template delete](#template-delete)
+- [version -- Server version](#version)
 - [encrypt -- Encrypt a value](#encrypt)
 
 ---
@@ -392,6 +435,66 @@ orbit gocd pipeline export <name> [flags]
 ```bash
 orbit gocd pipeline export my-pipeline
 orbit cd pipeline export my-pipeline --plugin-id yaml.config.plugin -o json
+```
+
+### pipeline compare
+
+Compare two pipeline instances to see material changes between them.
+
+```
+orbit gocd pipeline compare <name> --from <N> --to <N> [flags]
+```
+
+| Argument | Description |
+|----------|-------------|
+| `name` | Pipeline name |
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from` | Yes | From pipeline counter |
+| `--to` | Yes | To pipeline counter |
+
+**Example:**
+
+```bash
+orbit gocd pipeline compare my-pipeline --from 1 --to 2
+orbit cd pipeline compare my-pipeline --from 5 --to 10 -o json
+```
+
+### pipeline lock
+
+Lock a pipeline to prevent further scheduling until it is unlocked.
+
+```
+orbit gocd pipeline lock <name>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `name` | Pipeline name |
+
+**Example:**
+
+```bash
+orbit gocd pipeline lock my-pipeline
+```
+
+### pipeline unlock
+
+Unlock a locked pipeline.
+
+```
+orbit gocd pipeline unlock <name>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `name` | Pipeline name |
+
+**Example:**
+
+```bash
+orbit gocd pipeline unlock my-pipeline
 ```
 
 ---
@@ -1082,6 +1185,40 @@ orbit gocd user delete-bulk [flags]
 ```bash
 orbit gocd user delete-bulk --user jdoe --user jane
 orbit cd user delete-bulk --from-file users.yaml
+```
+
+### user current
+
+Show the current authenticated user.
+
+```
+orbit gocd user current [flags]
+```
+
+**Example:**
+
+```bash
+orbit gocd user current
+orbit cd user current -o json
+```
+
+### user update-current
+
+Update the current authenticated user from a file.
+
+```
+orbit gocd user update-current --from-file <file>
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with user fields to update |
+
+**Example:**
+
+```bash
+orbit gocd user update-current --from-file user.yaml
+orbit cd user update-current --from-file user.json
 ```
 
 ---
@@ -2157,6 +2294,654 @@ orbit gocd server-config mail-server delete
 
 ```bash
 orbit gocd server-config mail-server delete
+```
+
+---
+
+## access-token
+
+Manage GoCD access tokens.
+
+**Aliases:** `token`
+
+### access-token list
+
+List your access tokens.
+
+```
+orbit gocd access-token list [flags]
+```
+
+**Example:**
+
+```bash
+orbit gocd access-token list
+orbit cd token list -o json
+```
+
+### access-token create
+
+Create a new access token.
+
+```
+orbit gocd access-token create --description <desc>
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--description` | Yes | Description for the access token |
+
+**Example:**
+
+```bash
+orbit gocd access-token create --description "CI token"
+orbit cd token create --description "Deploy key"
+```
+
+### access-token revoke
+
+Revoke an access token.
+
+```
+orbit gocd access-token revoke <id> [flags]
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Token ID |
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--cause` | `""` | Reason for revoking the token |
+
+**Example:**
+
+```bash
+orbit gocd access-token revoke 42 --cause "No longer needed"
+orbit cd token revoke 42
+```
+
+### access-token list-all
+
+List all access tokens across all users (admin only).
+
+```
+orbit gocd access-token list-all [flags]
+```
+
+**Example:**
+
+```bash
+orbit gocd access-token list-all
+orbit cd token list-all -o json
+```
+
+### access-token revoke-admin
+
+Revoke any user's access token (admin only).
+
+```
+orbit gocd access-token revoke-admin <id> [flags]
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Token ID |
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--cause` | `""` | Reason for revoking the token |
+
+**Example:**
+
+```bash
+orbit gocd access-token revoke-admin 42 --cause "Security review"
+orbit cd token revoke-admin 42
+```
+
+---
+
+## dashboard
+
+Show the GoCD dashboard with pipeline groups, instances, and stage statuses.
+
+```
+orbit gocd dashboard [flags]
+```
+
+**Example:**
+
+```bash
+orbit gocd dashboard
+orbit cd dashboard -o json
+```
+
+---
+
+## notification-filter
+
+Manage GoCD notification filters.
+
+**Aliases:** `nf`
+
+### notification-filter list
+
+List all notification filters.
+
+```
+orbit gocd notification-filter list [flags]
+```
+
+**Example:**
+
+```bash
+orbit gocd notification-filter list
+orbit cd nf list -o json
+```
+
+### notification-filter get
+
+Get a notification filter.
+
+```
+orbit gocd notification-filter get <id>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Filter ID |
+
+**Example:**
+
+```bash
+orbit gocd notification-filter get 1
+orbit cd nf get 1 -o json
+```
+
+### notification-filter create
+
+Create a notification filter from a file.
+
+```
+orbit gocd notification-filter create --from-file <file>
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with filter definition |
+
+**Example:**
+
+```bash
+orbit gocd notification-filter create --from-file filter.yaml
+orbit cd nf create --from-file filter.json
+```
+
+### notification-filter delete
+
+Delete a notification filter.
+
+```
+orbit gocd notification-filter delete <id>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Filter ID |
+
+**Example:**
+
+```bash
+orbit gocd notification-filter delete 1
+orbit cd nf delete 1
+```
+
+---
+
+## package
+
+Manage GoCD packages.
+
+**Aliases:** `pkg`
+
+### package list
+
+List all packages.
+
+```
+orbit gocd package list [flags]
+```
+
+**Example:**
+
+```bash
+orbit gocd package list
+orbit cd pkg list -o json
+```
+
+### package get
+
+Get a package.
+
+```
+orbit gocd package get <id>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Package ID |
+
+**Example:**
+
+```bash
+orbit gocd package get pkg-id
+orbit cd pkg get pkg-id -o json
+```
+
+### package create
+
+Create a package from a file.
+
+```
+orbit gocd package create --from-file <file>
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with package definition |
+
+**Example:**
+
+```bash
+orbit gocd package create --from-file package.yaml
+orbit cd pkg create --from-file package.json
+```
+
+### package update
+
+Update a package from a file. Automatically fetches the current ETag.
+
+```
+orbit gocd package update <id> --from-file <file>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Package ID |
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with package definition |
+
+**Example:**
+
+```bash
+orbit gocd package update pkg-id --from-file package.yaml
+orbit cd pkg update pkg-id --from-file package.json
+```
+
+### package delete
+
+Delete a package.
+
+```
+orbit gocd package delete <id>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Package ID |
+
+**Example:**
+
+```bash
+orbit gocd package delete pkg-id
+orbit cd pkg delete pkg-id
+```
+
+### package usage
+
+Show pipelines using a package.
+
+```
+orbit gocd package usage <id> [flags]
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Package ID |
+
+**Example:**
+
+```bash
+orbit gocd package usage pkg-id
+orbit cd pkg usage pkg-id -o json
+```
+
+---
+
+## package-repo
+
+Manage GoCD package repositories.
+
+**Aliases:** `pkg-repo`
+
+### package-repo list
+
+List all package repositories.
+
+```
+orbit gocd package-repo list [flags]
+```
+
+**Example:**
+
+```bash
+orbit gocd package-repo list
+orbit cd pkg-repo list -o json
+```
+
+### package-repo get
+
+Get a package repository.
+
+```
+orbit gocd package-repo get <id>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Package repository ID |
+
+**Example:**
+
+```bash
+orbit gocd package-repo get repo-id
+orbit cd pkg-repo get repo-id -o json
+```
+
+### package-repo create
+
+Create a package repository from a file.
+
+```
+orbit gocd package-repo create --from-file <file>
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with repository definition |
+
+**Example:**
+
+```bash
+orbit gocd package-repo create --from-file repo.yaml
+orbit cd pkg-repo create --from-file repo.json
+```
+
+### package-repo update
+
+Update a package repository from a file. Automatically fetches the current ETag.
+
+```
+orbit gocd package-repo update <id> --from-file <file>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Package repository ID |
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with repository definition |
+
+**Example:**
+
+```bash
+orbit gocd package-repo update repo-id --from-file repo.yaml
+orbit cd pkg-repo update repo-id --from-file repo.json
+```
+
+### package-repo delete
+
+Delete a package repository.
+
+```
+orbit gocd package-repo delete <id>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Package repository ID |
+
+**Example:**
+
+```bash
+orbit gocd package-repo delete repo-id
+orbit cd pkg-repo delete repo-id
+```
+
+---
+
+## secret-config
+
+Manage GoCD secret configurations.
+
+**Aliases:** `secret`
+
+### secret-config list
+
+List all secret configurations.
+
+```
+orbit gocd secret-config list [flags]
+```
+
+**Example:**
+
+```bash
+orbit gocd secret-config list
+orbit cd secret list -o json
+```
+
+### secret-config get
+
+Get a secret configuration.
+
+```
+orbit gocd secret-config get <id>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Secret configuration ID |
+
+**Example:**
+
+```bash
+orbit gocd secret-config get my-secret
+orbit cd secret get my-secret -o json
+```
+
+### secret-config create
+
+Create a secret configuration from a file.
+
+```
+orbit gocd secret-config create --from-file <file>
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with secret config definition |
+
+**Example:**
+
+```bash
+orbit gocd secret-config create --from-file secret.yaml
+orbit cd secret create --from-file secret.json
+```
+
+### secret-config update
+
+Update a secret configuration from a file. Automatically fetches the current ETag.
+
+```
+orbit gocd secret-config update <id> --from-file <file>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Secret configuration ID |
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with secret config definition |
+
+**Example:**
+
+```bash
+orbit gocd secret-config update my-secret --from-file secret.yaml
+orbit cd secret update my-secret --from-file secret.json
+```
+
+### secret-config delete
+
+Delete a secret configuration.
+
+```
+orbit gocd secret-config delete <id>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | Secret configuration ID |
+
+**Example:**
+
+```bash
+orbit gocd secret-config delete my-secret
+orbit cd secret delete my-secret
+```
+
+---
+
+## template
+
+Manage GoCD pipeline templates.
+
+**Aliases:** `tmpl`
+
+### template list
+
+List all pipeline templates.
+
+```
+orbit gocd template list [flags]
+```
+
+**Example:**
+
+```bash
+orbit gocd template list
+orbit cd tmpl list -o json
+```
+
+### template get
+
+Get a pipeline template.
+
+```
+orbit gocd template get <name>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `name` | Template name |
+
+**Example:**
+
+```bash
+orbit gocd template get my-template
+orbit cd tmpl get my-template -o json
+```
+
+### template create
+
+Create a pipeline template from a file.
+
+```
+orbit gocd template create --from-file <file>
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with template definition |
+
+**Example:**
+
+```bash
+orbit gocd template create --from-file template.yaml
+orbit cd tmpl create --from-file template.json
+```
+
+### template update
+
+Update a pipeline template from a file. Automatically fetches the current ETag.
+
+```
+orbit gocd template update <name> --from-file <file>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `name` | Template name |
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--from-file` | Yes | Path to JSON or YAML file with template definition |
+
+**Example:**
+
+```bash
+orbit gocd template update my-template --from-file template.yaml
+orbit cd tmpl update my-template --from-file template.json
+```
+
+### template delete
+
+Delete a pipeline template.
+
+```
+orbit gocd template delete <name>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `name` | Template name |
+
+**Example:**
+
+```bash
+orbit gocd template delete my-template
+orbit cd tmpl delete my-template
+```
+
+---
+
+## version
+
+Show GoCD server version.
+
+```
+orbit gocd version [flags]
+```
+
+**Example:**
+
+```bash
+orbit gocd version
+orbit cd version -o json
 ```
 
 ---
