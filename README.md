@@ -65,6 +65,7 @@ orbit service ping
 | `--config` | Config file path | `~/.config/orbit/config.yaml` |
 | `-p, --profile` | Profile to use (overrides default) | |
 | `-o, --output` | Output format: `table`, `json`, `yaml` | `table` |
+| `--debug` | Print HTTP request/response details to stderr | `false` |
 
 ## Commands Overview
 
@@ -164,13 +165,15 @@ orbit gh release latest octocat/hello-world
 
 ### Bitbucket
 
-Manage projects, repositories, pull requests, branches, tags, and pipelines. Supports Cloud and Data Center. Alias: `bb`.
+Manage projects, repositories, pull requests, branches, tags, reviewer conditions, and users. Supports Cloud and Data Center. Alias: `bb`.
 
 ```bash
 orbit bb repo list MY-PROJ
 orbit bb pr list MY-PROJ my-repo --state open
 orbit bb pr create MY-PROJ my-repo --source feature/x --target main --title "Add feature"
+orbit bb pr approve MY-PROJ my-repo 42
 orbit bb branch list MY-PROJ my-repo
+orbit bb reviewer-condition list MY-PROJ
 ```
 
 **[Full Bitbucket reference →](docs/bitbucket.md)**
@@ -317,7 +320,7 @@ Skills are installed into `.claude/skills/` in your current project directory. O
 | `confluence` | Page view/create/update, markdown publishing, page width control |
 | `github` | Repos, PRs, Actions runs, issues, releases, secrets (alias: `gh`) |
 | `gitlab` | Projects, MRs, pipelines, branches, tags, variables (alias: `gl`) |
-| `bitbucket` | Projects, repos, PRs, branches, tags, pipelines (alias: `bb`) |
+| `bitbucket` | Projects, repos, PRs, branches, tags, reviewer conditions, approvals (alias: `bb`) |
 | `gocd` | Pipelines, agents, environments, config repos, server admin, stages, jobs (alias: `cd`) |
 | `format-docs` | Prepare and restructure markdown for Confluence publishing |
 
