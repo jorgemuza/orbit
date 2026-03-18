@@ -2,7 +2,7 @@
 
 A unified CLI for managing connections to development lifecycle services.
 
-Supports **Jira**, **Confluence**, **GitLab**, **GitHub**, and **Bitbucket** (cloud and self-hosted). Organize connections into profiles to switch between projects seamlessly.
+Supports **Jira**, **Confluence**, **GitLab**, **GitHub**, **Bitbucket**, and **GoCD** (cloud and self-hosted). Organize connections into profiles to switch between projects seamlessly.
 
 Secrets can be stored as [1Password](https://1password.com/) references (`op://vault/item/field`) and are resolved at runtime using the 1Password CLI.
 
@@ -175,6 +175,25 @@ orbit bb branch list MY-PROJ my-repo
 
 **[Full Bitbucket reference →](docs/bitbucket.md)**
 
+### GoCD
+
+Manage pipelines, pipeline groups, agents, environments, config repos, server administration, users, roles, authorization, plugins, backups, materials, artifact stores, elastic agent profiles, cluster profiles, stages, jobs, and server configuration. Alias: `cd`.
+
+```bash
+orbit cd pipeline list
+orbit cd pipeline status my-pipeline
+orbit cd pipeline history my-pipeline --limit 5
+orbit cd pipeline trigger my-pipeline
+orbit cd pipeline pause my-pipeline --reason "Maintenance"
+orbit cd agent list
+orbit cd env list
+orbit cd cr list
+orbit cd server health
+orbit cd server maintenance
+```
+
+**[Full GoCD reference →](docs/gocd.md)**
+
 ## Supported Services
 
 | Service | Type | Variants | Default Base URL |
@@ -184,6 +203,7 @@ orbit bb branch list MY-PROJ my-repo
 | GitLab | `gitlab` | `cloud`, `server` | `https://gitlab.com` |
 | GitHub | `github` | `cloud`, `server` | `https://api.github.com` |
 | Bitbucket | `bitbucket` | `cloud`, `server` | `https://api.bitbucket.org/2.0` |
+| GoCD | `gocd` | — | *(required — always self-hosted)* |
 
 ### Authentication Methods
 
@@ -264,7 +284,7 @@ Orbit ships with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) s
 
 ```bash
 # Install all orbit skills at once
-npx @anthropic-ai/claude-code-skills --skills jira,confluence,github,gitlab,bitbucket,format-docs --from github:jorgemuza/orbit
+npx @anthropic-ai/claude-code-skills --skills jira,confluence,github,gitlab,bitbucket,gocd,format-docs --from github:jorgemuza/orbit
 
 # Install a single skill
 npx @anthropic-ai/claude-code-skills --skills jira --from github:jorgemuza/orbit
@@ -284,6 +304,7 @@ Skills are installed into `.claude/skills/` in your current project directory. O
 | `github` | Repos, PRs, Actions runs, issues, releases, secrets (alias: `gh`) |
 | `gitlab` | Projects, MRs, pipelines, branches, tags, variables (alias: `gl`) |
 | `bitbucket` | Projects, repos, PRs, branches, tags, pipelines (alias: `bb`) |
+| `gocd` | Pipelines, agents, environments, config repos, server admin, stages, jobs (alias: `cd`) |
 | `format-docs` | Prepare and restructure markdown for Confluence publishing |
 
 ## License
