@@ -98,6 +98,25 @@ Run aliases: `run`, `actions` — so `orbit gh actions list octocat/hello-world`
 
 The `watch` command auto-discovers the most recent in-progress run if no run-id is given. It shows live job and step status with elapsed time, and exits with an error if the run fails.
 
+### Workflow Management
+
+```bash
+# List workflows (get the numeric workflow ID)
+orbit -p myprofile gh workflow list octocat/hello-world
+
+# Trigger a workflow dispatch (--ref is required)
+orbit -p myprofile gh workflow run octocat/hello-world 245836153 --ref main
+
+# Trigger with inputs
+orbit -p myprofile gh workflow run octocat/hello-world 245836153 --ref main --input env=staging
+
+# Enable/disable a workflow
+orbit -p myprofile gh workflow enable octocat/hello-world 245836153
+orbit -p myprofile gh workflow disable octocat/hello-world 245836153
+```
+
+**Important:** `workflow run` requires the numeric workflow ID (from `workflow list`), not the filename. The `--ref` flag is mandatory.
+
 ### GitHub Actions Secrets
 
 ```bash
