@@ -291,16 +291,28 @@ orbit -p profile jira issue delete <issue-key> [flags]
 
 ### issue comment
 
-Add a comment to an issue.
+Add a comment to an issue. Supports @mentions using Jira mention syntax.
 
 ```bash
 orbit -p profile jira issue comment <issue-key> -b <body>
 ```
 
-**Examples:**
+**Mentioning users in comments:**
+
+Use `[~accountId:ID]` to @mention a user in Cloud (produces a clickable mention). Use `[~username]` for Server. The account ID can be found via `jira user search` or from issue assignee details (`-o json`).
 
 ```bash
+# Simple comment
 orbit -p paybook jira issue comment PYMT-123 -b "This is fixed now"
+
+# Comment with @mention (Cloud — uses accountId)
+orbit -p paybook jira issue comment PYMT-123 -b "Hey [~accountId:5b10ac8d82e05b22cc7d4ef5], please review"
+
+# Comment with @mention (Server — uses username)
+orbit -p paybook jira issue comment PYMT-123 -b "Assigned back to [~jorge.padilla] for rework"
+
+# Find a user's accountId for mentions
+orbit -p paybook jira user search "Jorge"
 ```
 
 ---

@@ -107,6 +107,18 @@ orbit -p myprofile jira issue move PROJ-123 "In Progress"
 orbit -p myprofile jira issue move PROJ-123 Done --comment "Fixed in v2.1" --resolution Fixed
 ```
 
+### Comments with @mentions
+
+Use `[~accountId:ID]` to @mention users in comments (Cloud). Jira renders these as clickable user links. For Server, use `[~username]`.
+
+```bash
+# Add a comment mentioning the assignee
+orbit -p myprofile jira issue comment PROJ-123 -b "Hey [~accountId:5b10ac8d82e05b22cc7d4ef5], this needs rework"
+
+# Look up a user's accountId
+orbit -p myprofile jira user search "Jorge"
+```
+
 ### Searching Issues
 
 ```bash
