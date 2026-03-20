@@ -220,6 +220,44 @@ Re-run a workflow run.
 orbit github run rerun octocat/hello-world 12345
 ```
 
+## Workflows (GitHub Actions)
+
+### `github workflow list [owner/repo]`
+List workflows in a repository.
+```
+orbit github workflow list octocat/hello-world
+```
+
+### `github workflow view [owner/repo] [workflow-id]`
+View a workflow.
+```
+orbit github workflow view octocat/hello-world 245836153
+```
+
+### `github workflow run [owner/repo] [workflow-id]`
+Trigger a workflow dispatch event. Requires `--ref` flag.
+```
+orbit github workflow run octocat/hello-world 245836153 --ref main
+orbit github workflow run octocat/hello-world 245836153 --ref main --input key=value
+```
+Flags:
+- `--ref` — **(required)** git ref to dispatch on (branch or tag)
+- `--input` — workflow input as `key=value` (repeatable)
+
+**Workflow:** First `workflow list` to get the numeric workflow ID, then `workflow run` with `--ref`.
+
+### `github workflow enable [owner/repo] [workflow-id]`
+Enable a disabled workflow.
+```
+orbit github workflow enable octocat/hello-world 245836153
+```
+
+### `github workflow disable [owner/repo] [workflow-id]`
+Disable a workflow.
+```
+orbit github workflow disable octocat/hello-world 245836153
+```
+
 ## Secrets (GitHub Actions)
 
 ### `github secret list [owner/repo]`
