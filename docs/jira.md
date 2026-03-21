@@ -32,8 +32,22 @@ Complete reference for all `orbit jira` CLI commands.
   - [board list](#board-list)
 - [Filter Commands](#filter-commands)
   - [filter list](#filter-list)
+  - [filter view](#filter-view)
+  - [filter search](#filter-search)
   - [filter create](#filter-create)
+  - [filter update](#filter-update)
   - [filter delete](#filter-delete)
+- [Dashboard Commands](#dashboard-commands)
+  - [dashboard list](#dashboard-list)
+  - [dashboard view](#dashboard-view)
+  - [dashboard create](#dashboard-create)
+  - [dashboard delete](#dashboard-delete)
+  - [dashboard gadget list](#dashboard-gadget-list)
+  - [dashboard gadget add](#dashboard-gadget-add)
+  - [dashboard gadget remove](#dashboard-gadget-remove)
+  - [dashboard gadget property list](#dashboard-gadget-property-list)
+  - [dashboard gadget property get](#dashboard-gadget-property-get)
+  - [dashboard gadget property set](#dashboard-gadget-property-set)
 - [User Commands](#user-commands)
   - [user search](#user-search)
 - [Project Commands](#project-commands)
@@ -800,6 +814,49 @@ orbit jira filter list -p myprofile
 
 ---
 
+### filter view
+
+View details of a saved filter.
+
+```
+orbit jira filter view [filter-id] -p myprofile
+```
+
+#### Examples
+
+```bash
+orbit jira filter view 10195 -p myprofile
+```
+
+---
+
+### filter search
+
+Search for filters by name. Returns all accessible filters when no name is specified.
+
+```
+orbit jira filter search [flags] -p myprofile
+```
+
+#### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--name` | | Filter by name |
+| `--max-results` | 50 | Maximum number of results |
+
+#### Examples
+
+```bash
+# List all accessible filters
+orbit jira filter search -p myprofile
+
+# Search by name
+orbit jira filter search --name "Sprint" -p myprofile
+```
+
+---
+
 ### filter create
 
 Create a saved filter.
@@ -829,6 +886,34 @@ orbit jira filter create --name "My Work" --jql "assignee = currentUser()" --fav
 
 ---
 
+### filter update
+
+Update an existing filter.
+
+```
+orbit jira filter update [filter-id] [flags] -p myprofile
+```
+
+#### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--name` | New filter name |
+| `--jql` | New JQL query |
+| `--description` | New description |
+
+#### Examples
+
+```bash
+# Update the JQL
+orbit jira filter update 10195 --jql "project = PROJ AND sprint in openSprints()" -p myprofile
+
+# Rename a filter
+orbit jira filter update 10195 --name "Active Sprint" -p myprofile
+```
+
+---
+
 ### filter delete
 
 Delete a saved filter. Aliases: `rm`.
@@ -847,6 +932,181 @@ orbit jira filter delete [filter-id] -p myprofile
 
 ```bash
 orbit jira filter delete 12345 -p myprofile
+```
+
+---
+
+## Dashboard Commands
+
+### dashboard list
+
+List dashboards visible to the current user. Aliases: `ls`.
+
+```
+orbit jira dashboard list [flags] -p myprofile
+```
+
+#### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--filter` | | Filter dashboards by name |
+| `--max-results` | 50 | Maximum number of results |
+
+#### Examples
+
+```bash
+# List all dashboards
+orbit jira dashboard list -p myprofile
+
+# Filter by name
+orbit jira dashboard list --filter "Sprint" -p myprofile
+```
+
+---
+
+### dashboard view
+
+View details of a dashboard.
+
+```
+orbit jira dashboard view [dashboard-id] -p myprofile
+```
+
+#### Examples
+
+```bash
+orbit jira dashboard view 10117 -p myprofile
+```
+
+---
+
+### dashboard create
+
+Create a new dashboard.
+
+```
+orbit jira dashboard create [flags] -p myprofile
+```
+
+#### Flags
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--name` | Yes | Dashboard name |
+| `--description` | No | Dashboard description |
+
+#### Examples
+
+```bash
+orbit jira dashboard create --name "AI Metrics" --description "AI adoption tracking" -p myprofile
+```
+
+---
+
+### dashboard delete
+
+Delete a dashboard. Aliases: `rm`.
+
+```
+orbit jira dashboard delete [dashboard-id] -p myprofile
+```
+
+#### Examples
+
+```bash
+orbit jira dashboard delete 10408 -p myprofile
+```
+
+---
+
+### dashboard gadget list
+
+List gadgets on a dashboard.
+
+```
+orbit jira dashboard gadget list [dashboard-id] -p myprofile
+```
+
+#### Examples
+
+```bash
+orbit jira dashboard gadget list 10408 -p myprofile
+```
+
+---
+
+### dashboard gadget add
+
+Add a gadget to a dashboard.
+
+```
+orbit jira dashboard gadget add [dashboard-id] [flags] -p myprofile
+```
+
+#### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--module-key` | Gadget module key |
+| `--uri` | Gadget URI (use for Cloud) |
+| `--title` | Gadget title |
+| `--color` | Gadget color (blue, red, yellow, green, cyan, purple, gray, white) |
+| `--column` | Column position (0-based) |
+| `--row` | Row position (0-based) |
+
+#### Examples
+
+```bash
+orbit jira dashboard gadget add 10408 \
+  --uri "rest/gadgets/1.0/g/com.atlassian.jira.gadgets:filter-results-gadget/gadgets/filter-results-gadget.xml" \
+  --title "My Filter" --color blue -p myprofile
+```
+
+---
+
+### dashboard gadget remove
+
+Remove a gadget from a dashboard. Aliases: `rm`.
+
+```
+orbit jira dashboard gadget remove [dashboard-id] [gadget-id] -p myprofile
+```
+
+#### Examples
+
+```bash
+orbit jira dashboard gadget remove 10408 35501 -p myprofile
+```
+
+---
+
+### dashboard gadget property list
+
+List properties of a gadget.
+
+```bash
+orbit jira dashboard gadget property list 10408 35501 -p myprofile
+```
+
+---
+
+### dashboard gadget property get
+
+Get a gadget property value (returns JSON).
+
+```bash
+orbit jira dashboard gadget property get 10408 35501 config -p myprofile
+```
+
+---
+
+### dashboard gadget property set
+
+Set a gadget property (value must be valid JSON).
+
+```bash
+orbit jira dashboard gadget property set 10408 35501 config '{"filterId":"11233"}' -p myprofile
 ```
 
 ---

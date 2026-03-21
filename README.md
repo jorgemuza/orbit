@@ -92,7 +92,7 @@ orbit version                                       # Print version info
 
 ### Jira
 
-Manage issues, epics, sprints, boards, projects, releases, custom fields, screens, statuses, and issue types. Supports Jira Cloud (API v3) and Server/Data Center (API v2).
+Manage issues, epics, sprints, boards, projects, releases, dashboards, filters, custom fields, screens, statuses, and issue types. Supports Jira Cloud (API v3) and Server/Data Center (API v2).
 
 ```bash
 orbit jira issue list --project PROJ --assignee me
@@ -316,7 +316,7 @@ Skills are installed into `.claude/skills/` in your current project directory. O
 
 | Skill | Description |
 |-------|-------------|
-| `jira` | Issue CRUD, epics, sprints, boards, fields, screens, statuses, wiki markup formatting |
+| `jira` | Issue CRUD, epics, sprints, boards, dashboards, filters, fields, screens, statuses, wiki markup formatting |
 | `confluence` | Page view/create/update, markdown publishing, page width control |
 | `github` | Repos, PRs, Actions runs, issues, releases, secrets (alias: `gh`) |
 | `gitlab` | Projects, MRs, pipelines, branches, tags, variables (alias: `gl`) |

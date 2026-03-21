@@ -37,6 +37,24 @@ Complete reference for all `orbit jira` commands with flags and examples.
   - [screen field-add](#screen-field-add)
   - [screen field-remove](#screen-field-remove)
   - [screen field-move](#screen-field-move)
+- [Filter Commands](#filter-commands)
+  - [filter list](#filter-list)
+  - [filter view](#filter-view)
+  - [filter search](#filter-search)
+  - [filter create](#filter-create)
+  - [filter update](#filter-update)
+  - [filter delete](#filter-delete)
+- [Dashboard Commands](#dashboard-commands)
+  - [dashboard list](#dashboard-list)
+  - [dashboard view](#dashboard-view)
+  - [dashboard create](#dashboard-create)
+  - [dashboard delete](#dashboard-delete)
+  - [dashboard gadget list](#dashboard-gadget-list)
+  - [dashboard gadget add](#dashboard-gadget-add)
+  - [dashboard gadget remove](#dashboard-gadget-remove)
+  - [dashboard gadget property list](#dashboard-gadget-property-list)
+  - [dashboard gadget property get](#dashboard-gadget-property-get)
+  - [dashboard gadget property set](#dashboard-gadget-property-set)
 - [Status Commands](#status-commands)
   - [status list](#status-list)
 - [Issue Type Commands](#issue-type-commands)
@@ -807,6 +825,209 @@ orbit -p profile jira screen field-move <screen-id> <source-tab-id> <target-tab-
 # Move AI fields from General tab to AI Workflow tab
 orbit -p paybook jira screen field-move 10089 10189 10868 \
   --fields "customfield_10397,customfield_10398,customfield_10399,customfield_10400,customfield_10401,customfield_10402,customfield_10403"
+```
+
+---
+
+## Filter Commands
+
+### filter list
+
+List favourite/saved filters. Alias: `ls`.
+
+```
+orbit -p profile jira filter list
+```
+
+### filter view
+
+View details of a saved filter.
+
+```
+orbit -p profile jira filter view <filter-id>
+```
+
+**Examples:**
+
+```bash
+orbit -p paybook jira filter view 10195
+```
+
+### filter search
+
+Search for filters by name. Returns all accessible filters when no name is specified.
+
+```
+orbit -p profile jira filter search [flags]
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--name` | | Filter by name |
+| `--max-results` | 50 | Maximum results |
+
+**Examples:**
+
+```bash
+orbit -p paybook jira filter search
+orbit -p paybook jira filter search --name "Sprint"
+```
+
+### filter create
+
+Create a saved filter.
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--name` | Yes | Filter name |
+| `--jql` | Yes | JQL query |
+| `--description` | No | Description |
+| `--favourite` | No | Mark as favourite |
+
+```bash
+orbit -p paybook jira filter create --name "My Bugs" --jql "project = PROJ AND type = Bug"
+orbit -p paybook jira filter create --name "My Work" --jql "assignee = currentUser()" --favourite
+```
+
+### filter update
+
+Update an existing filter.
+
+| Flag | Description |
+|------|-------------|
+| `--name` | New name |
+| `--jql` | New JQL query |
+| `--description` | New description |
+
+```bash
+orbit -p paybook jira filter update 10195 --jql "project = PROJ AND sprint in openSprints()"
+orbit -p paybook jira filter update 10195 --name "Active Sprint"
+```
+
+### filter delete
+
+Delete a saved filter. Alias: `rm`.
+
+```bash
+orbit -p paybook jira filter delete 12345
+```
+
+---
+
+## Dashboard Commands
+
+### dashboard list
+
+List dashboards visible to the current user. Alias: `ls`.
+
+```
+orbit -p profile jira dashboard list [flags]
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--filter` | | Filter by name |
+| `--max-results` | 50 | Maximum results |
+
+**Examples:**
+
+```bash
+orbit -p paybook jira dashboard list
+orbit -p paybook jira dashboard list --filter "Sprint"
+```
+
+### dashboard view
+
+View details of a dashboard.
+
+```
+orbit -p profile jira dashboard view <dashboard-id>
+```
+
+**Examples:**
+
+```bash
+orbit -p paybook jira dashboard view 10117
+```
+
+### dashboard create
+
+Create a new dashboard.
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--name` | Yes | Dashboard name |
+| `--description` | No | Dashboard description |
+
+```bash
+orbit -p paybook jira dashboard create --name "AI Metrics" --description "AI adoption tracking"
+```
+
+### dashboard delete
+
+Delete a dashboard. Alias: `rm`.
+
+```bash
+orbit -p paybook jira dashboard delete 10408
+```
+
+### dashboard gadget list
+
+List gadgets on a dashboard.
+
+```bash
+orbit -p paybook jira dashboard gadget list 10408
+```
+
+### dashboard gadget add
+
+Add a gadget to a dashboard. Use `--uri` for Jira Cloud.
+
+| Flag | Description |
+|------|-------------|
+| `--module-key` | Gadget module key |
+| `--uri` | Gadget URI (alternative to module-key, required for Cloud) |
+| `--title` | Gadget title |
+| `--color` | Color: blue, red, yellow, green, cyan, purple, gray, white |
+| `--column` | Column position (0-based) |
+| `--row` | Row position (0-based) |
+
+```bash
+orbit -p paybook jira dashboard gadget add 10408 \
+  --uri "rest/gadgets/1.0/g/com.atlassian.jira.gadgets:filter-results-gadget/gadgets/filter-results-gadget.xml" \
+  --title "My Filter" --color blue
+```
+
+### dashboard gadget remove
+
+Remove a gadget from a dashboard. Alias: `rm`.
+
+```bash
+orbit -p paybook jira dashboard gadget remove 10408 35501
+```
+
+### dashboard gadget property list
+
+List properties of a gadget.
+
+```bash
+orbit -p paybook jira dashboard gadget property list 10408 35501
+```
+
+### dashboard gadget property get
+
+Get a gadget property value (JSON output).
+
+```bash
+orbit -p paybook jira dashboard gadget property get 10408 35501 config
+```
+
+### dashboard gadget property set
+
+Set a gadget property (JSON value).
+
+```bash
+orbit -p paybook jira dashboard gadget property set 10408 35501 config '{"filterId":"11233","num":"20"}'
 ```
 
 ---
