@@ -119,6 +119,7 @@ Manage pages, publish markdown directories, and control page layout. Supports Cl
 ```bash
 orbit confluence page 12345
 orbit confluence children 12345
+orbit confluence hierarchy 12345 --depth 3
 orbit confluence create --space DEV --parent 12345 --title "Guide" --file docs/guide.md
 orbit confluence update 12345 --file docs/guide.md
 orbit confluence publish ./docs --space DEV --parent 12345 --dry-run
@@ -317,7 +318,7 @@ Skills are installed into `.claude/skills/` in your current project directory. O
 | Skill | Description |
 |-------|-------------|
 | `jira` | Issue CRUD, epics, sprints, boards, dashboards, filters, fields, screens, statuses, wiki markup formatting |
-| `confluence` | Page view/create/update, markdown publishing, page width control |
+| `confluence` | Page view/create/update, hierarchy, markdown publishing, page width control |
 | `github` | Repos, PRs, Actions runs, issues, releases, secrets (alias: `gh`) |
 | `gitlab` | Projects, MRs, pipelines, branches, tags, variables (alias: `gl`) |
 | `bitbucket` | Projects, repos, PRs, branches, tags, reviewer conditions, approvals (alias: `bb`) |

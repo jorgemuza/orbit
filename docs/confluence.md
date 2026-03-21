@@ -7,6 +7,7 @@ Command reference for `orbit confluence` -- manage Confluence pages from the ter
 - [Global Flags](#global-flags)
 - [page](#page) -- View a Confluence page
 - [children](#children) -- List child pages
+- [hierarchy](#hierarchy) -- Show page hierarchy (ancestors + descendants)
 - [create](#create) -- Create a new page
 - [update](#update) -- Update an existing page
 - [delete](#delete) -- Delete a page
@@ -78,6 +79,56 @@ orbit confluence children [page-id] [flags]
 ```bash
 # List all child pages
 orbit confluence children 123456789 -p myprofile
+```
+
+---
+
+## hierarchy
+
+Show the full page hierarchy — ancestor chain (from root to the page) and descendant tree.
+
+```
+orbit confluence hierarchy [page-id] [flags]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `page-id` | The numeric ID of the Confluence page |
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--depth` | 2 | Maximum depth for the children tree |
+
+### Examples
+
+```bash
+# Show hierarchy with default depth (2 levels of children)
+orbit confluence hierarchy 123456789001 -p myprofile
+
+# Show deeper tree
+orbit confluence hierarchy 123456789001 --depth 5 -p myprofile
+
+# JSON tree output
+orbit confluence hierarchy 123456789001 -o json -p myprofile
+```
+
+### Output
+
+```
+Ancestors (top → bottom):
+  473267830879 — Foundation Home
+    123456789001 — AI Development Process  ← (this page)
+
+Children:
+  ├── 123456789003 — Foundations
+  │   ├── 123456789007 — Overview & Philosophy
+  │   ├── 123456789006 — Compounding Engineering
+  ├── 123456789004 — Organization
+  │   ├── 123456789005 — AI Layer Setup
 ```
 
 ---
