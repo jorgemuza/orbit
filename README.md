@@ -300,30 +300,24 @@ profiles:
 
 Orbit is available as a [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin that gives Claude deep knowledge of each service's CLI commands, flags, and workflows.
 
-### Install as a plugin (all skills)
+### Install via marketplace
 
-```bash
-claude plugin add github:jorgemuza/orbit
+```
+/plugin marketplace add jorgemuza/claude-plugins
+/plugin install orbit@jorgemuza
 ```
 
-This installs all orbit skills at once. Claude Code automatically discovers them and can use orbit commands on your behalf.
+### Install directly
 
-### Install individual skills
+```
+/plugin install jorgemuza/orbit
+```
 
-If you only need specific skills, install them individually:
+### Install individual skills (alternative)
 
 ```bash
-# Install all orbit skills at once
 npx @anthropic-ai/claude-code-skills --skills jira,confluence,github,gitlab,bitbucket,gocd,format-docs --from github:jorgemuza/orbit
-
-# Install a single skill
-npx @anthropic-ai/claude-code-skills --skills jira --from github:jorgemuza/orbit
-
-# Install a subset
-npx @anthropic-ai/claude-code-skills --skills jira,confluence --from github:jorgemuza/orbit
 ```
-
-Skills are installed into `.claude/skills/` in your current project directory.
 
 ### Available Skills
 
