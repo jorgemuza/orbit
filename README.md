@@ -135,7 +135,7 @@ Manage projects, merge requests, pipelines, jobs, branches, tags, issues, runner
 ```bash
 orbit gl project view my-team/app
 orbit gl project create --name "my-app" --namespace my-team
-orbit gl projects --group my-team
+orbit gl project list --group my-team
 orbit gl mr list my-team/app --state opened
 orbit gl mr create my-team/app --source feature/x --target main --title "Add feature"
 orbit gl pipeline list my-team/app

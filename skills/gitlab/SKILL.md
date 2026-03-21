@@ -38,10 +38,10 @@ Groups also accept ID or full path: `schools/frontend`
 orbit -p myprofile gl project schools/frontend/my-app
 
 # List your projects (membership-based)
-orbit -p myprofile gl projects --search frontend
+orbit -p myprofile gl project list --search frontend
 
 # List all projects in a group (includes subgroups)
-orbit -p myprofile gl projects --group schools/frontend
+orbit -p myprofile gl project list --group schools/frontend
 
 # View group info
 orbit -p myprofile gl group view schools/frontend
