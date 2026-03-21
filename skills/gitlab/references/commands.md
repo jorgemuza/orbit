@@ -40,7 +40,7 @@ orbit -p myprofile gl project schools/frontend/my-app
 
 **Output fields:** ID, Name, Path, Description, Default Branch, Visibility, URL, Last Activity
 
-### `gitlab projects`
+### `gitlab project list`
 
 List projects.
 
@@ -51,8 +51,8 @@ List projects.
 | `--limit <n>` | 50 | Max results |
 
 ```
-orbit -p myprofile gl projects --search frontend
-orbit -p myprofile gl projects --group schools/frontend
+orbit -p myprofile gl project list --search frontend
+orbit -p myprofile gl project list --group schools/frontend
 ```
 
 ---

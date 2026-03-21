@@ -105,12 +105,12 @@ orbit gl project create --name "my-app" --description "My new project" -p myprof
 
 ---
 
-## projects
+## project list
 
 List projects.
 
 ```
-orbit gitlab projects [flags] -p myprofile
+orbit gitlab project list [flags] -p myprofile
 ```
 
 **Flags:**
@@ -125,16 +125,16 @@ orbit gitlab projects [flags] -p myprofile
 
 ```bash
 # List all projects
-orbit gl projects -p myprofile
+orbit gl project list -p myprofile
 
 # Search for projects by name
-orbit gl projects --search "frontend" -p myprofile
+orbit gl project list --search "frontend" -p myprofile
 
 # List projects in a group
-orbit gl projects --group "schools/frontend" -p myprofile
+orbit gl project list --group "schools/frontend" -p myprofile
 
 # Limit results
-orbit gl projects --search "api" --limit 10 -p myprofile
+orbit gl project list --search "api" --limit 10 -p myprofile
 ```
 
 ---
