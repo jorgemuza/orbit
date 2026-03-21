@@ -1,6 +1,6 @@
 ---
 name: confluence
-description: "Manage Confluence pages using the orbit CLI — create, update, view, publish markdown directories, and control page width. Use this skill whenever the user asks about Confluence pages, wiki content, publishing documentation, uploading markdown to Confluence, syncing docs, or managing page hierarchies using orbit. Trigger on phrases like 'create a Confluence page', 'update the wiki', 'publish these docs to Confluence', 'upload markdown', 'set page width', 'view page', 'list child pages', or any Confluence-related task — even casual references like 'push this to Confluence', 'sync the docs', or 'check what pages are under X'. Also trigger when the user needs to convert markdown to Confluence storage format or wants to track which markdown files map to which Confluence pages via frontmatter metadata (confluence_page_id, confluence_url)."
+description: "Manage Confluence pages using the orbit CLI — create, update, view, publish markdown directories, check page hierarchy, and control page width. Use this skill whenever the user asks about Confluence pages, wiki content, publishing documentation, uploading markdown to Confluence, syncing docs, checking page hierarchy or ancestors, or managing page trees using orbit. Trigger on phrases like 'create a Confluence page', 'update the wiki', 'publish these docs to Confluence', 'upload markdown', 'set page width', 'view page', 'list child pages', 'show hierarchy', 'check page tree', 'what are the ancestors', or any Confluence-related task — even casual references like 'push this to Confluence', 'sync the docs', 'check what pages are under X', or 'show me the page structure'. Also trigger when the user needs to convert markdown to Confluence storage format or wants to track which markdown files map to which Confluence pages via frontmatter metadata (confluence_page_id, confluence_url)."
 ---
 
 # Confluence with orbit CLI
@@ -34,6 +34,15 @@ orbit -p myprofile confluence page 473676972036 -o json
 
 # List child pages
 orbit -p myprofile confluence children 473676972036
+
+# Show full page hierarchy (ancestors + descendants tree)
+orbit -p myprofile confluence hierarchy 473676972036
+
+# Deeper tree (default depth is 2)
+orbit -p myprofile confluence hierarchy 473676972036 --depth 5
+
+# JSON tree output
+orbit -p myprofile confluence hierarchy 473676972036 -o json
 ```
 
 ### Creating Pages from Markdown

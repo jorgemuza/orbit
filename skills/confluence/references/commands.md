@@ -7,6 +7,7 @@ Complete reference for all `orbit confluence` commands with flags and examples.
 - [Global Flags](#global-flags)
 - [page — View Page](#page)
 - [children — List Child Pages](#children)
+- [hierarchy — Show Page Hierarchy](#hierarchy)
 - [create — Create Page](#create)
 - [update — Update Page](#update)
 - [publish — Publish Directory](#publish)
@@ -80,6 +81,37 @@ ID              VERSION  TITLE
 473677103107    2        Foundations
 473676873739    1        Organization
 ```
+
+---
+
+## hierarchy
+
+Show the full page hierarchy — ancestor chain and descendant tree.
+
+```bash
+orbit -p profile confluence hierarchy <page-id> [--depth N]
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--depth` | 2 | Maximum depth for children tree |
+
+**Examples:**
+
+```bash
+# Show hierarchy (default 2 levels deep)
+orbit -p paybook confluence hierarchy 473676972036
+
+# Deeper tree
+orbit -p paybook confluence hierarchy 473676972036 --depth 5
+
+# JSON output (structured tree)
+orbit -p paybook confluence hierarchy 473676972036 -o json
+```
+
+**Output:**
+
+Shows ancestors top-to-bottom, marks the target page, then renders children with tree characters.
 
 ---
 
