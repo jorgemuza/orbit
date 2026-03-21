@@ -296,9 +296,21 @@ profiles:
           token: "op://DevVault/github-token/credential"
 ```
 
-## Claude Code Skills
+## Claude Code Plugin
 
-Orbit ships with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills that give Claude deep knowledge of each service's CLI commands, flags, and workflows. Install them with `npx @anthropic-ai/claude-code-skills`:
+Orbit is available as a [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin that gives Claude deep knowledge of each service's CLI commands, flags, and workflows.
+
+### Install as a plugin (all skills)
+
+```bash
+claude plugin add github:jorgemuza/orbit
+```
+
+This installs all orbit skills at once. Claude Code automatically discovers them and can use orbit commands on your behalf.
+
+### Install individual skills
+
+If you only need specific skills, install them individually:
 
 ```bash
 # Install all orbit skills at once
@@ -311,7 +323,7 @@ npx @anthropic-ai/claude-code-skills --skills jira --from github:jorgemuza/orbit
 npx @anthropic-ai/claude-code-skills --skills jira,confluence --from github:jorgemuza/orbit
 ```
 
-Skills are installed into `.claude/skills/` in your current project directory. Once installed, Claude Code automatically discovers them and can use orbit commands on your behalf.
+Skills are installed into `.claude/skills/` in your current project directory.
 
 ### Available Skills
 
@@ -323,6 +335,8 @@ Skills are installed into `.claude/skills/` in your current project directory. O
 | `gitlab` | Projects, MRs, pipelines, branches, tags, variables (alias: `gl`) |
 | `bitbucket` | Projects, repos, PRs, branches, tags, reviewer conditions, approvals (alias: `bb`) |
 | `gocd` | Pipelines, agents, environments, config repos, server admin, stages, jobs (alias: `cd`) |
+| `draxarp` | Projects, tasks, specs, docs, memories, sprints, knowledge graph, context captures |
+| `attestation` | Verify, download, and inspect build provenance attestations (Sigstore/SLSA) |
 | `format-docs` | Prepare and restructure markdown for Confluence publishing |
 
 ## License

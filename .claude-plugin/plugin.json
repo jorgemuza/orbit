@@ -1,0 +1,23 @@
+{
+  "name": "orbit",
+  "description": "Unified CLI skills for managing development lifecycle services — Jira, Confluence, GitHub, GitLab, Bitbucket, GoCD, and Draxarp. Includes issue tracking, dashboards, filters, pull requests, pipelines, wiki publishing, page hierarchy, build attestation, and markdown formatting for Confluence.",
+  "version": "0.24.0",
+  "author": {
+    "name": "Jorge Muza",
+    "url": "https://github.com/jorgemuza"
+  },
+  "repository": "https://github.com/jorgemuza/orbit",
+  "keywords": [
+    "orbit",
+    "jira",
+    "confluence",
+    "github",
+    "gitlab",
+    "bitbucket",
+    "gocd",
+    "draxarp",
+    "devops",
+    "ci-cd",
+    "cli"
+  ]
+}
