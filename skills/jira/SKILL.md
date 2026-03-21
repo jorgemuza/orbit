@@ -1,6 +1,6 @@
 ---
 name: jira
-description: "Interact with Jira using the orbit CLI to create, list, view, edit, and transition issues, manage sprints and epics, manage custom fields and screen configurations, list statuses and issue types, and write properly formatted descriptions using Jira wiki markup. Use this skill whenever the user asks about Jira tasks, tickets, issues, sprints, epics, or needs to manage project work items using orbit. Also trigger when the user says things like 'create a ticket', 'create epics', 'move this to done', 'assign the issue', 'update the description', 'format for Jira', 'create a custom field', 'add field to screen', 'list statuses', 'configure Jira', or any Jira-related workflow — even casual references like 'update Jira', 'what tickets are in this sprint', 'add a comment to PROJ-123', or 'set up AI tracking fields'. Trigger especially when descriptions need proper formatting (headings, bullets, tables, links) since Jira Server uses wiki markup, not markdown."
+description: "Interact with Jira using the orbit CLI to create, list, view, edit, and transition issues, manage sprints and epics, manage dashboards and gadgets, manage saved filters, manage custom fields and screen configurations, list statuses and issue types, and write properly formatted descriptions using Jira wiki markup. Use this skill whenever the user asks about Jira tasks, tickets, issues, sprints, epics, dashboards, filters, gadgets, or needs to manage project work items using orbit. Also trigger when the user says things like 'create a ticket', 'create epics', 'move this to done', 'assign the issue', 'update the description', 'format for Jira', 'create a custom field', 'add field to screen', 'list statuses', 'configure Jira', 'create a dashboard', 'add a gadget', 'list filters', 'search filters', or any Jira-related workflow — even casual references like 'update Jira', 'what tickets are in this sprint', 'add a comment to PROJ-123', 'set up AI tracking fields', 'show me the dashboards', or 'create a metrics dashboard'. Trigger especially when descriptions need proper formatting (headings, bullets, tables, links) since Jira Server uses wiki markup, not markdown."
 ---
 
 # Jira with orbit CLI
@@ -133,6 +133,67 @@ orbit -p myprofile jira issue list --jql "project = PROJ AND sprint in openSprin
 
 # JSON output for processing
 orbit -p myprofile jira issue list --project PROJ -o json
+```
+
+## Dashboards & Gadgets
+
+Create and manage Jira dashboards with gadgets programmatically.
+
+```bash
+# List dashboards
+orbit -p myprofile jira dashboard list
+orbit -p myprofile jira dashboard list --filter "Sprint"
+
+# Create a dashboard
+orbit -p myprofile jira dashboard create --name "AI Metrics" --description "AI adoption tracking"
+
+# View dashboard details
+orbit -p myprofile jira dashboard view 10408
+
+# Delete a dashboard
+orbit -p myprofile jira dashboard delete 10408
+
+# Add gadgets to a dashboard (use URI format for Cloud)
+orbit -p myprofile jira dashboard gadget add 10408 \
+  --uri "rest/gadgets/1.0/g/com.atlassian.jira.gadgets:filter-results-gadget/gadgets/filter-results-gadget.xml" \
+  --title "My Filter Results" --color blue
+
+# List gadgets on a dashboard
+orbit -p myprofile jira dashboard gadget list 10408
+
+# Remove a gadget
+orbit -p myprofile jira dashboard gadget remove 10408 35501
+
+# Configure gadget properties (e.g., bind a filter)
+orbit -p myprofile jira dashboard gadget property set 10408 35501 config '{"filterId":"11233"}'
+orbit -p myprofile jira dashboard gadget property get 10408 35501 config
+orbit -p myprofile jira dashboard gadget property list 10408 35501
+```
+
+## Filters
+
+Create, search, and manage saved JQL filters.
+
+```bash
+# List favourite filters
+orbit -p myprofile jira filter list
+
+# Search all accessible filters
+orbit -p myprofile jira filter search
+orbit -p myprofile jira filter search --name "Sprint"
+
+# View filter details
+orbit -p myprofile jira filter view 10195
+
+# Create a filter
+orbit -p myprofile jira filter create --name "My Bugs" --jql "project = PROJ AND type = Bug" --favourite
+
+# Update a filter
+orbit -p myprofile jira filter update 10195 --jql "project = PROJ AND sprint in openSprints()"
+orbit -p myprofile jira filter update 10195 --name "Active Sprint"
+
+# Delete a filter
+orbit -p myprofile jira filter delete 12345
 ```
 
 ## Field Management (Cloud Only)
