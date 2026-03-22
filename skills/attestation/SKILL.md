@@ -9,7 +9,10 @@ Verify, download, and inspect build provenance attestations using Sigstore bundl
 
 ## Prerequisites
 
-1. `orbit` binary built and accessible
+1. `orbit` CLI installed — if `which orbit` fails, install with:
+   - **macOS/Linux (Homebrew):** `brew install jorgemuza/tap/orbit`
+   - **macOS/Linux (script):** `curl -sSfL https://raw.githubusercontent.com/jorgemuza/orbit/main/install.sh | sh`
+   - **Windows (Scoop):** `scoop bucket add jorgemuza https://github.com/jorgemuza/scoop-bucket && scoop install orbit`
 2. A Sigstore attestation bundle (`.jsonl` or `.json`) for the artifact you want to verify or inspect
 3. For `download`: a profile with a GitHub service configured (attestation bundles are fetched from GitHub)
 

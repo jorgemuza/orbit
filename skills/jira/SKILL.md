@@ -9,7 +9,10 @@ Manage Jira issues, epics, sprints, boards, projects, releases, custom fields, s
 
 ## Prerequisites
 
-1. `orbit` binary built and accessible
+1. `orbit` CLI installed — if `which orbit` fails, install with:
+   - **macOS/Linux (Homebrew):** `brew install jorgemuza/tap/orbit`
+   - **macOS/Linux (script):** `curl -sSfL https://raw.githubusercontent.com/jorgemuza/orbit/main/install.sh | sh`
+   - **Windows (Scoop):** `scoop bucket add jorgemuza https://github.com/jorgemuza/scoop-bucket && scoop install orbit`
 2. A profile with a `jira-cloud` or `jira-onprem` service configured in `~/.config/orbit/config.yaml`
 3. Valid credentials — API token for Cloud (basic auth with email + token), PAT for Server
 4. Credentials can be stored in 1Password with `op://` prefix for automatic resolution
