@@ -9,7 +9,10 @@ Manage Confluence pages, publish markdown documentation, and control page layout
 
 ## Prerequisites
 
-1. `orbit` binary built and accessible
+1. `orbit` CLI installed — if `which orbit` fails, install with:
+   - **macOS/Linux (Homebrew):** `brew install jorgemuza/tap/orbit`
+   - **macOS/Linux (script):** `curl -sSfL https://raw.githubusercontent.com/jorgemuza/orbit/main/install.sh | sh`
+   - **Windows (Scoop):** `scoop bucket add jorgemuza https://github.com/jorgemuza/scoop-bucket && scoop install orbit`
 2. A profile with a `confluence-cloud` or `confluence-server` service configured in `~/.config/orbit/config.yaml`
 3. Valid credentials (API token for Cloud, PAT for Server) — can be stored in 1Password with `op://` prefix
 4. For Cloud: auth type is `basic` with email as username and API token as password

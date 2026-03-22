@@ -9,7 +9,10 @@ Manage Bitbucket repositories, pull requests, branches, tags, commits, projects,
 
 ## Prerequisites
 
-1. `orbit` binary built and accessible
+1. `orbit` CLI installed — if `which orbit` fails, install with:
+   - **macOS/Linux (Homebrew):** `brew install jorgemuza/tap/orbit`
+   - **macOS/Linux (script):** `curl -sSfL https://raw.githubusercontent.com/jorgemuza/orbit/main/install.sh | sh`
+   - **Windows (Scoop):** `scoop bucket add jorgemuza https://github.com/jorgemuza/scoop-bucket && scoop install orbit`
 2. A profile with a `bitbucket` service configured in `~/.config/orbit/config.yaml`
 3. Valid credentials (Personal Access Token or Bearer token for Server; app password for Cloud) — can be stored in 1Password with `op://` prefix
 
