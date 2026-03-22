@@ -193,7 +193,7 @@ confluence_properties:
 
 - `id` -- sets the macro ID (used by `detailssummary` reports to target specific property blocks)
 - `fields` -- ordered key-value pairs rendered as a two-column table inside the macro
-- Values matching `{status:Color|Text}` are converted to status badge macros
+- Values matching `{status:Color|Text}` are converted to status badge macros (emoji shortcodes like `:green_circle: Green` are also supported)
 - Values matching `YYYY-MM-DD` are converted to Confluence `<time>` date macros
 - Other values are rendered as plain text
 

@@ -136,7 +136,18 @@ Other panel types: `note`, `warning`, `tip`
 </ac:structured-macro>
 ```
 
-Colors: Grey, Red, Yellow, Green, Blue
+Colors: Grey, Red, Yellow, Green, Blue, Purple
+
+**Emoji shortcode syntax** — GitHub-style emoji circles are automatically converted to status macros:
+
+| Markdown | Rendered as |
+|----------|------------|
+| `:green_circle: Green` | `{status:Green\|Green}` → Green status badge |
+| `:yellow_circle: Yellow` | `{status:Yellow\|Yellow}` → Yellow status badge |
+| `:red_circle: Red` | `{status:Red\|Red}` → Red status badge |
+| `:blue_circle: Blue` | `{status:Blue\|Blue}` → Blue status badge |
+
+This allows status tables in markdown to render natively in Confluence without rewriting.
 
 ### Date Macro
 
@@ -230,7 +241,7 @@ When you use `--file` with a markdown file, the orbit CLI:
 10. **Plain blockquotes** — `> ` lines become info panel macros
 11. **MkDocs admonitions** — `!!! note "title"` with indented content maps to Confluence panel macros
 12. **Collapsible sections** — `<details><summary>Title</summary>` blocks become expand macros
-13. **Status badges** — Inline `{status:Color|Text}` syntax becomes status macros
+13. **Status badges** — Inline `{status:Color|Text}` syntax becomes status macros. Emoji shortcodes (`:green_circle: Green`, `:yellow_circle: Yellow`, `:red_circle: Red`) are also converted automatically
 14. **Horizontal rules** — `---`, `***`, `___` become `<hr />`
 15. **Image alt text** — Preserved as `ac:alt` attribute on `ac:image` elements
 16. **Converts inline** — `**bold**`, `` `code` ``, `~~strike~~`, links, images
