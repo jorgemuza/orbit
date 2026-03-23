@@ -46,6 +46,12 @@ orbit -p myprofile gl project list --search frontend
 # List all projects in a group (includes subgroups)
 orbit -p myprofile gl project list --group schools/frontend
 
+# Projects with activity today (shows branches)
+orbit -p myprofile gl project activity
+
+# Activity in the last 7 days, filtered by branch
+orbit -p myprofile gl project activity --days 7 --branch development,master
+
 # View group info
 orbit -p myprofile gl group view schools/frontend
 

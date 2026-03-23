@@ -55,6 +55,26 @@ orbit -p myprofile gl project list --search frontend
 orbit -p myprofile gl project list --group schools/frontend
 ```
 
+### `gitlab project activity`
+
+List projects with recent activity, showing which branches received pushes.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--since <YYYY-MM-DD>` | | Show activity since date |
+| `--days <n>` | | Show activity from the last N days |
+| `--group <id-or-path>` | | Filter to projects in a group |
+| `--branch <names>` | | Filter by branch names (comma-separated) |
+| `--limit <n>` | 100 | Max projects to scan |
+
+Defaults to today when neither `--since` nor `--days` is provided.
+
+```
+orbit -p myprofile gl project activity
+orbit -p myprofile gl project activity --days 7
+orbit -p myprofile gl project activity --group schools --branch development,master
+```
+
 ---
 
 ## group
