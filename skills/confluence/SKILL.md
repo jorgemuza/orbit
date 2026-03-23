@@ -48,6 +48,28 @@ orbit -p myprofile confluence hierarchy 473676972036 --depth 5
 orbit -p myprofile confluence hierarchy 473676972036 -o json
 ```
 
+### Searching Pages
+
+```bash
+# Search by space
+orbit -p myprofile confluence search --space FO
+
+# Search by title (fuzzy match)
+orbit -p myprofile confluence search --space FO --title "Architecture"
+
+# Search by label
+orbit -p myprofile confluence search --space FO --label design
+
+# Full-text search
+orbit -p myprofile confluence search --space FO --text "deployment pipeline"
+
+# Raw CQL query
+orbit -p myprofile confluence search --cql 'space=FO AND label=design AND type=page'
+
+# Increase result limit (default 25)
+orbit -p myprofile confluence search --space ISMS --limit 100
+```
+
 ### Creating Pages from Markdown
 
 When creating a page from a markdown file, the CLI automatically converts it to Confluence storage format (XHTML). The converter handles headings, lists, tables, code blocks, blockquotes, inline formatting, and images.
@@ -66,24 +88,19 @@ Pages are automatically created with **wide width** (full-width layout).
 
 ### Updating Existing Pages
 
-**IMPORTANT — Title updates require `--title`:** The `update` command only updates the page body by default. If the frontmatter `title:` has changed, you **must** pass `--title` explicitly — otherwise the Confluence page title stays unchanged. The `publish` command handles this automatically (reads title from frontmatter), but single-file `update` does not.
+When `--file` is provided, the `update` command automatically reads the title from frontmatter, syncs labels from `confluence_labels`, prepends page properties from `confluence_properties`, and sets full-width layout — matching the `publish` command behavior. Use `--title` to override the frontmatter title.
 
 ```bash
-# Update page content only (title unchanged)
+# Update page from markdown (title, labels, properties auto-synced)
 orbit -p myprofile confluence update 473676972036 --file docs/overview.md
 
-# Update title AND content — ALWAYS do this when title has changed
+# Override title explicitly
 orbit -p myprofile confluence update 473676972036 \
-  --title "Updated Title" --file docs/overview.md
+  --title "Custom Title" --file docs/overview.md
 
 # Update with inline storage format
 orbit -p myprofile confluence update 473676972036 --body "<p>New content</p>"
 ```
-
-**When updating a single page from a markdown file:**
-1. Read the frontmatter `title:` field from the file
-2. Always pass `--title "<title>"` along with `--file` to ensure the Confluence page title stays in sync
-3. This avoids stale titles on Confluence while the body content is updated
 
 ### Publishing a Directory of Markdown Files
 
@@ -104,6 +121,20 @@ orbit -p myprofile confluence publish ./docs --space FO --parent 473677299713
 # Preview what would be created (no API calls)
 orbit -p myprofile confluence publish ./docs --space FO --parent 473677299713 --dry-run
 ```
+
+### Diagram Rendering
+
+Fenced code blocks with diagram languages are automatically rendered as images via [kroki.io](https://kroki.io) — no Confluence plugins required. Supported languages: `mermaid`, `plantuml`, `graphviz`, `dot`, `d2`, `ditaa`, `erd`, `nomnoml`, `svgbob`, `vega`, `vegalite`, `wavedrom`, `pikchr`, `structurizr`, `excalidraw`, `c4plantuml`.
+
+````markdown
+```mermaid
+graph LR
+    A-->B
+    A-->C
+```
+````
+
+This renders as a PNG image (max 800px height) with a clickable link to the full-resolution image. Regular code blocks (`python`, `go`, `bash`, etc.) are unaffected.
 
 ### Setting Page Width
 
@@ -146,9 +177,8 @@ This enables:
 **Example workflow for syncing a file:**
 
 ```bash
-# If confluence_page_id exists in frontmatter, update (always include --title):
-orbit -p myprofile confluence update 473676972036 \
-  --title "Overview" --file docs/overview.md
+# If confluence_page_id exists in frontmatter, update (title auto-read from frontmatter):
+orbit -p myprofile confluence update 473676972036 --file docs/overview.md
 
 # If no confluence_page_id, create new:
 orbit -p myprofile confluence create --space FO --parent 473677299713 \

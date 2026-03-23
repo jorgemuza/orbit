@@ -60,6 +60,46 @@ orbit confluence page 123456789 -p myprofile --service wiki-prod
 
 ---
 
+## search
+
+Search Confluence pages using CQL or convenience filters.
+
+```
+orbit confluence search [query] [flags] -p myprofile
+```
+
+**Flags:**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--space` | string | | Filter by space key. |
+| `--title` | string | | Search by title (fuzzy match). |
+| `--label` | string | | Filter by label. |
+| `--text` | string | | Full-text search. |
+| `--cql` | string | | Raw CQL query (overrides other filters). |
+| `--limit` | int | 25 | Maximum results. |
+
+**Examples:**
+
+```bash
+# Search by space
+orbit confluence search --space ISMS --limit 100 -p myprofile
+
+# Search by title
+orbit confluence search --space FO --title "Architecture" -p myprofile
+
+# Search by label
+orbit confluence search --space FO --label design -p myprofile
+
+# Full-text search
+orbit confluence search --space FO --text "deployment pipeline" -p myprofile
+
+# Raw CQL query
+orbit confluence search --cql 'space=FO AND label=design AND type=page' -p myprofile
+```
+
+---
+
 ## children
 
 List the child pages of a given Confluence page.

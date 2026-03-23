@@ -6,6 +6,7 @@ Complete reference for all `orbit confluence` commands with flags and examples.
 
 - [Global Flags](#global-flags)
 - [page — View Page](#page)
+- [search — Search Pages](#search)
 - [children — List Child Pages](#children)
 - [hierarchy — Show Page Hierarchy](#hierarchy)
 - [create — Create Page](#create)
@@ -54,6 +55,35 @@ URL:     https://paybook.atlassian.net/wiki/spaces/FO/pages/473676972036
 ```
 
 **Output (json format):** Full page object including `body.storage.value` with the page content in Confluence storage format.
+
+---
+
+## search
+
+Search Confluence pages using CQL or convenience filters.
+
+```
+orbit confluence search [query] [flags]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--space` | string | | Filter by space key |
+| `--title` | string | | Search by title (fuzzy match, CQL `~`) |
+| `--label` | string | | Filter by label |
+| `--text` | string | | Full-text search |
+| `--cql` | string | | Raw CQL query (overrides other filters) |
+| `--limit` | int | 25 | Maximum results |
+
+A positional argument is treated as a text search term.
+
+```bash
+orbit -p myprofile confluence search --space FO --title "Architecture"
+orbit -p myprofile confluence search --space ISMS --limit 100
+orbit -p myprofile confluence search --space FO --label design
+orbit -p myprofile confluence search --cql 'space=FO AND label=design AND type=page'
+orbit -p myprofile confluence search "deployment pipeline"
+```
 
 ---
 
