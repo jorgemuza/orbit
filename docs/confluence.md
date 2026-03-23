@@ -266,6 +266,38 @@ orbit confluence delete 123456789 -p myprofile
 
 ---
 
+## export
+
+Export a Confluence page as markdown or raw storage format.
+
+```
+orbit confluence export [page-id] [flags] -p myprofile
+```
+
+**Flags:**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--format` | string | `markdown` | Output format: `markdown` or `storage`. |
+| `--output` | string | | Output directory (prints to stdout if omitted). |
+
+Markdown export includes YAML frontmatter with page metadata (`confluence_page_id`, `confluence_space`, `confluence_url`).
+
+**Examples:**
+
+```bash
+# Export as markdown to stdout
+orbit confluence export 12345 -p myprofile
+
+# Export as markdown to a directory
+orbit confluence export 12345 --format markdown --output docs/ -p myprofile
+
+# Export raw storage format (Confluence XHTML)
+orbit confluence export 12345 --format storage --output backup/ -p myprofile
+```
+
+---
+
 ## publish
 
 Publish an entire directory of markdown files to Confluence. This command creates or updates a tree of pages that mirrors the directory structure.

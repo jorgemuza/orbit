@@ -11,6 +11,7 @@ Complete reference for all `orbit confluence` commands with flags and examples.
 - [hierarchy — Show Page Hierarchy](#hierarchy)
 - [create — Create Page](#create)
 - [update — Update Page](#update)
+- [export — Export Page](#export)
 - [publish — Publish Directory](#publish)
 - [set-width — Set Page Width](#set-width)
 
@@ -217,6 +218,34 @@ orbit -p paybook confluence update 473676972036 \
 - The command automatically fetches the current page version and increments it
 - If `--title` is not provided, the existing title is preserved
 - When using `--file`, the title from the markdown file is NOT used — provide `--title` explicitly if you want to change it
+
+---
+
+## export
+
+Export a Confluence page as markdown or raw storage format.
+
+```
+orbit confluence export [page-id] [flags]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--format` | string | `markdown` | Output format: `markdown`, `storage` |
+| `--output` | string | | Output directory (prints to stdout if omitted) |
+
+Markdown export includes frontmatter with `confluence_page_id`, `confluence_space`, and `confluence_url`. Storage export saves the raw Confluence XHTML.
+
+```bash
+# Export page as markdown to stdout
+orbit -p myprofile confluence export 12345
+
+# Export page as markdown to a directory
+orbit -p myprofile confluence export 12345 --format markdown --output docs/
+
+# Export raw storage format
+orbit -p myprofile confluence export 12345 --format storage --output backup/
+```
 
 ---
 
