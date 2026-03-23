@@ -139,6 +139,47 @@ orbit gl project list --search "api" --limit 10 -p myprofile
 
 ---
 
+## project activity
+
+List projects with recent activity, showing which branches received pushes.
+
+```
+orbit gitlab project activity [flags] -p myprofile
+```
+
+**Flags:**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--since` | string | | Show activity since date (YYYY-MM-DD). |
+| `--days` | int | | Show activity from the last N days. |
+| `--group` | string | | Filter to projects in a group (ID or path). |
+| `--branch` | string | | Filter by branch names (comma-separated). |
+| `--limit` | int | 100 | Maximum projects to scan. |
+
+When neither `--since` nor `--days` is provided, defaults to today.
+
+**Examples:**
+
+```bash
+# Projects with activity today
+orbit gl project activity -p myprofile
+
+# Activity in the last 7 days
+orbit gl project activity --days 7 -p myprofile
+
+# Activity since a specific date
+orbit gl project activity --since 2026-03-20 -p myprofile
+
+# Scoped to a group
+orbit gl project activity --group schools --days 3 -p myprofile
+
+# Only show activity on specific branches
+orbit gl project activity --branch development,master -p myprofile
+```
+
+---
+
 ## group
 
 Manage and view GitLab groups.
