@@ -136,6 +136,19 @@ graph LR
 
 This renders as a PNG image (max 800px height) with a clickable link to the full-resolution image. Regular code blocks (`python`, `go`, `bash`, etc.) are unaffected.
 
+### Exporting Pages
+
+```bash
+# Export page as markdown (default)
+orbit -p myprofile confluence export 12345
+
+# Export to a directory
+orbit -p myprofile confluence export 12345 --format markdown --output docs/
+
+# Export raw storage format
+orbit -p myprofile confluence export 12345 --format storage --output backup/
+```
+
 ### Setting Page Width
 
 ```bash
