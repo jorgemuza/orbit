@@ -141,12 +141,14 @@ This renders as a PNG image (max 600px wide, 800px tall — auto-scaled) with a 
 - Parenthesized suffixes in participant aliases converted: `Worker (queue)` → `Worker - queue`
 - Trailing `()` on participant names removed
 - Port numbers after colons removed: `API:8000` → `API`
+- Reverse arrows flipped: `Client<<--API: msg` → `API-->>Client: msg`
 
 **When writing Mermaid diagrams for Confluence publishing, avoid:**
 - HTML tags (`<br/>`) in participant names or notes
 - Colons in participant alias text (e.g., `API:8000`)
 - Parentheses in participant aliases (e.g., `Worker(queue)`)
 - Function-call syntax in aliases (e.g., `dispatch()`)
+- Reverse arrows (`<<--`) — Mermaid only supports left-to-right arrows
 - ASCII box-drawing characters — use proper Mermaid syntax instead
 
 ### Exporting Pages
