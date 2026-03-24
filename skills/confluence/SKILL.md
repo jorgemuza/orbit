@@ -134,7 +134,20 @@ graph LR
 ```
 ````
 
-This renders as a PNG image (max 800px height) with a clickable link to the full-resolution image. Regular code blocks (`python`, `go`, `bash`, etc.) are unaffected.
+This renders as a PNG image (max 600px wide, 800px tall — auto-scaled) with a clickable link to the full-resolution image. Regular code blocks (`python`, `go`, `bash`, etc.) are unaffected. If Kroki rejects a diagram (syntax error), it falls back to a syntax-highlighted code block.
+
+**Mermaid diagrams are auto-sanitized** before rendering to fix common Kroki compatibility issues:
+- `<br/>` tags stripped (replaced with `. `)
+- Parenthesized suffixes in participant aliases converted: `Worker (queue)` → `Worker - queue`
+- Trailing `()` on participant names removed
+- Port numbers after colons removed: `API:8000` → `API`
+
+**When writing Mermaid diagrams for Confluence publishing, avoid:**
+- HTML tags (`<br/>`) in participant names or notes
+- Colons in participant alias text (e.g., `API:8000`)
+- Parentheses in participant aliases (e.g., `Worker(queue)`)
+- Function-call syntax in aliases (e.g., `dispatch()`)
+- ASCII box-drawing characters — use proper Mermaid syntax instead
 
 ### Exporting Pages
 
