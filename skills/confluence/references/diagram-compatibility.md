@@ -14,6 +14,7 @@ These are automatically corrected by orbit during publishing:
 | Port numbers after colon | `participant API as Django API:8000` | `Django API` |
 | `<br/>` in notes | `Note right of X: line1<br/>line2` | `line1. line2` |
 | `<br/>` in messages | `A->>B: first<br/>second` | `first. second` |
+| Reverse arrows `<<--` | `Client<<--API: event` | `API-->>Client: event` (sender/receiver flipped) |
 
 ## Manual Fixes Required
 
