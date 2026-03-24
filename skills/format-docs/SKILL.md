@@ -243,15 +243,50 @@ Fix markdown patterns that don't convert well to Confluence:
 | GitHub-flavored alerts (`> [!NOTE]`) | Keep as-is — the converter handles these |
 | MkDocs admonitions (`!!! note`) | Keep as-is — the converter handles these |
 
-### 5. Confluence-Specific Enhancements
+### 5. Diagram Formatting
+
+Fenced code blocks with diagram languages (`mermaid`, `plantuml`, `graphviz`, `d2`, etc.) are rendered as PNG images via kroki.io during Confluence publishing. Orbit auto-sanitizes common issues, but source diagrams should follow these rules for best results.
+
+**Auto-fixed by orbit** (no manual action needed):
+- `<br/>` tags in participant names, notes, and messages → stripped
+- Parenthesized suffixes in participant aliases: `Worker (queue)` → `Worker - queue`
+- Trailing `()` on participant names → removed
+- Port numbers after colons: `API:8000` → `API`
+- Reverse arrows: `Client<<--API: msg` → `API-->>Client: msg`
+
+**Must be fixed manually when formatting docs:**
+
+| Issue | Fix |
+|-------|-----|
+| ASCII box-drawing (`┌┐└┘│─`) | Convert to proper Mermaid/D2/PlantUML syntax |
+| ASCII sequence diagrams (`\|-- ->`) | Convert to `sequenceDiagram` with proper arrows |
+| Bare code blocks (no language tag) with diagram-like content | Add `mermaid`, `d2`, or `plantuml` language tag |
+| State transitions as plain text (`DRAFT → ACTIVE → DEPRECATED`) | Convert to `stateDiagram-v2` |
+| Very large diagrams (15+ participants, 50+ messages) | Split into smaller diagrams |
+
+**Diagram type selection:**
+
+| Content | Best format |
+|---------|------------|
+| Request/response flows | `mermaid` sequenceDiagram |
+| State machines | `mermaid` stateDiagram-v2 |
+| Simple flowcharts | `mermaid` flowchart TD/LR |
+| Component trees | `mermaid` graph TD |
+| Entity/data models | `mermaid` erDiagram |
+| Nested architecture | `d2` |
+| Layered systems | `d2` |
+
+When encountering ASCII art or text-based diagrams in documents being formatted, convert them to the appropriate diagram language. If the diagram is too complex to convert confidently, leave it as a plain code block with a `text` language tag.
+
+### 6. Confluence-Specific Enhancements
 
 These are optional improvements that use Confluence features:
 
-- **Status badges** — Use `{status:Color|Text}` syntax in property fields (e.g., `{status:Green|Published}`)
+- **Status badges** — Use `{status:Color|Text}` syntax in property fields (e.g., `{status:Green|Published}`). Emoji shortcodes (`:green_circle: Green`) are also supported.
 - **Confluence ignore blocks** — Wrap sections that should only appear in markdown (not Confluence) with `<!-- confluence:ignore-start -->` and `<!-- confluence:ignore-end -->`. In INDEX.md files, all child page tables must be wrapped (see Directory-Level Checks above).
 - **Properties report** — Every INDEX.md must include a properties report directive. See the INDEX.md structure in Directory-Level Checks for the exact pattern.
 
-### 6. Dry Run
+### 7. Dry Run
 
 After making changes, suggest the user verify with:
 
