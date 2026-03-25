@@ -111,6 +111,28 @@ orbit -p myprofile gl pipeline cancel 595 12345
 
 Pipeline aliases: `pipeline`, `pipe`, `ci` — so `orbit gl ci list 595` works too.
 
+# List pipeline schedules
+orbit -p myprofile gl schedule list 595
+
+# Create a nightly schedule
+orbit -p myprofile gl schedule create 595 --desc "Nightly build" --ref main --cron "0 2 * * *"
+
+# Trigger a schedule immediately
+orbit -p myprofile gl schedule run 595 42
+
+# Update schedule cron or disable it
+orbit -p myprofile gl schedule update 595 42 --cron "0 3 * * *"
+orbit -p myprofile gl schedule update 595 42 --active=false
+
+# Add/remove schedule variables
+orbit -p myprofile gl schedule var 595 42 DEPLOY_ENV production
+orbit -p myprofile gl schedule var-delete 595 42 DEPLOY_ENV
+
+# Delete a schedule
+orbit -p myprofile gl schedule delete 595 42
+
+Schedule aliases: `schedule`, `sched`.
+
 ### Branches and Tags
 
 ```bash
