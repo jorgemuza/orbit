@@ -222,6 +222,14 @@ orbit -p myprofile gl mr create 595 \
   --source feature/login --target main --title "Add login page"
 ```
 
+### `gitlab mr close <project> <mr-iid>`
+
+Close a merge request.
+
+```
+orbit -p myprofile gl mr close 595 42
+```
+
 ### `gitlab mr merge <project> <mr-iid>`
 
 Merge a merge request.
