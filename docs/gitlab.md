@@ -487,6 +487,22 @@ orbit gl mr create schools/frontend/my-app \
   -p myprofile
 ```
 
+### mr close
+
+Close a merge request.
+
+```
+orbit gitlab mr close [project] [mr-iid] -p myprofile
+```
+
+**Examples:**
+
+```bash
+orbit gl mr close 595 42 -p myprofile
+```
+
+---
+
 ### mr merge
 
 Merge a merge request.
