@@ -5,7 +5,7 @@ description: "Create and manage GitLab projects, merge requests, pipelines, issu
 
 # GitLab with orbit CLI
 
-Manage GitLab projects, merge requests, pipelines, issues, branches, tags, commits, members, and users through the `orbit` CLI. Works with both GitLab Cloud and self-hosted instances via REST API v4, with multi-profile support and 1Password secret resolution.
+Manage GitLab projects, merge requests, pipelines, pipeline schedules, issues, branches, tags, commits, members, and users through the `orbit` CLI. Works with both GitLab Cloud and self-hosted instances via REST API v4, with multi-profile support and 1Password secret resolution.
 
 ## Prerequisites
 

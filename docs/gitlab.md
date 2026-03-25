@@ -22,6 +22,7 @@ Projects can be specified by numeric ID or full path (e.g., `schools/frontend/my
 - [commit](#commit)
 - [mr (merge-request)](#mr)
 - [pipeline](#pipeline)
+- [schedule](#schedule)
 - [job](#job)
 - [runner](#runner)
 - [issue](#issue)
@@ -644,6 +645,121 @@ orbit gitlab pipeline cancel [project] [pipeline-id] -p myprofile
 
 ```bash
 orbit gl ci cancel schools/frontend/my-app 98765 -p myprofile
+```
+
+---
+
+## schedule
+
+Manage pipeline schedules (alias: `sched`).
+
+### schedule list
+
+List all pipeline schedules for a project.
+
+```
+orbit gitlab schedule list [project] -p myprofile
+```
+
+**Examples:**
+
+```bash
+orbit gl schedule list 595 -p myprofile
+```
+
+### schedule view
+
+View details of a specific schedule.
+
+```
+orbit gitlab schedule view [project] [schedule-id] -p myprofile
+```
+
+### schedule create
+
+Create a new pipeline schedule.
+
+```
+orbit gitlab schedule create [project] [flags] -p myprofile
+```
+
+**Flags:**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--desc` | string | | Schedule description (required). |
+| `--ref` | string | `main` | Branch or tag to run. |
+| `--cron` | string | | Cron expression (required). |
+| `--timezone` | string | `UTC` | Cron timezone. |
+
+**Examples:**
+
+```bash
+# Nightly build at 2am UTC
+orbit gl schedule create 595 --desc "Nightly build" --ref main --cron "0 2 * * *" -p myprofile
+
+# Weekly deploy on Mondays at 9am Mexico City time
+orbit gl schedule create 595 --desc "Weekly deploy" --cron "0 9 * * 1" --timezone "America/Mexico_City" -p myprofile
+```
+
+### schedule update
+
+Update an existing schedule.
+
+```
+orbit gitlab schedule update [project] [schedule-id] [flags] -p myprofile
+```
+
+**Flags:**
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--desc` | string | Schedule description. |
+| `--ref` | string | Branch or tag. |
+| `--cron` | string | Cron expression. |
+| `--timezone` | string | Cron timezone. |
+| `--active` | bool | Enable or disable the schedule. |
+
+**Examples:**
+
+```bash
+# Change cron expression
+orbit gl schedule update 595 42 --cron "0 3 * * *" -p myprofile
+
+# Disable a schedule
+orbit gl schedule update 595 42 --active=false -p myprofile
+```
+
+### schedule delete
+
+Delete a pipeline schedule.
+
+```bash
+orbit gl schedule delete 595 42 -p myprofile
+```
+
+### schedule run
+
+Trigger a scheduled pipeline immediately.
+
+```bash
+orbit gl schedule run 595 42 -p myprofile
+```
+
+### schedule var
+
+Add a variable to a pipeline schedule.
+
+```bash
+orbit gl schedule var 595 42 DEPLOY_ENV production -p myprofile
+```
+
+### schedule var-delete
+
+Delete a variable from a pipeline schedule.
+
+```bash
+orbit gl schedule var-delete 595 42 DEPLOY_ENV -p myprofile
 ```
 
 ---
