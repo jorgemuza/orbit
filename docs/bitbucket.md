@@ -478,6 +478,8 @@ View the activity feed of a pull request (comments, approvals, status changes).
 orbit bb pr activity TEAM my-service 42 -p myprofile
 ```
 
+Nested comment replies are shown with indentation — all reply threads are traversed recursively.
+
 ---
 
 ## user

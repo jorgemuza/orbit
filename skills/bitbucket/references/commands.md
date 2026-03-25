@@ -245,6 +245,8 @@ List pull request activity — comments, approvals, merges, status changes.
 
 **Activity types shown:** COMMENTED, APPROVED, REVIEWED (needs work), MERGED, DECLINED, OPENED
 
+Nested comment replies are shown with indentation — all reply threads are traversed recursively so no responses are hidden.
+
 ---
 
 ## user
