@@ -193,6 +193,44 @@ orbit tkm clear --confirm --project /path/to/project
 3. Each assistant response with token usage is extracted, cost is calculated using per-model pricing, and stored in a local SQLite database at `~/.config/orbit/tkm.db`
 4. Incremental parsing uses byte-offset tracking to avoid re-reading entire files
 
+## Architecture: RTK + orbit tkm
+
+Token management has two complementary sides:
+
+| Component | Role | What it does |
+|-----------|------|-------------|
+| **[RTK](https://github.com/rtk-ai/rtk)** | Compression | Intercepts command output (git, grep, npm, etc.) and compresses it before it reaches the LLM. Saves 60-90% of input tokens. |
+| **orbit tkm** | Analytics | Tracks token consumption, calculates costs per model, and reports usage trends over time. |
+
+RTK and orbit tkm are **complementary** — RTK reduces what goes in, tkm measures what came out. RTK is optional; tkm works standalone for usage tracking and cost analysis even without RTK installed.
+
+### Setup with RTK (recommended)
+
+```bash
+# Install RTK
+brew install rtk-ai/tap/rtk
+
+# Set up Claude Code hooks (auto-rewrites commands for compression)
+rtk init -g
+
+# Verify
+rtk verify
+```
+
+Once RTK is active, commands like `git status` are automatically rewritten to `rtk git status` via a Claude Code PreToolUse hook. The compressed output uses fewer tokens, and tkm tracks the actual consumption.
+
+### Setup without RTK
+
+orbit tkm works standalone — just install orbit and run `orbit tkm status`. It reads Claude Code session files directly and calculates costs. You won't get compression savings, but you'll have full visibility into token usage and costs.
+
+### How they work together
+
+```
+Claude Code → PreToolUse hook → RTK compresses command output → LLM receives fewer tokens
+                                                                        ↓
+Claude Code → session JSONL → orbit tkm ingests → usage dashboard, cost reports
+```
+
 ## Default Model Pricing (per million tokens)
 
 | Model | Input | Output | Cache Read | Cache Write |

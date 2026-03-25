@@ -117,6 +117,28 @@ orbit tkm sessions -o json > sessions.json
 - **Incremental:** Only parses new data since last sync (byte-offset tracking)
 - **Retention:** Skips files older than 90 days
 
+## RTK Integration (Optional)
+
+[RTK](https://github.com/rtk-ai/rtk) is a companion tool that compresses command output before it reaches the LLM, saving 60-90% of input tokens. orbit tkm handles the analytics side.
+
+| Tool | Role |
+|------|------|
+| **RTK** | Compresses command output (git, grep, npm, etc.) |
+| **orbit tkm** | Tracks usage, calculates costs, reports trends |
+
+RTK is optional — tkm works standalone. To add RTK compression:
+
+```bash
+# Install RTK
+brew install rtk-ai/tap/rtk
+
+# Set up Claude Code hooks
+rtk init -g
+
+# Verify compression is working
+rtk verify
+```
+
 ## Model Pricing
 
 Default pricing (per million tokens):
