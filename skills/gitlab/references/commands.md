@@ -11,6 +11,7 @@ Complete reference for all `orbit gitlab` (alias: `gl`) commands and flags.
 - [commit](#commit)
 - [mr (merge request)](#mr-merge-request)
 - [pipeline (aliases: pipe, ci)](#pipeline)
+- [schedule (alias: sched)](#schedule)
 - [issue](#issue)
 - [member](#member)
 - [user](#user)
@@ -284,6 +285,91 @@ Retry a pipeline (re-runs failed jobs).
 ### `gitlab pipeline cancel <project> <pipeline-id>`
 
 Cancel a running pipeline.
+
+---
+
+## schedule
+
+### `gitlab schedule list <project>`
+
+List pipeline schedules.
+
+```
+orbit -p myprofile gl schedule list 595
+```
+
+### `gitlab schedule view <project> <schedule-id>`
+
+View schedule details.
+
+```
+orbit -p myprofile gl schedule view 595 42
+```
+
+### `gitlab schedule create <project>`
+
+Create a pipeline schedule.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--desc` | | Schedule description (required) |
+| `--ref` | `main` | Branch or tag to run |
+| `--cron` | | Cron expression (required) |
+| `--timezone` | `UTC` | Cron timezone |
+
+```
+orbit -p myprofile gl schedule create 595 --desc "Nightly build" --ref main --cron "0 2 * * *"
+orbit -p myprofile gl schedule create 595 --desc "Weekly deploy" --cron "0 9 * * 1" --timezone "America/Mexico_City"
+```
+
+### `gitlab schedule update <project> <schedule-id>`
+
+Update a pipeline schedule.
+
+| Flag | Description |
+|------|-------------|
+| `--desc` | Schedule description |
+| `--ref` | Branch or tag |
+| `--cron` | Cron expression |
+| `--timezone` | Cron timezone |
+| `--active` | Enable/disable (`true`/`false`) |
+
+```
+orbit -p myprofile gl schedule update 595 42 --cron "0 3 * * *"
+orbit -p myprofile gl schedule update 595 42 --active=false
+```
+
+### `gitlab schedule delete <project> <schedule-id>`
+
+Delete a pipeline schedule.
+
+```
+orbit -p myprofile gl schedule delete 595 42
+```
+
+### `gitlab schedule run <project> <schedule-id>`
+
+Trigger a scheduled pipeline immediately.
+
+```
+orbit -p myprofile gl schedule run 595 42
+```
+
+### `gitlab schedule var <project> <schedule-id> <key> <value>`
+
+Add a variable to a schedule.
+
+```
+orbit -p myprofile gl schedule var 595 42 DEPLOY_ENV production
+```
+
+### `gitlab schedule var-delete <project> <schedule-id> <key>`
+
+Delete a variable from a schedule.
+
+```
+orbit -p myprofile gl schedule var-delete 595 42 DEPLOY_ENV
+```
 
 ---
 
