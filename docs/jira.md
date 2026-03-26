@@ -390,28 +390,26 @@ orbit jira issue delete PRT-200 -p myprofile             # Capability
 
 ### issue comment
 
-Add a comment to an issue.
+Add a comment to an issue. Body can be passed as `--body` flag or as a positional argument.
 
 ```
-orbit jira issue comment [issue-key] [flags] -p myprofile
+orbit jira issue comment [issue-key] [body...] [flags] -p myprofile
 ```
-
-#### Arguments
-
-| Argument | Description |
-|----------|-------------|
-| `issue-key` | The Jira issue key |
 
 #### Flags
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--body` | `-b` | Comment body text |
+| Flag | Description |
+|------|-------------|
+| `--body` | Comment body text (alternative to positional argument) |
 
 #### Examples
 
 ```bash
-orbit jira issue comment MYPROJ-123 -b "This has been deployed to staging." -p myprofile
+# Using --body flag
+orbit jira issue comment MYPROJ-123 --body "This has been deployed to staging." -p myprofile
+
+# Using positional argument
+orbit jira issue comment MYPROJ-123 "This has been deployed to staging." -p myprofile
 ```
 
 ---

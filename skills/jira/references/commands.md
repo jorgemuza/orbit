@@ -309,10 +309,11 @@ orbit -p profile jira issue delete <issue-key> [flags]
 
 ### issue comment
 
-Add a comment to an issue. Supports @mentions using Jira mention syntax.
+Add a comment to an issue. Body can be passed as `--body` flag or as a positional argument. Supports @mentions using Jira mention syntax.
 
 ```bash
-orbit -p profile jira issue comment <issue-key> -b <body>
+orbit -p profile jira issue comment <issue-key> --body <body>
+orbit -p profile jira issue comment <issue-key> "comment text"
 ```
 
 **Mentioning users in comments:**
