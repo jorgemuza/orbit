@@ -2075,6 +2075,35 @@ orbit gocd job run --pipeline my-pipeline --stage my-stage --pipeline-counter 1 
 
 ---
 
+### job log
+
+View console output for a job run. Aliases: `logs`, `console`.
+
+```
+orbit gocd job log --pipeline <name> --stage <name> --job <name> --pipeline-counter <N> [flags]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--pipeline` | Yes | | Pipeline name. |
+| `--stage` | Yes | | Stage name. |
+| `--job` | Yes | | Job name. |
+| `--pipeline-counter` | Yes | | Pipeline counter. |
+| `--stage-counter` | No | 1 | Stage counter. |
+| `--tail` | No | 0 | Show only the last N lines. |
+
+**Examples:**
+
+```bash
+# Full console log
+orbit cd job log --pipeline my-pipeline --stage build --job compile --pipeline-counter 42 -p myprofile
+
+# Last 50 lines only
+orbit cd job log --pipeline deploy --stage prod --job deploy-app --pipeline-counter 10 --tail 50 -p myprofile
+```
+
+---
+
 ## server
 
 Manage GoCD server.

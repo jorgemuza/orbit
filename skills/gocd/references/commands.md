@@ -40,6 +40,11 @@ Get a pipeline instance.
 |------|---------|-------------|
 | `--counter` | `0` | Pipeline counter (0 = latest) |
 
+### `orbit gocd pipeline config <name>`
+Get the admin configuration of a pipeline, including materials (repos, branches), stages, jobs, environment variables, and template info. Uses the GoCD Admin API (v11).
+
+Table output shows a human-readable summary. Use `-o json` or `-o yaml` for the full pipeline configuration object (useful for inspecting or modifying and passing to `pipeline update`).
+
 ### `orbit gocd pipeline trigger <name>`
 Schedule a pipeline run.
 
@@ -631,6 +636,23 @@ Run specific jobs in a stage.
 | `--pipeline-counter` | Yes | Pipeline counter |
 | `--stage-counter` | Yes | Stage counter |
 | `--job` | Yes | Job name to run (repeatable) |
+
+### `orbit gocd job log`
+View console output for a job run. Aliases: `logs`, `console`.
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--pipeline` | Yes | | Pipeline name |
+| `--stage` | Yes | | Stage name |
+| `--job` | Yes | | Job name |
+| `--pipeline-counter` | Yes | | Pipeline counter |
+| `--stage-counter` | No | 1 | Stage counter |
+| `--tail` | No | 0 | Show only the last N lines |
+
+```
+orbit -p myprofile cd job log --pipeline my-pipeline --stage build --job compile --pipeline-counter 42
+orbit -p myprofile cd job log --pipeline deploy --stage prod --job deploy-app --pipeline-counter 10 --tail 50
+```
 
 ## Server Commands
 

@@ -1,6 +1,6 @@
 ---
 name: gocd
-description: "Manage GoCD pipelines, pipeline groups, agents, environments, config repos, server administration, users, roles, authorization configs, plugins, backups, materials, artifact stores, elastic agent profiles, cluster profiles, stages, jobs, server configuration, templates, packages, package repositories, notification filters, dashboard, access tokens, secret configs, and server version using the orbit CLI. Use this skill whenever the user asks about GoCD pipelines, agents, environments, config repos, server health, maintenance mode, CI/CD operations, pipeline groups, users, roles, auth configs, plugins, backups, materials, artifact stores, elastic agents, stages, jobs, templates, packages, package repositories, notification filters, dashboard, access tokens, secret configs, or server version on GoCD. Trigger on phrases like 'list pipelines', 'create pipeline', 'delete pipeline', 'pipeline status', 'trigger a build', 'pause pipeline', 'list agents', 'enable agent', 'disable agent', 'kill running tasks', 'agent job history', 'list environments', 'create environment', 'patch environment', 'config repo status', 'create config repo', 'preflight check', 'server health', 'maintenance mode', 'encrypt a value', 'list users', 'create user', 'list roles', 'auth config', 'list plugins', 'schedule backup', 'list materials', 'artifact store', 'elastic agent profile', 'cluster profile', 'cancel stage', 'run stage', 'run job', 'site url', 'job timeout', 'mail server config', 'pipeline group', 'list templates', 'create template', 'dashboard', 'access tokens', 'secret config', 'compare pipelines', 'lock pipeline', 'unlock pipeline', 'server version', 'notification filters', 'list packages', 'package repository', 'current user', or any GoCD-related task — even casual references like 'what pipelines are running', 'is the agent idle', 'check the build', 'schedule a run', 'put server in maintenance', 'check config repo sync', 'who has access', 'what plugins are installed', or 'GoCD status'. The orbit CLI alias is `cd`."
+description: "Manage GoCD pipelines, pipeline groups, agents, environments, config repos, server administration, users, roles, authorization configs, plugins, backups, materials, artifact stores, elastic agent profiles, cluster profiles, stages, jobs, server configuration, templates, packages, package repositories, notification filters, dashboard, access tokens, secret configs, and server version using the orbit CLI. Use this skill whenever the user asks about GoCD pipelines, agents, environments, config repos, server health, maintenance mode, CI/CD operations, pipeline groups, users, roles, auth configs, plugins, backups, materials, artifact stores, elastic agents, stages, jobs, templates, packages, package repositories, notification filters, dashboard, access tokens, secret configs, or server version on GoCD. Trigger on phrases like 'list pipelines', 'create pipeline', 'delete pipeline', 'pipeline status', 'pipeline config', 'pipeline materials', 'what branch', 'trigger a build', 'pause pipeline', 'list agents', 'enable agent', 'disable agent', 'kill running tasks', 'agent job history', 'list environments', 'create environment', 'patch environment', 'config repo status', 'create config repo', 'preflight check', 'server health', 'maintenance mode', 'encrypt a value', 'list users', 'create user', 'list roles', 'auth config', 'list plugins', 'schedule backup', 'list materials', 'artifact store', 'elastic agent profile', 'cluster profile', 'cancel stage', 'run stage', 'run job', 'site url', 'job timeout', 'mail server config', 'pipeline group', 'list templates', 'create template', 'dashboard', 'access tokens', 'secret config', 'compare pipelines', 'lock pipeline', 'unlock pipeline', 'server version', 'notification filters', 'list packages', 'package repository', 'current user', or any GoCD-related task — even casual references like 'what pipelines are running', 'is the agent idle', 'check the build', 'schedule a run', 'put server in maintenance', 'check config repo sync', 'who has access', 'what plugins are installed', or 'GoCD status'. The orbit CLI alias is `cd`."
 ---
 
 # GoCD with orbit CLI
@@ -82,6 +82,10 @@ orbit -p myprofile gocd pipeline history my-pipeline --limit 5
 
 # Get a specific pipeline instance
 orbit -p myprofile gocd pipeline get my-pipeline --counter 42
+
+# Get pipeline admin config (materials, stages, env vars)
+orbit -p myprofile cd pipeline config my-pipeline
+orbit -p myprofile cd pipeline config my-pipeline -o json
 
 # Trigger a pipeline run
 orbit -p myprofile cd pipeline trigger my-pipeline
@@ -329,6 +333,12 @@ orbit -p myprofile cd stage run --pipeline my-pipeline --counter 5 --stage build
 
 # Run specific jobs in a stage
 orbit -p myprofile cd job run --pipeline my-pipeline --stage build --pipeline-counter 5 --stage-counter 1 --job unit-test --job integration-test
+
+# View job console log
+orbit -p myprofile cd job log --pipeline my-pipeline --stage build --job compile --pipeline-counter 42
+
+# View last 50 lines of job log
+orbit -p myprofile cd job log --pipeline deploy --stage prod --job deploy-app --pipeline-counter 10 --tail 50
 ```
 
 ### Server Administration
