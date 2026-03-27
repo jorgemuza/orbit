@@ -138,6 +138,40 @@ Delete a branch.
 orbit -p myprofile gl branch delete 595 feature/old-thing
 ```
 
+### `gitlab branch protect <project> <branch>`
+
+Protect a branch with push, merge, and unprotect access controls.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--push` | `maintainer` | Push access: `no-access`, `developer`, `maintainer`, `admin` |
+| `--merge` | `maintainer` | Merge access: `no-access`, `developer`, `maintainer`, `admin` |
+| `--unprotect` | | Unprotect access level |
+| `--allow-force-push` | `false` | Allow force push |
+| `--allowed-to-push` | | User IDs allowed to push (repeatable) |
+| `--allowed-to-merge` | | User IDs allowed to merge (repeatable) |
+
+```
+orbit -p myprofile gl branch protect 650 main --push no-access --merge maintainer
+orbit -p myprofile gl branch protect 650 main --push no-access --merge maintainer --allowed-to-push 12
+```
+
+### `gitlab branch unprotect <project> <branch>`
+
+Remove branch protection.
+
+```
+orbit -p myprofile gl branch unprotect 650 main
+```
+
+### `gitlab branch protections <project>`
+
+List all protected branches with push/merge access levels.
+
+```
+orbit -p myprofile gl branch protections 650
+```
+
 ---
 
 ## tag

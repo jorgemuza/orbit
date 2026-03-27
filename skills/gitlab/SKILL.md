@@ -148,6 +148,15 @@ orbit -p myprofile gl branch create 595 feature/new-thing main
 # Delete a branch
 orbit -p myprofile gl branch delete 595 feature/old-thing
 
+# Protect a branch (only maintainers can merge, no direct push)
+orbit -p myprofile gl branch protect 650 main --push no-access --merge maintainer
+
+# List protected branches
+orbit -p myprofile gl branch protections 650
+
+# Remove protection
+orbit -p myprofile gl branch unprotect 650 main
+
 # List tags
 orbit -p myprofile gl tag list 595
 

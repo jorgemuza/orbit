@@ -316,6 +316,60 @@ orbit gl branch delete schools/frontend/my-app feature/old-feature -p myprofile
 
 ---
 
+### branch protect
+
+Protect a branch with push, merge, and unprotect access controls. If the branch is already protected, the existing rules are replaced.
+
+```
+orbit gitlab branch protect [project] [branch] [flags] -p myprofile
+```
+
+**Flags:**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--push` | string | `maintainer` | Push access: `no-access`, `developer`, `maintainer`, `admin`. |
+| `--merge` | string | `maintainer` | Merge access: `no-access`, `developer`, `maintainer`, `admin`. |
+| `--unprotect` | string | | Unprotect access level. |
+| `--allow-force-push` | bool | `false` | Allow force push. |
+| `--allowed-to-push` | int[] | | User IDs allowed to push (repeatable). |
+| `--allowed-to-merge` | int[] | | User IDs allowed to merge (repeatable). |
+
+**Examples:**
+
+```bash
+# Only maintainers can push and merge
+orbit gl branch protect 650 main --push maintainer --merge maintainer -p myprofile
+
+# No direct push, only maintainers can merge MRs
+orbit gl branch protect 650 main --push no-access --merge maintainer -p myprofile
+
+# Allow specific user to push by user ID
+orbit gl branch protect 650 main --push no-access --merge maintainer --allowed-to-push 12 -p myprofile
+```
+
+---
+
+### branch unprotect
+
+Remove branch protection.
+
+```bash
+orbit gl branch unprotect 650 main -p myprofile
+```
+
+---
+
+### branch protections
+
+List all protected branches with push/merge access levels.
+
+```bash
+orbit gl branch protections 650 -p myprofile
+```
+
+---
+
 ## tag
 
 Manage tags in a project.
