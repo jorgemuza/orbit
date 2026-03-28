@@ -46,6 +46,21 @@ orbit -p myprofile gh repos --org kubernetes
 
 # List repos with limit
 orbit -p myprofile gh repos --limit 10
+
+# Edit repo settings
+orbit -p myprofile gh repo edit Paybook/ai --description "Updated"
+
+# Archive a repo
+orbit -p myprofile gh repo edit Paybook/ai --archived
+
+# List collaborators
+orbit -p myprofile gh repo collab list Paybook/ai
+
+# Add collaborator
+orbit -p myprofile gh repo collab add Paybook/ai jorgemuza --permission admin
+
+# Remove collaborator
+orbit -p myprofile gh repo collab remove Paybook/ai jorgemuza
 ```
 
 ### Working with Pull Requests

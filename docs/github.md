@@ -111,6 +111,76 @@ orbit github repos --limit 10 -p myprofile
 
 ---
 
+## repo edit
+
+Edit repository settings.
+
+```
+orbit github repo edit [owner/repo] [flags] -p myprofile
+```
+
+**Flags:**
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--description` | string | New repository description. |
+| `--private` | bool | Set private status. |
+| `--default-branch` | string | Set default branch. |
+| `--archived` | bool | Archive or unarchive the repository. |
+
+**Examples:**
+
+```bash
+# Archive a repository
+orbit gh repo edit Paybook/ai --archived -p myprofile
+
+# Unarchive a repository
+orbit gh repo edit Paybook/ai --archived=false -p myprofile
+
+# Update description
+orbit gh repo edit Paybook/ai --description "Updated description" -p myprofile
+```
+
+---
+
+## repo collaborator
+
+Manage repository collaborators (alias: `collab`).
+
+### repo collaborator list
+
+List repository collaborators with permissions.
+
+```bash
+orbit gh repo collab list Paybook/ai -p myprofile
+```
+
+### repo collaborator add
+
+Add a collaborator to a repository.
+
+```
+orbit github repo collaborator add [owner/repo] [username] [flags] -p myprofile
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--permission` | `push` | Permission: `pull`, `triage`, `push`, `maintain`, `admin`. |
+
+```bash
+orbit gh repo collab add Paybook/ai jorgemuza --permission admin -p myprofile
+```
+
+### repo collaborator remove
+
+Remove a collaborator from a repository.
+
+```bash
+orbit gh repo collab remove Paybook/ai jorgemuza -p myprofile
+```
+
+---
+
 ## branch
 
 Manage repository branches.

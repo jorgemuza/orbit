@@ -18,6 +18,40 @@ Flags:
 - `--org` — list repos for an organization
 - `--limit` — max results (default: 30)
 
+### `github repo edit [owner/repo]`
+Edit repository settings.
+```
+orbit gh repo edit Paybook/ai --description "New description"
+orbit gh repo edit Paybook/ai --archived              # archive repo
+orbit gh repo edit Paybook/ai --archived=false         # unarchive repo
+orbit gh repo edit Paybook/ai --private --default-branch develop
+```
+Flags:
+- `--description` — new description
+- `--private` — set private status
+- `--default-branch` — set default branch
+- `--archived` — archive or unarchive the repository
+
+### `github repo collaborator list [owner/repo]`
+List repository collaborators with permissions.
+```
+orbit gh repo collab list Paybook/ai
+```
+
+### `github repo collaborator add [owner/repo] [username]`
+Add a collaborator to a repository.
+```
+orbit gh repo collab add Paybook/ai jorgemuza --permission admin
+```
+Flags:
+- `--permission` — permission level: `pull`, `triage`, `push`, `maintain`, `admin` (default: push)
+
+### `github repo collaborator remove [owner/repo] [username]`
+Remove a collaborator from a repository.
+```
+orbit gh repo collab remove Paybook/ai jorgemuza
+```
+
 ## Pull Requests
 
 ### `github pr list [owner/repo]`
