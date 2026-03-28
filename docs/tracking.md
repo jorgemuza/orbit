@@ -1,0 +1,85 @@
+# Orbit Tracking Command Reference
+
+Push workflow events and token usage data to Draxarp Tracking for analytics and compliance reporting.
+
+Requires a profile with a `draxarp` service configured.
+
+---
+
+## event push
+
+Push a workflow event to Draxarp Tracking.
+
+```
+orbit tracking event push [flags] -p myprofile
+```
+
+**Flags:**
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--type` | string | Event type (required). E.g., `skill.completed`, `jira.transition`, `agent.invoked`. |
+| `--ticket` | string | Jira ticket ID (e.g., `PROJ-42`). |
+| `--project-key` | string | Jira project key (e.g., `PROJ`). |
+| `--skill` | string | Skill name (e.g., `execute`, `commit`). |
+| `--agent` | string | Agent name (e.g., `developer`, `architect`). |
+| `--phase-from` | string | PIV phase transitioning from. |
+| `--phase-to` | string | PIV phase transitioning to. |
+| `--status-from` | string | Jira status transitioning from. |
+| `--status-to` | string | Jira status transitioning to. |
+| `--session` | string | Claude Code session ID. |
+| `--context-reset` | int | Context reset number. |
+| `--meta` | string | JSON metadata (e.g., `'{"branch":"feature/x"}'`). |
+
+**Examples:**
+
+```bash
+# Skill completed
+orbit -p myprofile tracking event push --type "skill.completed" --ticket PROJ-42 --skill execute
+
+# Jira transition
+orbit -p myprofile tracking event push --type "jira.transition" --ticket PROJ-42 --status-to "In Code Review"
+
+# Agent invoked
+orbit -p myprofile tracking event push --type "agent.invoked" --ticket PROJ-42 --agent developer
+```
+
+---
+
+## tkm push
+
+Push unpushed token usage events from the local TKM database to Draxarp Tracking. Uses incremental sync — only pushes events not yet sent.
+
+```
+orbit tracking tkm push [flags] -p myprofile
+```
+
+**Flags:**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--batch-size` | int | 100 | Max events to push per run. |
+| `--dry-run` | bool | false | Show events without pushing. |
+
+**Examples:**
+
+```bash
+# Push unpushed events
+orbit -p myprofile tracking tkm push
+
+# Push with larger batch
+orbit -p myprofile tracking tkm push --batch-size 500
+
+# Preview without pushing
+orbit -p myprofile tracking tkm push --dry-run
+```
+
+---
+
+## How It Works
+
+1. `orbit tkm sync` ingests Claude Code session data into `~/.config/orbit/tkm.db`
+2. `orbit tracking tkm push` reads unpushed events from the local DB and sends them to Draxarp
+3. A `push_state` table tracks the last pushed event ID per target — subsequent pushes only send new events
+4. Events are sent in chunks (default 100) to the Draxarp `/api/v1/tracking/ingest/token-usage` endpoint
+5. Draxarp deduplicates by `event_hash` — re-pushing is safe

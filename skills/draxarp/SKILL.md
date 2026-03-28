@@ -57,6 +57,13 @@ The `orbit draxarp` (or `orbit dx`) command manages the Draxarp Development Inte
 | `graph` | `kg` | Knowledge graph — nodes, edges, impact analysis, subgraph, path finding |
 | `decompose` | — | AI-powered task decomposition from descriptions |
 
+### Tracking (via `orbit tracking`)
+
+| Command | Description |
+|---------|-------------|
+| `tracking event push` | Push workflow events (skill completions, Jira transitions, agent invocations) |
+| `tracking tkm push` | Push token usage data from local TKM database |
+
 ## Quick Reference
 
 ### Projects
