@@ -25,6 +25,8 @@ Alias: `orbit -p <profile> cd <command> [flags]`
 
 All commands support `-o json` and `-o yaml` for structured output. For full command details and all flags, see `references/commands.md`.
 
+For self-hosted instances with self-signed certificates, add `tls_skip_verify: true` to the service config. For proxy access, add `proxy: socks5://host:port`.
+
 ## Command Groups
 
 | Group | Alias | Description |

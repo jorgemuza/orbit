@@ -24,6 +24,8 @@ Alias: `orbit -p <profile> gl <command> [flags]`
 
 All commands support `-o json` for JSON output. For full command details and all flags, see `references/commands.md`.
 
+For self-hosted instances with self-signed certificates, add `tls_skip_verify: true` to the service config. For proxy access, add `proxy: socks5://host:port` (also supports `http://` and `https://`).
+
 ## Project Identification
 
 Projects can be referenced by numeric ID or full path:
