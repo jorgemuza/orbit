@@ -117,6 +117,23 @@ orbit tkm sessions -o json > sessions.json
 - **Incremental:** Only parses new data since last sync (byte-offset tracking)
 - **Retention:** Skips files older than 90 days
 
+## Pushing Data to Draxarp
+
+Token usage data can be pushed to Draxarp Tracking for centralized analytics:
+
+```bash
+# Push unpushed events to Draxarp
+orbit -p paybook tracking tkm push
+
+# Preview without pushing
+orbit -p paybook tracking tkm push --dry-run
+
+# Push with larger batch
+orbit -p paybook tracking tkm push --batch-size 500
+```
+
+Uses incremental sync — only pushes events not yet sent. Safe to re-run (Draxarp deduplicates by event hash).
+
 ## RTK Integration (Optional)
 
 [RTK](https://github.com/rtk-ai/rtk) is a companion tool that compresses command output before it reaches the LLM, saving 60-90% of input tokens. orbit tkm handles the analytics side.
