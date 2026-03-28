@@ -18,6 +18,40 @@ Flags:
 - `--org` — list repos for an organization
 - `--limit` — max results (default: 30)
 
+### `github repo edit [owner/repo]`
+Edit repository settings.
+```
+orbit gh repo edit my-org/my-repo --description "New description"
+orbit gh repo edit my-org/my-repo --archived              # archive repo
+orbit gh repo edit my-org/my-repo --archived=false         # unarchive repo
+orbit gh repo edit my-org/my-repo --private --default-branch develop
+```
+Flags:
+- `--description` — new description
+- `--private` — set private status
+- `--default-branch` — set default branch
+- `--archived` — archive or unarchive the repository
+
+### `github repo collaborator list [owner/repo]`
+List repository collaborators with permissions.
+```
+orbit gh repo collab list my-org/my-repo
+```
+
+### `github repo collaborator add [owner/repo] [username]`
+Add a collaborator to a repository.
+```
+orbit gh repo collab add my-org/my-repo jorgemuza --permission admin
+```
+Flags:
+- `--permission` — permission level: `pull`, `triage`, `push`, `maintain`, `admin` (default: push)
+
+### `github repo collaborator remove [owner/repo] [username]`
+Remove a collaborator from a repository.
+```
+orbit gh repo collab remove my-org/my-repo jorgemuza
+```
+
 ## Pull Requests
 
 ### `github pr list [owner/repo]`

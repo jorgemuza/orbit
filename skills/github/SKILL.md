@@ -46,6 +46,21 @@ orbit -p myprofile gh repos --org kubernetes
 
 # List repos with limit
 orbit -p myprofile gh repos --limit 10
+
+# Edit repo settings
+orbit -p myprofile gh repo edit my-org/my-repo --description "Updated"
+
+# Archive a repo
+orbit -p myprofile gh repo edit my-org/my-repo --archived
+
+# List collaborators
+orbit -p myprofile gh repo collab list my-org/my-repo
+
+# Add collaborator
+orbit -p myprofile gh repo collab add my-org/my-repo jorgemuza --permission admin
+
+# Remove collaborator
+orbit -p myprofile gh repo collab remove my-org/my-repo jorgemuza
 ```
 
 ### Working with Pull Requests
