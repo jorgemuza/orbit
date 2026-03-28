@@ -285,6 +285,8 @@ profiles:
         type: gitlab
         variant: server
         base_url: https://gitlab.internal.com
+        tls_skip_verify: true                          # skip TLS cert validation (self-signed certs)
+        proxy: socks5://127.0.0.1:1080                 # optional: SOCKS5, HTTP, or HTTPS proxy
         auth:
           method: basic
           username: admin
@@ -295,6 +297,17 @@ profiles:
           method: token
           token: "op://DevVault/github-token/credential"
 ```
+
+### Network Configuration
+
+Each service supports optional proxy and TLS settings:
+
+| Field | Description |
+|-------|-------------|
+| `proxy` | Proxy URL: `socks5://host:port`, `http://host:port`, or `https://host:port` |
+| `tls_skip_verify` | Set `true` to skip TLS certificate validation (self-signed certs) |
+
+Without explicit proxy config, orbit respects `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY` environment variables.
 
 ## Claude Code Plugin
 

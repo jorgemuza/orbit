@@ -24,6 +24,8 @@ Alias: `orbit -p <profile> bb <command> [flags]`
 
 All commands support `-o json` for JSON output. For full command details and all flags, see `references/commands.md`.
 
+For self-hosted instances with self-signed certificates, add `tls_skip_verify: true` to the service config. For proxy access, add `proxy: socks5://host:port`.
+
 ## Addressing Convention
 
 Bitbucket Server/Data Center uses **project-key + repo-slug** to identify repositories. These are the two positional arguments most commands require:
