@@ -133,6 +133,9 @@ orbit -p myprofile jira issue attach PROJ-123 screenshot.png log.txt
 
 # List attachments
 orbit -p myprofile jira issue attachments PROJ-123
+
+# Remove an attachment by ID
+orbit -p myprofile jira issue detach 12345
 ```
 
 ### Searching Issues
