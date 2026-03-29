@@ -14,6 +14,8 @@ Complete reference for all `orbit jira` commands with flags and examples.
   - [issue move](#issue-move)
   - [issue delete](#issue-delete)
   - [issue comment](#issue-comment)
+  - [issue attach](#issue-attach)
+  - [issue attachments](#issue-attachments)
   - [issue link](#issue-link)
   - [issue unlink](#issue-unlink)
   - [issue worklog](#issue-worklog)
@@ -332,6 +334,33 @@ orbit -p paybook jira issue comment PYMT-123 -b "Assigned back to [~jorge.padill
 
 # Find a user's accountId for mentions
 orbit -p paybook jira user search "Jorge"
+```
+
+---
+
+### issue attach
+
+Attach files to an issue. Aliases: `attachment`, `upload`.
+
+```bash
+orbit -p profile jira issue attach <issue-key> <file...>
+```
+
+```bash
+# Attach a single file
+orbit -p paybook jira issue attach PYMT-123 report.pdf
+
+# Attach multiple files
+orbit -p paybook jira issue attach PYMT-123 screenshot.png log.txt
+```
+
+### issue attachments
+
+List attachments on an issue.
+
+```bash
+orbit -p paybook jira issue attachments PYMT-123
+orbit -p paybook jira issue attachments PYMT-123 -o json
 ```
 
 ---
