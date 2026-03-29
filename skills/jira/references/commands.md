@@ -14,6 +14,8 @@ Complete reference for all `orbit jira` commands with flags and examples.
   - [issue move](#issue-move)
   - [issue delete](#issue-delete)
   - [issue comment](#issue-comment)
+  - [issue attach](#issue-attach)
+  - [issue attachments](#issue-attachments)
   - [issue link](#issue-link)
   - [issue unlink](#issue-unlink)
   - [issue worklog](#issue-worklog)
@@ -332,6 +334,33 @@ orbit -p myprofile jira issue comment PROJ-123 -b "Assigned back to [~john.smith
 
 # Find a user's accountId for mentions
 orbit -p myprofile jira user search "Jorge"
+```
+
+---
+
+### issue attach
+
+Attach files to an issue. Aliases: `attachment`, `upload`.
+
+```bash
+orbit -p profile jira issue attach <issue-key> <file...>
+```
+
+```bash
+# Attach a single file
+orbit -p myprofile jira issue attach PROJ-123 report.pdf
+
+# Attach multiple files
+orbit -p myprofile jira issue attach PROJ-123 screenshot.png log.txt
+```
+
+### issue attachments
+
+List attachments on an issue.
+
+```bash
+orbit -p myprofile jira issue attachments PROJ-123
+orbit -p myprofile jira issue attachments PROJ-123 -o json
 ```
 
 ---

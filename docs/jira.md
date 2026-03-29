@@ -414,6 +414,37 @@ orbit jira issue comment MYPROJ-123 "This has been deployed to staging." -p mypr
 
 ---
 
+### issue attach
+
+Attach files to an issue. Aliases: `attachment`, `upload`.
+
+```
+orbit jira issue attach [issue-key] [file...] -p myprofile
+```
+
+**Examples:**
+
+```bash
+# Attach a single file
+orbit jira issue attach PROJ-123 report.pdf -p myprofile
+
+# Attach multiple files
+orbit jira issue attach PROJ-123 screenshot.png log.txt -p myprofile
+```
+
+---
+
+### issue attachments
+
+List attachments on an issue.
+
+```bash
+orbit jira issue attachments PROJ-123 -p myprofile
+orbit jira issue attachments PROJ-123 -o json -p myprofile
+```
+
+---
+
 ### issue link
 
 Create a link between two issues.

@@ -122,6 +122,19 @@ orbit -p myprofile jira issue comment PROJ-123 -b "Hey [~accountId:5b10ac8d82e05
 orbit -p myprofile jira user search "Jorge"
 ```
 
+### Attachments
+
+```bash
+# Attach a file to an issue
+orbit -p myprofile jira issue attach PROJ-123 report.pdf
+
+# Attach multiple files
+orbit -p myprofile jira issue attach PROJ-123 screenshot.png log.txt
+
+# List attachments
+orbit -p myprofile jira issue attachments PROJ-123
+```
+
 ### Searching Issues
 
 ```bash
