@@ -300,14 +300,31 @@ profiles:
 
 ### Network Configuration
 
-Each service supports optional proxy and TLS settings:
+Proxy and TLS settings can be set at the **profile level** (applies to all services) or per **service** (overrides profile):
 
-| Field | Description |
-|-------|-------------|
-| `proxy` | Proxy URL: `socks5://host:port`, `http://host:port`, or `https://host:port` |
-| `tls_skip_verify` | Set `true` to skip TLS certificate validation (self-signed certs) |
+```yaml
+profiles:
+  - name: corp
+    proxy: socks5h://127.0.0.1:1080       # applies to all services in this profile
+    tls_skip_verify: true                   # applies to all services in this profile
+    services:
+      - name: gitlab
+        type: gitlab
+        base_url: https://gitlab.internal.com
+        # inherits proxy + tls_skip_verify from profile
+      - name: jira-cloud
+        type: jira
+        base_url: https://myco.atlassian.net
+        proxy: ""                            # override: no proxy for this service
+        tls_skip_verify: false               # override: verify TLS for this service
+```
 
-Without explicit proxy config, orbit respects `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY` environment variables.
+| Field | Level | Description |
+|-------|-------|-------------|
+| `proxy` | Profile or Service | Proxy URL: `socks5://`, `socks5h://`, `http://`, `https://` |
+| `tls_skip_verify` | Profile or Service | Skip TLS cert validation (self-signed certs) |
+
+Service-level settings override profile-level. Without any proxy config, orbit respects `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY` environment variables.
 
 ## Claude Code Plugin
 
