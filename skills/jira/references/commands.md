@@ -363,6 +363,17 @@ orbit -p paybook jira issue attachments PYMT-123
 orbit -p paybook jira issue attachments PYMT-123 -o json
 ```
 
+### issue detach
+
+Remove attachments by ID. Aliases: `rm-attachment`, `remove-attachment`.
+
+```bash
+orbit -p paybook jira issue detach 12345
+orbit -p paybook jira issue detach 12345 12346 12347
+```
+
+Use `issue attachments` to find attachment IDs first.
+
 ---
 
 ### issue link

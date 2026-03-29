@@ -445,6 +445,28 @@ orbit jira issue attachments PROJ-123 -o json -p myprofile
 
 ---
 
+### issue detach
+
+Remove attachments by ID. Aliases: `rm-attachment`, `remove-attachment`.
+
+```
+orbit jira issue detach [attachment-id...] -p myprofile
+```
+
+**Examples:**
+
+```bash
+# Remove a single attachment
+orbit jira issue detach 12345 -p myprofile
+
+# Remove multiple attachments
+orbit jira issue detach 12345 12346 12347 -p myprofile
+```
+
+Use `orbit jira issue attachments PROJ-123` to find attachment IDs first.
+
+---
+
 ### issue link
 
 Create a link between two issues.
