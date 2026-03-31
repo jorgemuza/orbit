@@ -76,6 +76,18 @@ orbit -p paybook tracking tkm push --dry-run
 
 ---
 
+## Invocation Source Detection
+
+Workflow events are automatically tagged with their invocation source:
+
+| Context | `metadata.invoked_by` | `metadata.entrypoint` |
+|---------|----------------------|-----------------------|
+| Claude Code CLI session | `claude-code` | `cli` |
+| Claude Code IDE extension | `claude-code` | (varies) |
+| User running orbit manually | `manual` | — |
+
+This allows Draxarp to distinguish automated AI-driven events from manual human invocations. The detection uses the `CLAUDECODE` environment variable set by Claude Code.
+
 ## How It Works
 
 1. `orbit tkm sync` ingests Claude Code session data into `~/.config/orbit/tkm.db`
