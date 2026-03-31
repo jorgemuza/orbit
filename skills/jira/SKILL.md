@@ -41,7 +41,7 @@ orbit -p myprofile jira issue view PROJ-123 --comments 50
 orbit -p myprofile jira issue view PROJ-123 -o json
 ```
 
-The view command shows: summary, type, status, priority, assignee, reporter, labels, components, description, subtasks, links, and **comments with author/date/edit timestamps** formatted for easy reading.
+The view command shows: summary, type, status, priority, assignee, reporter, labels, components, description, subtasks, links, **attachments** (with filename, size, download URL), and **comments with author/date/edit timestamps**. Attachments appear before comments so screenshots referenced in comment text have context.
 
 ### Creating Issues
 

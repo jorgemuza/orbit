@@ -141,7 +141,7 @@ orbit -p profile jira issue view <issue-key> [flags]
 |------|------|-------------|
 | `--comments` | int | Number of recent comments to show (default: 10, use 0 to hide) |
 
-Comments are displayed chronologically with author, date, and edit indicator. Dates are formatted as `YYYY-MM-DD HH:MM` for readability.
+The view shows: summary, type, status, priority, assignee, reporter, labels, components, description, subtasks, links, **attachments** (with filename, size, author, date, and download URL), and **comments** (with author, date, and edit indicator). Dates are formatted as `YYYY-MM-DD HH:MM` for readability. Attachments appear before comments for context when screenshots are referenced in comment text.
 
 **Examples:**
 
