@@ -127,7 +127,7 @@ orbit -p paybook jira issue list --project PYMT --type Epic -o json
 
 ### issue view
 
-View detailed issue information.
+View detailed issue information including summary, status, assignee, description, subtasks, links, and **comments with timestamps**.
 
 **Aliases:** `show`
 
@@ -139,13 +139,23 @@ orbit -p profile jira issue view <issue-key> [flags]
 
 | Flag | Type | Description |
 |------|------|-------------|
-| `--comments` | int | Number of recent comments to show (default: 1) |
+| `--comments` | int | Number of recent comments to show (default: 10, use 0 to hide) |
+
+Comments are displayed chronologically with author, date, and edit indicator. Dates are formatted as `YYYY-MM-DD HH:MM` for readability.
 
 **Examples:**
 
 ```bash
+# View issue with last 10 comments (default)
 orbit -p paybook jira issue view PYMT-123
-orbit -p paybook jira issue view PYMT-123 --comments 5
+
+# View with all comments
+orbit -p paybook jira issue view PYMT-123 --comments 50
+
+# Hide comments
+orbit -p paybook jira issue view PYMT-123 --comments 0
+
+# JSON output (includes full comment history)
 orbit -p paybook jira issue view PYMT-123 -o json
 ```
 
