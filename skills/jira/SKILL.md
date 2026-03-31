@@ -154,6 +154,41 @@ orbit -p myprofile jira issue list --jql "project = PROJ AND sprint in openSprin
 orbit -p myprofile jira issue list --project PROJ -o json
 ```
 
+## Sprint Management
+
+```bash
+# List sprints on a board
+orbit -p myprofile jira sprint list --board-id 42
+orbit -p myprofile jira sprint list --board-id 42 --state active
+
+# View sprint details
+orbit -p myprofile jira sprint view 1366
+
+# List issues in a sprint
+orbit -p myprofile jira sprint list 1366
+
+# Create a sprint
+orbit -p myprofile jira sprint create --board-id 42 --name "Sprint 5" --start-date 2026-04-01 --end-date 2026-04-15
+
+# Start a sprint
+orbit -p myprofile jira sprint start 1366
+
+# Close a sprint
+orbit -p myprofile jira sprint close 1366
+
+# Update sprint name/dates/goal
+orbit -p myprofile jira sprint update 1366 --name "Sprint 5 Extended" --end-date 2026-04-20
+
+# Add issues to a sprint
+orbit -p myprofile jira sprint add 1366 PROJ-101 PROJ-102
+
+# Move issues to backlog
+orbit -p myprofile jira sprint remove PROJ-101 PROJ-102
+
+# Delete a sprint
+orbit -p myprofile jira sprint delete 1366
+```
+
 ## Dashboards & Gadgets
 
 Create and manage Jira dashboards with gadgets programmatically.

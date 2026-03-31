@@ -542,6 +542,54 @@ Add issues to a sprint (max 50).
 orbit -p profile jira sprint add <sprint-id> <issue-keys...>
 ```
 
+### sprint close
+
+Close an active sprint.
+
+```bash
+orbit -p profile jira sprint close <sprint-id>
+```
+
+### sprint view
+
+View sprint details.
+
+```bash
+orbit -p profile jira sprint view <sprint-id>
+```
+
+### sprint update
+
+Update sprint name, dates, or goal.
+
+| Flag | Description |
+|------|-------------|
+| `--name` | Sprint name |
+| `--start-date` | Start date (YYYY-MM-DD) |
+| `--end-date` | End date (YYYY-MM-DD) |
+| `--goal` | Sprint goal |
+
+```bash
+orbit -p profile jira sprint update 1366 --name "Sprint 2" --goal "Ship v2.0"
+orbit -p profile jira sprint update 1366 --end-date 2026-04-15
+```
+
+### sprint remove
+
+Move issues from sprint to backlog. Alias: `backlog`.
+
+```bash
+orbit -p profile jira sprint remove PROJ-101 PROJ-102
+```
+
+### sprint delete
+
+Delete a sprint.
+
+```bash
+orbit -p profile jira sprint delete <sprint-id>
+```
+
 ---
 
 ## Board Commands
