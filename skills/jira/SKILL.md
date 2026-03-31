@@ -28,6 +28,21 @@ For Jira wiki markup formatting (Server only), see `references/wiki-markup.md`.
 
 ## Core Workflows
 
+### Viewing Issues
+
+```bash
+# View issue with comments (shows last 10 by default)
+orbit -p myprofile jira issue view PROJ-123
+
+# View with more comments
+orbit -p myprofile jira issue view PROJ-123 --comments 50
+
+# JSON output (includes full data + all comments)
+orbit -p myprofile jira issue view PROJ-123 -o json
+```
+
+The view command shows: summary, type, status, priority, assignee, reporter, labels, components, description, subtasks, links, and **comments with author/date/edit timestamps** formatted for easy reading.
+
 ### Creating Issues
 
 ```bash
