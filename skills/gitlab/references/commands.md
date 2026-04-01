@@ -288,6 +288,64 @@ List comments on a merge request (excludes system-generated notes).
 |------|---------|-------------|
 | `--limit <n>` | 50 | Max results |
 
+### `gitlab mr approve <project> <mr-iid>`
+
+Approve a merge request.
+
+```
+orbit -p myprofile gl mr approve 595 42
+```
+
+### `gitlab mr unapprove <project> <mr-iid>`
+
+Revoke approval. Alias: `revoke`.
+
+```
+orbit -p myprofile gl mr unapprove 595 42
+```
+
+### `gitlab mr approvals <project> <mr-iid>`
+
+View approval status — required, remaining, who approved.
+
+```
+orbit -p myprofile gl mr approvals 595 42
+```
+
+### `gitlab mr rebase <project> <mr-iid>`
+
+Rebase onto the target branch.
+
+```
+orbit -p myprofile gl mr rebase 595 42
+```
+
+### `gitlab mr reopen <project> <mr-iid>`
+
+Reopen a closed merge request.
+
+```
+orbit -p myprofile gl mr reopen 595 42
+```
+
+### `gitlab mr edit <project> <mr-iid>`
+
+Edit a merge request.
+
+| Flag | Description |
+|------|-------------|
+| `--title` | New title |
+| `--description` | New description |
+| `--assignee` | Assignee user ID |
+| `--labels` | Comma-separated labels |
+| `--target` | Target branch |
+| `--draft` | Mark as draft |
+
+```
+orbit -p myprofile gl mr edit 595 42 --title "Updated title"
+orbit -p myprofile gl mr edit 595 42 --assignee 15 --labels "bug,urgent"
+```
+
 ---
 
 ## pipeline

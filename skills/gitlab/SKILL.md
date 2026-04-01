@@ -82,6 +82,24 @@ orbit -p myprofile gl mr create 595 \
 # Merge an MR (with optional squash)
 orbit -p myprofile gl mr merge 595 42 --squash
 
+# Approve / unapprove
+orbit -p myprofile gl mr approve 595 42
+orbit -p myprofile gl mr unapprove 595 42
+
+# Check approval status
+orbit -p myprofile gl mr approvals 595 42
+
+# Rebase onto target branch
+orbit -p myprofile gl mr rebase 595 42
+
+# Close / reopen
+orbit -p myprofile gl mr close 595 42
+orbit -p myprofile gl mr reopen 595 42
+
+# Edit MR (title, description, assignee, labels, draft)
+orbit -p myprofile gl mr edit 595 42 --title "Updated title"
+orbit -p myprofile gl mr edit 595 42 --assignee 15 --labels "bug,urgent"
+
 # Add a comment
 orbit -p myprofile gl mr comment 595 42 --body "LGTM!"
 
