@@ -24,14 +24,13 @@ services:
     type: qmetry
     base_url: https://qtmcloud.qmetry.com
     headers:
-      apiKey: "op://Vault/qmetry-api-key/credential"
       referer: "https://qtmcloud.qmetry.com/"
     auth:
-      method: token
-      token: "not-used"
+      method: apiKey
+      apiKey: "op://Vault/qmetry-api-key/credential"
 ```
 
-The `apiKey` header is the QMetry authentication mechanism. The `referer` header is required by QMetry's CORS validation. The `auth.token` is not used but required by orbit's service structure.
+The `apiKey` auth method sends the key as an `apiKey` HTTP header on every request. The `referer` header is required by QMetry's CORS validation. API keys are generated from QMetry Settings → API Keys.
 
 ## Quick Reference
 
