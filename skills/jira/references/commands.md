@@ -373,6 +373,26 @@ orbit -p paybook jira issue attachments PYMT-123
 orbit -p paybook jira issue attachments PYMT-123 -o json
 ```
 
+### issue download
+
+Download attachments from an issue. Alias: `dl`.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--output`, `-O` | `.` | Output directory |
+| `--images-only` | `false` | Download only image attachments (png, jpg, gif, webp, svg) |
+
+```bash
+# Download all attachments to current directory
+orbit -p paybook jira issue download PYMT-123
+
+# Download to a specific directory
+orbit -p paybook jira issue download PYMT-123 --output ./attachments
+
+# Download only images (screenshots)
+orbit -p paybook jira issue download PYMT-123 --images-only --output ./screenshots
+```
+
 ### issue detach
 
 Remove attachments by ID. Aliases: `rm-attachment`, `remove-attachment`.
