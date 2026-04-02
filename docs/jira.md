@@ -445,6 +445,36 @@ orbit jira issue attachments PROJ-123 -o json -p myprofile
 
 ---
 
+### issue download
+
+Download attachments from an issue. Alias: `dl`.
+
+```
+orbit jira issue download [issue-key] [flags] -p myprofile
+```
+
+**Flags:**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--output`, `-O` | string | `.` | Output directory. |
+| `--images-only` | bool | `false` | Download only image attachments. |
+
+**Examples:**
+
+```bash
+# Download all attachments
+orbit jira issue download PROJ-123 -p myprofile
+
+# Download to a directory
+orbit jira issue download PROJ-123 --output ./attachments -p myprofile
+
+# Download only screenshots
+orbit jira issue download PROJ-123 --images-only --output ./screenshots -p myprofile
+```
+
+---
+
 ### issue detach
 
 Remove attachments by ID. Aliases: `rm-attachment`, `remove-attachment`.
