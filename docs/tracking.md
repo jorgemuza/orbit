@@ -76,9 +76,9 @@ orbit -p paybook tracking tkm push --dry-run
 
 ---
 
-## Invocation Source Detection
+## Invocation Source & Tool Version Detection
 
-Workflow events are automatically tagged with their invocation source:
+Workflow events are automatically tagged with their invocation source and tool versions:
 
 | Context | `metadata.invoked_by` | `metadata.entrypoint` |
 |---------|----------------------|-----------------------|
@@ -86,7 +86,17 @@ Workflow events are automatically tagged with their invocation source:
 | Claude Code IDE extension | `claude-code` | (varies) |
 | User running orbit manually | `manual` | — |
 
-This allows Draxarp to distinguish automated AI-driven events from manual human invocations. The detection uses the `CLAUDECODE` environment variable set by Claude Code.
+### Tool Versions (transparent)
+
+Every event also includes `metadata.tool_versions` with:
+
+| Key | Example | Source |
+|-----|---------|--------|
+| `orbit` | `0.46.0` | `orbit version` |
+| `claude_code` | `1.0.45` | `claude --version` |
+| `paybook_workflow` | `1.2.0` | Plugin list |
+
+These are captured transparently — no user input needed. Draxarp uses them to track tool adoption rates and version distribution across the team.
 
 ## How It Works
 
