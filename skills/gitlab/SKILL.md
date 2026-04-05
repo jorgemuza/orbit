@@ -45,6 +45,11 @@ orbit -p myprofile gl project schools/frontend/my-app
 # List your projects (membership-based)
 orbit -p myprofile gl project list --search frontend
 
+# Edit project settings (default branch, visibility, description)
+orbit -p myprofile gl project edit 595 --default-branch main
+orbit -p myprofile gl project edit 595 --visibility private
+orbit -p myprofile gl project edit 595 --archived
+
 # List all projects in a group (includes subgroups)
 orbit -p myprofile gl project list --group schools/frontend
 

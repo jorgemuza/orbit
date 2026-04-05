@@ -41,6 +41,32 @@ orbit -p myprofile gl project schools/frontend/my-app
 
 **Output fields:** ID, Name, Path, Description, Default Branch, Visibility, URL, Last Activity
 
+### `gitlab project edit <project>`
+
+Edit project settings.
+
+| Flag | Description |
+|------|-------------|
+| `--name` | Project name |
+| `--description` | Project description |
+| `--default-branch` | Default branch name |
+| `--visibility` | Visibility: `private`, `internal`, `public` |
+| `--archived` | Archive or unarchive |
+
+```
+orbit -p myprofile gl project edit 595 --default-branch main
+orbit -p myprofile gl project edit 595 --visibility private --description "Updated"
+orbit -p myprofile gl project edit 595 --archived
+```
+
+### `gitlab project delete <project>`
+
+Delete a project.
+
+```
+orbit -p myprofile gl project delete 595
+```
+
 ### `gitlab project list`
 
 List projects.
