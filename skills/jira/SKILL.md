@@ -1,6 +1,6 @@
 ---
 name: jira
-description: "Interact with Jira using the orbit CLI to create, list, view, edit, and transition issues, manage sprints and epics, manage dashboards and gadgets, manage saved filters, manage custom fields and screen configurations, list statuses and issue types, and write properly formatted descriptions using Jira wiki markup. Use this skill whenever the user asks about Jira tasks, tickets, issues, sprints, epics, dashboards, filters, gadgets, or needs to manage project work items using orbit. Also trigger when the user says things like 'create a ticket', 'create epics', 'move this to done', 'assign the issue', 'update the description', 'format for Jira', 'create a custom field', 'add field to screen', 'list statuses', 'configure Jira', 'create a dashboard', 'add a gadget', 'list filters', 'search filters', or any Jira-related workflow — even casual references like 'update Jira', 'what tickets are in this sprint', 'add a comment to PROJ-123', 'set up AI tracking fields', 'show me the dashboards', or 'create a metrics dashboard'. Trigger especially when descriptions need proper formatting (headings, bullets, tables, links) since Jira Server uses wiki markup, not markdown."
+description: "Interact with Jira using the orbit CLI to create, list, view, edit, and transition issues, manage sprints and epics, export epic hierarchies to markdown, manage dashboards and gadgets, manage saved filters, manage custom fields and screen configurations, list statuses and issue types, and write properly formatted descriptions using Jira wiki markup. Use this skill whenever the user asks about Jira tasks, tickets, issues, sprints, epics, dashboards, filters, gadgets, or needs to manage project work items using orbit. Also trigger when the user says things like 'create a ticket', 'create epics', 'move this to done', 'assign the issue', 'update the description', 'format for Jira', 'create a custom field', 'add field to screen', 'list statuses', 'configure Jira', 'create a dashboard', 'add a gadget', 'list filters', 'search filters', 'export epic', 'dump epic hierarchy', or any Jira-related workflow — even casual references like 'update Jira', 'what tickets are in this sprint', 'add a comment to PROJ-123', 'set up AI tracking fields', 'show me the dashboards', or 'create a metrics dashboard'. Trigger especially when descriptions need proper formatting (headings, bullets, tables, links) since Jira Server uses wiki markup, not markdown."
 ---
 
 # Jira with orbit CLI
@@ -174,6 +174,27 @@ orbit -p myprofile jira issue list --jql "project = PROJ AND sprint in openSprin
 # JSON output for processing
 orbit -p myprofile jira issue list --project PROJ -o json
 ```
+
+## Exporting Epic Hierarchies
+
+Export full epic hierarchies (epic → stories → sub-tasks) to structured markdown directories.
+
+```bash
+# Export a single epic
+orbit -p myprofile jira export BS-1243 -O ./jira-export
+
+# Export multiple epics
+orbit -p myprofile jira export BS-1243 BS-1255 BS-1246 -O ./jira-export
+```
+
+Output structure:
+```
+<outdir>/<EPIC-KEY>/INDEX.md                    — epic metadata + story list
+<outdir>/<EPIC-KEY>/<STORY-KEY>/INDEX.md        — story metadata + sub-task list
+<outdir>/<EPIC-KEY>/<STORY-KEY>/<TASK-KEY>.md   — individual sub-task file
+```
+
+Each file includes a metadata table (type, status, assignee, priority, labels, story points) and the full description converted from Jira ADF to markdown. Use `--max-results` to control how many children are fetched per level (default: 100).
 
 ## Sprint Management
 

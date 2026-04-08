@@ -18,6 +18,8 @@ Complete reference for all `orbit jira` CLI commands.
   - [issue unlink](#issue-unlink)
   - [issue worklog](#issue-worklog)
   - [issue clone](#issue-clone)
+- [Export Command](#export-command)
+  - [export](#export)
 - [Epic Commands](#epic-commands)
   - [epic list](#epic-list)
   - [epic create](#epic-create)
@@ -610,6 +612,51 @@ orbit jira issue clone MYPROJ-123 -s "Cloned: new feature variant" -p myprofile
 
 # Clone with text replacements
 orbit jira issue clone MYPROJ-123 -H "v1:v2" -H "staging:production" -p myprofile
+```
+
+---
+
+## Export Command
+
+### export
+
+Export one or more Jira epics and their full hierarchy (stories, sub-tasks) into a structured markdown directory tree.
+
+```
+orbit jira export [epic-key...] [flags] -p myprofile
+```
+
+#### Output Structure
+
+```
+<outdir>/
+  <EPIC-KEY>/
+    INDEX.md               — epic description + story list
+    <STORY-KEY>/
+      INDEX.md             — story description + sub-task list
+      <TASK-KEY>.md        — individual sub-task files
+```
+
+Each markdown file includes a metadata table (type, status, assignee, priority, labels, story points) and the full description converted from ADF to markdown.
+
+#### Flags
+
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--output` | `-O` | `.` | Output directory |
+| `--max-results` | | `100` | Max child issues per level |
+
+#### Examples
+
+```bash
+# Export a single epic
+orbit jira export BS-1243 -O ./jira-export -p myprofile
+
+# Export multiple epics
+orbit jira export BS-1243 BS-1255 BS-1246 -O ./jira-export -p myprofile
+
+# Export to current directory
+orbit jira export PROJ-100 -p myprofile
 ```
 
 ---

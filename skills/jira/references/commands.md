@@ -20,6 +20,8 @@ Complete reference for all `orbit jira` commands with flags and examples.
   - [issue unlink](#issue-unlink)
   - [issue worklog](#issue-worklog)
   - [issue clone](#issue-clone)
+- [Export Command](#export-command)
+  - [export](#export)
 - [Epic Commands](#epic-commands)
 - [Sprint Commands](#sprint-commands)
 - [Board Commands](#board-commands)
@@ -477,6 +479,41 @@ orbit -p profile jira issue clone <issue-key> [flags]
 orbit -p paybook jira issue clone PYMT-123
 orbit -p paybook jira issue clone PYMT-123 --summary "Cloned: new title"
 orbit -p paybook jira issue clone PYMT-123 --replace "v1:v2"
+```
+
+---
+
+## Export Command
+
+### export
+
+Export one or more Jira epics and their full hierarchy (stories, sub-tasks) into structured markdown directories.
+
+```bash
+orbit -p profile jira export <epic-key...> [flags]
+```
+
+**Flags:**
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `-O, --output` | string | Output directory (default: `.`) |
+| `--max-results` | int | Max child issues per level (default: 100) |
+
+**Output structure:**
+
+```
+<outdir>/<EPIC-KEY>/INDEX.md                    — epic metadata + story list
+<outdir>/<EPIC-KEY>/<STORY-KEY>/INDEX.md        — story metadata + sub-task list
+<outdir>/<EPIC-KEY>/<STORY-KEY>/<TASK-KEY>.md   — individual sub-task file
+```
+
+**Examples:**
+
+```bash
+orbit -p paybook jira export BS-1243 -O ./jira-export
+orbit -p paybook jira export BS-1243 BS-1255 BS-1246 -O ./jira-export
+orbit -p paybook jira export PROJ-100
 ```
 
 ---
