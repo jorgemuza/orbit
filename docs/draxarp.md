@@ -235,3 +235,86 @@ orbit draxarp doc delete <doc-id>
 | Flag | Description |
 |------|-------------|
 | `--slug` | Look up by slug instead of ID |
+
+---
+
+## Tracking
+
+Manage tracking configuration and diagnose ingest pipeline health. All commands live under `orbit dx tracking` (alias `trk`) and talk to the Draxarp service.
+
+```bash
+# Show / set expected tool versions
+orbit dx tracking tool-versions
+orbit dx trk tv set --orbit 0.49.0 --claude-code 2.1.94 --paybook-workflow 1.5.2
+
+# Per-user diagnosis
+orbit dx tracking doctor manuel.toala@paybook.me
+orbit dx trk doctor 019d3f12-2f4d-7362-a846-9d82be46534f --json
+
+# Cluster-wide pipeline health
+orbit dx tracking pipelines
+orbit dx trk pipelines --json
+
+# Tail ingest events across both pipelines (Ctrl-C to exit --follow)
+orbit dx tracking tail
+orbit dx trk tail --user manuel.toala@paybook.me --follow
+orbit dx trk tail --limit 100
+
+# Query the api_logs table (when request logging is enabled)
+orbit dx tracking api-logs --user manuel.toala@paybook.me --path ingest
+orbit dx trk api-logs --limit 100
+
+# Inspect local ~/.claude/settings.json ingest hooks (no service call)
+orbit dx tracking hooks
+orbit dx trk hooks --settings ~/.claude/settings.json
+```
+
+### Subcommands
+
+| Command | Description |
+|---------|-------------|
+| `tool-versions` / `tv` | Show latest expected tool versions (orbit, claude-code, paybook-workflow). |
+| `tool-versions set` | Update latest expected tool versions. |
+| `doctor <user>` | Per-user pipeline diagnosis with verdict and hints. Checks both `tracking_token_usage_events` and `tracking_workflow_events`, inspects PATs, and classifies as `healthy` / `token_usage_broken` / `workflow_broken` / `both_pipelines_broken` / `inactive`. |
+| `pipelines` | Cluster-wide pipeline health snapshot plus "stuck users" (recent workflow, no token-usage in 7d). |
+| `tail` | Tail recent ingest events unified across pipelines. Supports `--follow` for real-time streaming. |
+| `api-logs` | Query the `api_logs` table when request logging is enabled. |
+| `hooks` | Inspect local `~/.claude/settings.json` for ingest hook entries (runs offline — no service call). |
+
+**Flags for `doctor`:**
+| Flag | Description |
+|------|-------------|
+| `--json` | Output raw JSON report. |
+
+**Flags for `pipelines`:**
+| Flag | Description |
+|------|-------------|
+| `--json` | Output raw JSON report. |
+
+**Flags for `tail`:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--user` | — | Filter by user email or tracking user ID. |
+| `--limit` | 30 | Max rows on initial fetch. |
+| `--follow` | false | Poll for new events until Ctrl-C. |
+| `--interval` | 3s | Poll interval when `--follow`. |
+| `--json` | false | Output raw JSON. |
+
+**Flags for `api-logs`:**
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--user` | — | Filter by user email or tracking user ID. |
+| `--path` | — | Substring filter on request path. |
+| `--limit` | 30 | Max rows. |
+| `--json` | false | Output raw JSON. |
+
+**Flags for `hooks`:**
+| Flag | Description |
+|------|-------------|
+| `--settings` | Path to `settings.json` (default `$HOME/.claude/settings.json`). |
+
+**Verdict / status values** surfaced by `doctor` and `pipelines`:
+
+`healthy`, `stale`, `token_usage_broken`, `workflow_broken`, `both_pipelines_broken`, `inactive`, `empty`.
+
+The classification and gap-detection logic lives on the backend so the UI and CLI share a single source of truth; this CLI only renders the payload with color coding and runs the `tail --follow` polling loop.

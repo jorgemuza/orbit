@@ -64,6 +64,31 @@ The `orbit draxarp` (or `orbit dx`) command manages the Draxarp Development Inte
 | `tracking event push` | Push workflow events (skill completions, Jira transitions, agent invocations) |
 | `tracking tkm push` | Push token usage data from local TKM database |
 
+### Tracking admin & diagnostics (via `orbit dx tracking`, alias `trk`)
+
+| Command | Description |
+|---------|-------------|
+| `tool-versions` / `tv` | Show/set latest expected tool versions (orbit, claude-code, paybook-workflow) |
+| `doctor <user>` | Per-user pipeline diagnosis with verdict and actionable hints |
+| `pipelines` | Cluster-wide pipeline health + list of "stuck users" |
+| `tail` | Tail ingest events across both pipelines; supports `--follow` |
+| `api-logs` | Query the `api_logs` table (when request logging is enabled) |
+| `hooks` | Inspect local `~/.claude/settings.json` ingest hooks (offline) |
+
+```bash
+# Diagnose why events stopped flowing for a user
+orbit dx trk doctor manuel.toala@paybook.me
+
+# Cluster health + stuck users
+orbit dx trk pipelines
+
+# Real-time stream for a single user
+orbit dx trk tail --user manuel.toala@paybook.me --follow
+
+# Verify the user's local hooks still reference the ingest endpoints
+orbit dx trk hooks
+```
+
 ## Quick Reference
 
 ### Projects
