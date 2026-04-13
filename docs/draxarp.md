@@ -280,6 +280,8 @@ orbit dx trk hooks --settings ~/.claude/settings.json
 | `tail` | Tail recent ingest events unified across pipelines. Supports `--follow` for real-time streaming. |
 | `api-logs` | Query the `api_logs` table when request logging is enabled. |
 | `hooks` | Inspect local `~/.claude/settings.json` for ingest hook entries (runs offline — no service call). |
+| `hooks install` | Idempotently add a `Stop` hook that runs `orbit -p <profile> tracking tkm push --quiet` after every Claude Code response. Without it, token-usage only flows when a skill that embeds `tracking tkm push` (e.g. `commit`, `prime`) is explicitly used. |
+| `hooks uninstall` | Remove any `tracking tkm push` entries from `Stop` hooks in `settings.json`, preserving unrelated hooks. |
 
 **Flags for `doctor`:**
 | Flag | Description |
@@ -308,10 +310,24 @@ orbit dx trk hooks --settings ~/.claude/settings.json
 | `--limit` | 30 | Max rows. |
 | `--json` | false | Output raw JSON. |
 
-**Flags for `hooks`:**
+**Flags for `hooks`, `hooks install`, `hooks uninstall`:**
 | Flag | Description |
 |------|-------------|
 | `--settings` | Path to `settings.json` (default `$HOME/.claude/settings.json`). |
+| `--bake-profile` | *(install only)* Profile name to bake into the hook command. Defaults to the global `-p` value, falling back to `paybook`. |
+
+**Install example:**
+
+```bash
+# First-run setup (idempotent — safe to re-run)
+orbit dx tracking hooks install --bake-profile paybook
+
+# Verify
+orbit dx tracking hooks
+
+# Remove (preserves unrelated Stop hooks)
+orbit dx tracking hooks uninstall
+```
 
 **Verdict / status values** surfaced by `doctor` and `pipelines`:
 

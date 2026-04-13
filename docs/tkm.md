@@ -18,7 +18,7 @@ orbit tkm status [flags]
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--period` | string | `today` | Time period: `today`, `week`, `month`, `all`. |
+| `--period` | string | `today` | Time period: `today`, `yesterday`, `week`, `month` (calendar month-to-date), `month-rolling` (last 30 days), `all`. |
 | `--project` | string | | Filter by project path. |
 
 **Examples:**
@@ -26,6 +26,8 @@ orbit tkm status [flags]
 ```bash
 orbit tkm status
 orbit tkm status --period week
+orbit tkm status --period month           # calendar MTD — matches 'tkm usage --period monthly' rows
+orbit tkm status --period month-rolling   # rolling 30-day window
 orbit tkm status --project /path/to/project
 orbit tkm status -o json
 ```
@@ -72,14 +74,17 @@ orbit tkm cost [flags]
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--period` | string | `all` | Time period: `today`, `week`, `month`, `all`. |
+| `--period` | string | `all` | Time period: `today`, `yesterday`, `week`, `month` (calendar month-to-date), `month-rolling` (last 30 days), `all`. |
 | `--project` | string | | Filter by project path. |
+
+> **Period semantics** — `month` means **calendar month-to-date** (e.g. `2026-04-01` to now), so `tkm cost --period month` and the latest row of `tkm usage --period monthly` agree on the total. `month-rolling` is a trailing 30-day window (e.g. `2026-03-14` to now) and will straddle calendar month boundaries.
 
 **Examples:**
 
 ```bash
 orbit tkm cost
-orbit tkm cost --period month
+orbit tkm cost --period month           # this calendar month so far
+orbit tkm cost --period month-rolling   # last 30 days
 orbit tkm cost --project /path/to/project
 ```
 

@@ -74,6 +74,8 @@ The `orbit draxarp` (or `orbit dx`) command manages the Draxarp Development Inte
 | `tail` | Tail ingest events across both pipelines; supports `--follow` |
 | `api-logs` | Query the `api_logs` table (when request logging is enabled) |
 | `hooks` | Inspect local `~/.claude/settings.json` ingest hooks (offline) |
+| `hooks install` | Idempotently wire a `Stop` hook that runs `tracking tkm push` after every Claude Code response |
+| `hooks uninstall` | Remove `tracking tkm push` `Stop` hooks while preserving unrelated hooks |
 
 ```bash
 # Diagnose why events stopped flowing for a user
@@ -87,7 +89,12 @@ orbit dx trk tail --user manuel.toala@paybook.me --follow
 
 # Verify the user's local hooks still reference the ingest endpoints
 orbit dx trk hooks
+
+# First-run setup: wire the token-usage Stop hook (idempotent)
+orbit dx trk hooks install --bake-profile paybook
 ```
+
+> Without `hooks install`, token-usage events only flow when a skill that embeds `tracking tkm push` (e.g. `paybook-workflow:commit`, `paybook-workflow:prime`) is explicitly used — producing false `TOKEN_USAGE_BROKEN` verdicts in `doctor`.
 
 ## Quick Reference
 

@@ -38,8 +38,11 @@ orbit tkm usage --period monthly
 # Cost breakdown by model
 orbit tkm cost
 
-# Monthly cost trends
+# This calendar month so far (matches latest row of 'tkm usage --period monthly')
 orbit tkm cost --period month
+
+# Trailing 30 days (straddles month boundaries)
+orbit tkm cost --period month-rolling
 
 # Recent sessions with token counts
 orbit tkm sessions
@@ -108,6 +111,10 @@ orbit tkm usage --period monthly -o json > monthly-usage.json
 orbit tkm cost -o json > cost-breakdown.json
 orbit tkm sessions -o json > sessions.json
 ```
+
+## Period Semantics
+
+`--period` accepts: `today`, `yesterday`, `week` (last 7 days), `month` (**calendar month-to-date**, e.g. `2026-04-01` → now), `month-rolling` (trailing 30 days, straddles month boundaries), and `all`. Use `month` when you want "this month's spend so far" and want it to agree with `tkm usage --period monthly`'s latest row; use `month-rolling` when you want a rolling 30-day window.
 
 ## Data Storage
 

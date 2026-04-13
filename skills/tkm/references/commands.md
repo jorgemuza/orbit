@@ -8,12 +8,14 @@ Quick summary of token usage and cost for a time period.
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--period` | `today` | Time period: `today`, `week`, `month`, `all` |
+| `--period` | `today` | Time period: `today`, `yesterday`, `week`, `month` (calendar MTD), `month-rolling` (last 30d), `all` |
 | `--project` | | Filter by project path |
 
 ```
 orbit tkm status
 orbit tkm status --period week
+orbit tkm status --period month           # this calendar month so far
+orbit tkm status --period month-rolling   # last 30 days
 orbit tkm status --project /path/to/project
 ```
 
@@ -44,12 +46,15 @@ Cost breakdown by model.
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--period` | `all` | Time period: `today`, `week`, `month`, `all` |
+| `--period` | `all` | Time period: `today`, `yesterday`, `week`, `month` (calendar MTD), `month-rolling` (last 30d), `all` |
 | `--project` | | Filter by project path |
+
+> `month` is calendar month-to-date and matches the latest row of `tkm usage --period monthly`. `month-rolling` is the trailing 30-day window and will straddle month boundaries.
 
 ```
 orbit tkm cost
-orbit tkm cost --period month
+orbit tkm cost --period month           # this calendar month so far
+orbit tkm cost --period month-rolling   # last 30 days
 ```
 
 ---
