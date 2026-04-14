@@ -464,6 +464,29 @@ Remove your approval from a pull request.
 orbit bb pr unapprove TEAM my-service 42 -p myprofile
 ```
 
+### `pr needs-work`
+
+Flag a pull request as `NEEDS_WORK` — Bitbucket Server's "request changes" signal. Blocks merge the same way the manual "Needs Work" button in the UI does, without closing the PR (unlike `decline`). Aliases: `request-changes`. **Server only** — Bitbucket Cloud has a different approval model.
+
+Uses `POST /participants` (create-or-update) under the hood, so it works even when the caller isn't already listed as a reviewer on the PR.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `repo-slug` | 2 | The repository slug. |
+| `pr-id` | 3 | The pull request ID. |
+
+```bash
+# Leave the review comment first, then flip to needs-work
+orbit bb pr comment TEAM my-service 42 -m "Please address the three items above" -p myprofile
+orbit bb pr needs-work TEAM my-service 42 -p myprofile
+
+# When the author pushes fixes, approve to clear the status
+orbit bb pr approve TEAM my-service 42 -p myprofile
+```
+
+> `approve`, `unapprove`, and `needs-work` all share a single `SetReviewStatus` helper that `POST`s to `/participants` with `role=REVIEWER` and the target status. The caller's username is resolved from the profile's `auth.username` (basic auth) or from the `X-AUSERNAME` header on an authed GET (PAT/bearer), then memoized for the life of the process.
+
 ### `pr activity`
 
 View the activity feed of a pull request (comments, approvals, status changes).
