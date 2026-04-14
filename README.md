@@ -67,6 +67,18 @@ orbit service ping
 | `-o, --output` | Output format: `table`, `json`, `yaml` | `table` |
 | `--debug` | Print HTTP request/response details to stderr | `false` |
 
+## Request Reliability
+
+Every orbit service client (jira, confluence, github, gitlab, bitbucket, gocd, draxarp, qmetry, tkm) shares a single HTTP layer with automatic retry for transient failures:
+
+- **Idempotent methods only** — `GET` and `HEAD` retry up to 3 times; `POST`, `PUT`, `PATCH`, `DELETE` execute exactly once so transitions/creates/updates can't be double-submitted.
+- **Exponential backoff** — 150ms → 300ms → 600ms between attempts.
+- **Retry triggers** — network/connection errors, `429 Too Many Requests`, and `5xx` (except `501 Not Implemented`).
+- **Fail-fast** — `4xx` other than `429` returns immediately (e.g. `401`, `403`, `404`, `422`) since retrying won't help.
+- Use `--debug` to see each attempt's request/response on stderr.
+
+Bulk read commands that fan out over many keys — such as `orbit jira issue list --fresh` — share a bounded-concurrency worker (`internal/concurrency.ParallelDo`) so parallel fetches respect service rate limits (default concurrency: 4 for Jira Cloud) and collect partial failures instead of aborting the whole operation.
+
 ## Commands Overview
 
 ### Profile & Service Management

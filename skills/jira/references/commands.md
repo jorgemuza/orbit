@@ -117,7 +117,7 @@ orbit -p profile jira issue list [flags]
 | `--max-results` | int | Max results (default: 50) |
 | `-F, --fresh` | bool | Re-verify each row against `/issue/{key}` (bypasses JQL search index lag; ~N extra API calls) |
 
-> **When to use `--fresh`:** right after transitioning/creating/updating issues in the same session, or whenever the user says "current", "fresh", "live", "still open", or "right now". Without it, `issue list` reads the eventually-consistent search index and may lag 30–60s. With it, each row is re-fetched in parallel (concurrency 8) from the authoritative single-issue endpoint.
+> **When to use `--fresh`:** right after transitioning/creating/updating issues in the same session, or whenever the user says "current", "fresh", "live", "still open", or "right now". Without it, `issue list` reads the eventually-consistent search index and may lag 30–60s. With it, each row is re-fetched in parallel (concurrency 4, tuned for Jira Cloud's ~10 req/s limit) from the authoritative single-issue endpoint, and transient failures are retried automatically by orbit's shared HTTP layer. Per-key failures keep the stale row and are logged on stderr — the list still renders.
 
 **Examples:**
 

@@ -124,7 +124,7 @@ orbit jira issue list [flags] -p myprofile
 | `--max-results` | | `50` | Maximum number of results to return |
 | `--fresh` | `-F` | `false` | Re-verify each result against the authoritative `/issue/{key}` endpoint. Bypasses Jira's JQL search index, which can lag 30–60s behind transitions. Costs ~N extra API calls; use when acting on a list right after writes. |
 
-> **JQL index lag** — by default `issue list` hits Jira's JQL search index, which is eventually consistent. Right after you transition, create, or update an issue, the list may still show the old status for up to a minute. Pass `--fresh` to refresh each result against the authoritative single-issue endpoint in parallel (8 concurrent requests). Both the table and `-o json` outputs honor `--fresh`.
+> **JQL index lag** — by default `issue list` hits Jira's JQL search index, which is eventually consistent. Right after you transition, create, or update an issue, the list may still show the old status for up to a minute. Pass `--fresh` to refresh each result against the authoritative single-issue endpoint in parallel (concurrency 4, tuned for Jira Cloud's ~10 req/s rate limit). Both the table and `-o json` outputs honor `--fresh`. Per-key failures keep the stale row and are reported on stderr — the list as a whole still renders. Transient errors (network, 429, 5xx) are retried automatically by the shared HTTP layer; see the "Request Reliability" section in the top-level README for details.
 
 #### Examples
 
