@@ -122,6 +122,9 @@ orbit jira issue list [flags] -p myprofile
 | `--reverse` | | | Reverse sort order |
 | `--start-at` | | | Pagination offset |
 | `--max-results` | | `50` | Maximum number of results to return |
+| `--fresh` | `-F` | `false` | Re-verify each result against the authoritative `/issue/{key}` endpoint. Bypasses Jira's JQL search index, which can lag 30–60s behind transitions. Costs ~N extra API calls; use when acting on a list right after writes. |
+
+> **JQL index lag** — by default `issue list` hits Jira's JQL search index, which is eventually consistent. Right after you transition, create, or update an issue, the list may still show the old status for up to a minute. Pass `--fresh` to refresh each result against the authoritative single-issue endpoint in parallel (8 concurrent requests). Both the table and `-o json` outputs honor `--fresh`.
 
 #### Examples
 
@@ -146,6 +149,9 @@ orbit jira issue list --project MYPROJ -l backend -l urgent -C "API Team" -p myp
 
 # Reverse sort with limited results
 orbit jira issue list --project MYPROJ --order-by updated --reverse --max-results 10 -p myprofile
+
+# Fresh list right after transitioning tickets — bypasses JQL index lag
+orbit jira issue list --project MYPROJ -s "Open" --fresh -p myprofile
 ```
 
 ---
