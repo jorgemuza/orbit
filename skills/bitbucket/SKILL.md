@@ -1,6 +1,6 @@
 ---
 name: bitbucket
-description: "Manage Bitbucket repositories, pull requests, branches, tags, commits, projects, and admin settings using the orbit CLI. Use this skill whenever the user asks about Bitbucket repos, PRs (pull requests), branches, tags, commits, code review, project management, default reviewer conditions, required approvals, merge restrictions, or PR approvals on Bitbucket Server/Data Center or Bitbucket Cloud. Trigger on phrases like 'list PRs', 'show pull requests', 'create a branch', 'open a PR', 'view the latest commits', 'list repos in project X', 'merge the PR', 'decline the PR', 'approve the PR', 'unapprove', 'check PR activity', 'bypass merge check', 'required approvals', 'reviewer conditions', 'who needs to approve', or any Bitbucket-related task — even casual references like 'what PRs are open', 'show me the repos', 'tag a release', 'check if it merged', 'who approved it', 'list branches', or 'why can't I merge'. Also trigger when the user provides a Bitbucket Server URL (e.g., https://git.example.com/projects/PROJ/repos/my-repo/) or mentions Bitbucket Data Center. The orbit CLI alias is `bb`."
+description: "Manage Bitbucket repositories, pull requests, branches, tags, commits, projects, and admin settings using the orbit CLI. Use this skill whenever the user asks about Bitbucket repos, PRs (pull requests), branches, tags, commits, code review, project management, default reviewer conditions, required approvals, merge restrictions, or PR approvals on Bitbucket Server/Data Center or Bitbucket Cloud. Trigger on phrases like 'list PRs', 'show pull requests', 'create a branch', 'open a PR', 'view the latest commits', 'list repos in project X', 'merge the PR', 'decline the PR', 'approve the PR', 'unapprove', 'request changes', 'needs work', 'mark as needs work', 'reject the PR', 'block the merge', 'check PR activity', 'bypass merge check', 'required approvals', 'reviewer conditions', 'who needs to approve', or any Bitbucket-related task — even casual references like 'what PRs are open', 'show me the repos', 'tag a release', 'check if it merged', 'who approved it', 'list branches', or 'why can't I merge'. Also trigger when the user provides a Bitbucket Server URL (e.g., https://git.example.com/projects/PROJ/repos/my-repo/) or mentions Bitbucket Data Center. The orbit CLI alias is `bb`."
 ---
 
 # Bitbucket with orbit CLI
@@ -102,7 +102,12 @@ orbit -p myprofile bb pr approve L3SUP agents-sre 42
 # Remove approval from a PR
 orbit -p myprofile bb pr unapprove L3SUP agents-sre 42
 
-# Decline a PR
+# Request changes on a PR (Bitbucket Server NEEDS_WORK). Aliases: request-changes.
+# Pair with 'pr comment' to leave the actionable feedback first, then flip the status.
+orbit -p myprofile bb pr comment L3SUP agents-sre 42 -m "Please address the items above"
+orbit -p myprofile bb pr needs-work L3SUP agents-sre 42
+
+# Decline a PR (closes it — use needs-work for "request changes" instead)
 orbit -p myprofile bb pr decline L3SUP agents-sre 42
 
 # Add a comment to a PR
@@ -206,10 +211,22 @@ orbit -p myprofile bb pr activity L3SUP agents-sre 42
 # Get the full diff for code review (run SEPARATELY, not in parallel)
 orbit -p myprofile bb pr diff L3SUP agents-sre 42
 
-# Approve and comment
+# Outcome: approve (all good)
 orbit -p myprofile bb pr approve L3SUP agents-sre 42
 orbit -p myprofile bb pr comment L3SUP agents-sre 42 --body "LGTM!"
+
+# Outcome: request changes (three issues need fixing before merge)
+orbit -p myprofile bb pr comment L3SUP agents-sre 42 --body "Please address: 1) ..., 2) ..., 3) ..."
+orbit -p myprofile bb pr needs-work L3SUP agents-sre 42
 ```
+
+**Picking the right review outcome:**
+
+| Outcome | Command | When to use |
+|---------|---------|-------------|
+| Approve | `pr approve` | PR is ready to merge; no blockers. |
+| Request changes | `pr needs-work` | PR needs fixes but is still the right direction. Author addresses feedback and pushes; you flip to `approve`. PR stays open. |
+| Reject | `pr decline` | PR is fundamentally wrong and shouldn't be merged at all. **Closes the PR**; reversible only via reopen. Rarely the right choice after a normal review — prefer `needs-work`. |
 
 **Extract project key and repo slug from a URL:**
 Given `https://git.cnvrmedia.net/projects/L3SUP/repos/agents-sre/pull-requests`:
