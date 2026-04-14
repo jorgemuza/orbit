@@ -173,7 +173,12 @@ orbit -p myprofile jira issue list --jql "project = PROJ AND sprint in openSprin
 
 # JSON output for processing
 orbit -p myprofile jira issue list --project PROJ -o json
+
+# Fresh list — bypasses the JQL search index (useful right after transitions)
+orbit -p myprofile jira issue list --jql "project = PROJ AND status = Open" --fresh
 ```
+
+> **JQL index lag** — `issue list` hits Jira's JQL search index, which is eventually consistent and can trail transitions by 30–60s. When the user asks for a "current", "fresh", or "live" list, or they just transitioned a ticket in the same session, **pass `--fresh`** so each row is re-verified against the authoritative single-issue endpoint. Without `--fresh`, list results are informational; always re-verify a single key with `jira issue view KEY` before acting on it.
 
 ## Exporting Epic Hierarchies
 

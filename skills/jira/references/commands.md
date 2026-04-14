@@ -115,6 +115,9 @@ orbit -p profile jira issue list [flags]
 | `--reverse` | bool | Reverse display order |
 | `--start-at` | int | Pagination start index (default: 0) |
 | `--max-results` | int | Max results (default: 50) |
+| `-F, --fresh` | bool | Re-verify each row against `/issue/{key}` (bypasses JQL search index lag; ~N extra API calls) |
+
+> **When to use `--fresh`:** right after transitioning/creating/updating issues in the same session, or whenever the user says "current", "fresh", "live", "still open", or "right now". Without it, `issue list` reads the eventually-consistent search index and may lag 30–60s. With it, each row is re-fetched in parallel (concurrency 8) from the authoritative single-issue endpoint.
 
 **Examples:**
 
@@ -123,6 +126,9 @@ orbit -p myprofile jira issue list --project PROJ
 orbit -p myprofile jira issue list --assignee me --status "In Progress"
 orbit -p myprofile jira issue list --jql "project = PROJ AND issuetype = Epic"
 orbit -p myprofile jira issue list --project PROJ --type Epic -o json
+
+# Fresh list after just transitioning tickets
+orbit -p myprofile jira issue list --project PROJ -s Open --fresh
 ```
 
 ---
