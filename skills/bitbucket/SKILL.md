@@ -58,6 +58,30 @@ orbit -p myprofile bb repo list OPS
 orbit -p myprofile bb repo view OPS ops-agents
 ```
 
+### Managing Repositories
+
+```bash
+# Create a repo
+orbit -p myprofile bb repo create OPS --name my-service --description "Payment API"
+
+# Update a repo
+orbit -p myprofile bb repo edit OPS my-service --description "New description"
+
+# Delete a repo (irreversible)
+orbit -p myprofile bb repo delete OPS my-service
+
+# Fork a repo into another project
+orbit -p myprofile bb repo fork OPS ops-agents --target-project MYPROJ
+
+# List forks
+orbit -p myprofile bb repo forks OPS ops-agents
+
+# Manage user permissions (REPO_READ, REPO_WRITE, REPO_ADMIN)
+orbit -p myprofile bb repo permissions OPS ops-agents
+orbit -p myprofile bb repo grant OPS ops-agents john.doe --permission REPO_WRITE
+orbit -p myprofile bb repo revoke OPS ops-agents john.doe
+```
+
 ### Working with Pull Requests
 
 Bitbucket uses "pull requests" (PR), same as GitHub.

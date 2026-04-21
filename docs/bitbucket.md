@@ -120,6 +120,147 @@ View details of a single repository.
 orbit bb repo view TEAM my-service -p myprofile
 ```
 
+### `repo create`
+
+Create a new repository in a project.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--name` | string | *(required)* | Repository name. |
+| `--description` | string | | Repository description. |
+| `--default-branch` | string | | Default branch name (e.g. `main`). |
+| `--public` | bool | `false` | Make the repository publicly visible. |
+| `--forkable` | bool | `true` | Allow forking. |
+
+```bash
+orbit bb repo create OPS --name my-service --description "Payment gateway" -p myprofile
+orbit bb repo create OPS --name my-api --public -p myprofile
+```
+
+### `repo edit`
+
+Update a repository's settings. **Alias:** `repo update`.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `repo-slug` | 2 | The repository slug. |
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--name` | string | New repository name. |
+| `--description` | string | New description. |
+| `--default-branch` | string | New default branch. |
+| `--public` | bool | Set public visibility. |
+| `--forkable` | bool | Allow/disallow forking. |
+
+```bash
+orbit bb repo edit OPS my-service --description "Updated description" -p myprofile
+orbit bb repo edit OPS my-service --public=false --forkable=false -p myprofile
+```
+
+### `repo delete`
+
+Delete a repository. **Irreversible.**
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `repo-slug` | 2 | The repository slug. |
+
+```bash
+orbit bb repo delete OPS my-service -p myprofile
+```
+
+### `repo fork`
+
+Fork a repository, optionally into a different project.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | Source project key. |
+| `repo-slug` | 2 | Source repository slug. |
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--name` | string | Fork name (default: same as source). |
+| `--target-project` | string | Target project key (default: same project). |
+
+```bash
+orbit bb repo fork OPS ops-agents --name ops-agents-fork -p myprofile
+orbit bb repo fork OPS ops-agents --target-project MYPROJ -p myprofile
+```
+
+### `repo forks`
+
+List forks of a repository.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `repo-slug` | 2 | The repository slug. |
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--limit` | int | 25 | Maximum forks to return. |
+
+```bash
+orbit bb repo forks OPS ops-agents -p myprofile
+```
+
+### `repo permissions`
+
+List user-level permissions on a repository.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `repo-slug` | 2 | The repository slug. |
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--limit` | int | 50 | Maximum results. |
+
+```bash
+orbit bb repo permissions OPS ops-agents -p myprofile
+```
+
+### `repo grant`
+
+Grant a user permission on a repository.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `repo-slug` | 2 | The repository slug. |
+| `username` | 3 | Bitbucket username (slug). |
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--permission` | string | *(required)* One of `REPO_READ`, `REPO_WRITE`, `REPO_ADMIN`. |
+
+```bash
+orbit bb repo grant OPS ops-agents john.doe --permission REPO_WRITE -p myprofile
+```
+
+### `repo revoke`
+
+Revoke a user's permission on a repository.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `repo-slug` | 2 | The repository slug. |
+| `username` | 3 | Bitbucket username (slug). |
+
+```bash
+orbit bb repo revoke OPS ops-agents john.doe -p myprofile
+```
+
 ---
 
 ## branch
