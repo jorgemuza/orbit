@@ -58,6 +58,30 @@ orbit -p myprofile bb repo list L3SUP
 orbit -p myprofile bb repo view L3SUP agents-sre
 ```
 
+### Managing Repositories
+
+```bash
+# Create a repo
+orbit -p myprofile bb repo create L3SUP --name my-service --description "Payment API"
+
+# Update a repo
+orbit -p myprofile bb repo edit L3SUP my-service --description "New description"
+
+# Delete a repo (irreversible)
+orbit -p myprofile bb repo delete L3SUP my-service
+
+# Fork a repo into another project
+orbit -p myprofile bb repo fork L3SUP agents-sre --target-project MYPROJ
+
+# List forks
+orbit -p myprofile bb repo forks L3SUP agents-sre
+
+# Manage user permissions (REPO_READ, REPO_WRITE, REPO_ADMIN)
+orbit -p myprofile bb repo permissions L3SUP agents-sre
+orbit -p myprofile bb repo grant L3SUP agents-sre john.doe --permission REPO_WRITE
+orbit -p myprofile bb repo revoke L3SUP agents-sre john.doe
+```
+
 ### Working with Pull Requests
 
 Bitbucket uses "pull requests" (PR), same as GitHub.
