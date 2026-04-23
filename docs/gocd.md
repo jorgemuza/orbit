@@ -15,6 +15,7 @@ Manage GoCD pipelines, agents, environments, config repos, server administration
 - GoCD is always self-hosted -- `base_url` is required in the service configuration.
 - Authentication uses either token (Bearer) or basic auth.
 - All commands support `-o json` and `-o yaml` for structured output.
+- **GoCD 25.x compatible.** All API versions verified against [api.gocd.org/25.1.0](https://api.gocd.org/25.1.0/). Dashboard handles both v4 (25.x) and older response formats. Pipeline instance falls back to history extraction when the direct instance API is restricted by permission.
 
 ---
 
@@ -249,7 +250,7 @@ orbit cd pipeline history my-pipeline --limit 5 -o json
 
 ### pipeline get
 
-Get a pipeline instance (latest or by counter).
+Get a pipeline instance (latest or by counter). Uses a three-strategy fallback for maximum GoCD version compatibility: modern instance path (GoCD 18.x+), legacy instance path (GoCD 14.3–17.x), then extraction from pipeline history (works on all versions, including servers that restrict the instance endpoint by permission — confirmed on GoCD 25.1.0).
 
 ```
 orbit gocd pipeline get <name> [flags]
@@ -2092,6 +2093,8 @@ orbit gocd job log --pipeline <name> --stage <name> --job <name> --pipeline-coun
 | `--stage-counter` | No | 1 | Stage counter. |
 | `--tail` | No | 0 | Show only the last N lines. |
 
+> **404 hint:** if the job name is wrong, the CLI fetches the pipeline instance and prints the actual stage/job names on stderr before returning the error, so you can see what to pass without having to look it up separately.
+
 **Examples:**
 
 ```bash
@@ -2432,7 +2435,7 @@ orbit cd token revoke-admin 42
 
 ## dashboard
 
-Show the GoCD dashboard with pipeline groups, instances, and stage statuses.
+Show the GoCD dashboard with pipeline groups, instances, and stage statuses. Compatible with both GoCD 25.x (v4 format: pipeline names as strings + objects at top-level `_embedded.pipelines`) and older versions (objects nested inside each group's `_embedded`).
 
 ```
 orbit gocd dashboard [flags]
