@@ -27,6 +27,11 @@ All commands support `-o json` and `-o yaml` for structured output. For full com
 
 For self-hosted instances with self-signed certificates, add `tls_skip_verify: true` to the service config. For proxy access, add `proxy: socks5://host:port`.
 
+**GoCD 25.x compatible.** All API versions verified against [api.gocd.org/25.1.0](https://api.gocd.org/25.1.0/). Key compatibility notes:
+- **Dashboard** handles both the v4 format (GoCD 25.x: pipeline names as strings) and older formats (objects nested inside groups) automatically.
+- **Pipeline instance** (`pipeline get --counter N`) uses a three-strategy fallback: modern path, legacy path, then history extraction — works even on servers that restrict the instance API by permission.
+- **Job log** prints actual stage/job names on 404 so you don't have to look up the correct job name separately.
+
 ## Command Groups
 
 | Group | Alias | Description |
@@ -48,7 +53,7 @@ For self-hosted instances with self-signed certificates, add `tls_skip_verify: t
 | `cluster-profile` | `cp` | Elastic agent cluster profile CRUD |
 | `elastic-agent-profile` | `eap` | Elastic agent profile CRUD, usage |
 | `stage` | | Stage cancel, run |
-| `job` | | Job run |
+| `job` | | Job run, console log (with 404 job-name hints) |
 | `encrypt` | | Encrypt values |
 | `template` | `tmpl` | Pipeline template CRUD |
 | `package-repo` | `pkg-repo` | Package repository CRUD |
@@ -336,12 +341,14 @@ orbit -p myprofile cd stage run --pipeline my-pipeline --counter 5 --stage build
 # Run specific jobs in a stage
 orbit -p myprofile cd job run --pipeline my-pipeline --stage build --pipeline-counter 5 --stage-counter 1 --job unit-test --job integration-test
 
-# View job console log
+# View job console log (if 404, shows valid stage/job names on stderr)
 orbit -p myprofile cd job log --pipeline my-pipeline --stage build --job compile --pipeline-counter 42
 
 # View last 50 lines of job log
 orbit -p myprofile cd job log --pipeline deploy --stage prod --job deploy-app --pipeline-counter 10 --tail 50
 ```
+
+> **Job name hint:** if `--job` is wrong, the CLI prints actual stage/job names from the pipeline instance, e.g. `stage=plan jobs=[terraform-plan]`. Use `pipeline get <name> --counter N` to discover stage/job names before fetching logs.
 
 ### Server Administration
 
