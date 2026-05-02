@@ -43,7 +43,7 @@ Get a pipeline instance.
 ### `orbit gocd pipeline config <name>`
 Get the admin configuration of a pipeline, including materials (repos, branches), stages, jobs, environment variables, and template info. Uses the GoCD Admin API (v11).
 
-Table output shows a human-readable summary. Use `-o json` or `-o yaml` for the full pipeline configuration object (useful for inspecting or modifying and passing to `pipeline update`).
+Table output shows a human-readable summary. Use `-o json` or `-o yaml` for the full pipeline configuration object (useful for inspecting or modifying and passing to `pipeline update`). Secure environment variables include `encrypted_value` in the JSON output, so a round-trip `config -o json > file` → `update --from-file file` preserves secrets.
 
 ### `orbit gocd pipeline trigger <name>`
 Schedule a pipeline run.
@@ -67,7 +67,7 @@ Create a pipeline from a JSON or YAML file.
 | `--from-file` | Yes | Path to JSON or YAML file with pipeline definition |
 
 ### `orbit gocd pipeline update <name> --from-file <file>`
-Update a pipeline configuration. Automatically fetches the current ETag.
+Update a pipeline configuration. Automatically fetches the current ETag. Secure env vars (`encrypted_value`) are preserved through the round-trip — only the populated field (`value` for plaintext, `encrypted_value` for secure) is sent.
 
 | Argument | Description |
 |----------|-------------|

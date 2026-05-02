@@ -366,11 +366,17 @@ orbit gocd pipeline update <name> --from-file <file>
 |------|----------|-------------|
 | `--from-file` | Yes | Path to JSON or YAML file with pipeline configuration |
 
+> **Secure env vars preserved.** Round-trip `config -o json > file.json` → `update --from-file file.json` is safe for pipelines with secure environment variables (e.g. `TF_VAR_db_password`). The `encrypted_value` field is preserved on unmarshal and sent back with `omitempty`, so GoCD keeps the existing encrypted blob. Only the populated field (`value` for plaintext, `encrypted_value` for secure) is included in the update payload.
+
 **Example:**
 
 ```bash
-orbit gocd pipeline update my-pipeline --from-file pipeline.yaml
+# Safe round-trip: export then re-import (secure vars preserved)
+orbit cd pipeline config my-pipeline -o json > pipeline.json
+# edit pipeline.json (add a stage, change a material, etc.)
 orbit cd pipeline update my-pipeline --from-file pipeline.json
+
+orbit gocd pipeline update my-pipeline --from-file pipeline.yaml
 ```
 
 ### pipeline delete

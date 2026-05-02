@@ -75,8 +75,12 @@ orbit -p myprofile gocd pipeline list
 # Create a pipeline from file
 orbit -p myprofile cd pipeline create --group my-group --from-file pipeline.yaml
 
-# Update a pipeline configuration
+# Update a pipeline configuration (secure env vars like TF_VAR_db_password are preserved)
 orbit -p myprofile cd pipeline update my-pipeline --from-file pipeline.yaml
+
+# Safe round-trip: export config, edit, re-import (encrypted_value preserved)
+orbit -p myprofile cd pipeline config my-pipeline -o json > pipeline.json
+orbit -p myprofile cd pipeline update my-pipeline --from-file pipeline.json
 
 # Delete a pipeline
 orbit -p myprofile cd pipeline delete my-pipeline
