@@ -46,7 +46,15 @@ Get the admin configuration of a pipeline, including materials (repos, branches)
 Table output shows a human-readable summary. Use `-o json` or `-o yaml` for the full pipeline configuration object (useful for inspecting or modifying and passing to `pipeline update`). Secure environment variables include `encrypted_value` in the JSON output, so a round-trip `config -o json > file` → `update --from-file file` preserves secrets.
 
 ### `orbit gocd pipeline trigger <name>`
-Schedule a pipeline run.
+Schedule a pipeline run with optional per-run overrides.
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--env` | string (repeatable) | Environment variable override (`KEY=VALUE`). Overrides the pipeline default for this run only. |
+| `--secure-env` | string (repeatable) | Mark an env var name as secure (pair with `--env`). |
+| `--material` | string (repeatable) | Pin a material revision (`FINGERPRINT=REVISION`). |
+
+Without flags, trigger uses pipeline defaults. Use `--env` for per-run secret rotation, version overrides, or parameter injection without modifying the pipeline config.
 
 ### `orbit gocd pipeline pause <name>`
 Pause a pipeline.

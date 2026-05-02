@@ -273,20 +273,44 @@ orbit cd pipeline get my-pipeline --counter 42 -o json
 
 ### pipeline trigger
 
-Schedule a pipeline run.
+Schedule a pipeline run with optional per-run environment variable and material revision overrides.
 
 ```
-orbit gocd pipeline trigger <name>
+orbit gocd pipeline trigger <name> [flags]
 ```
 
 | Argument | Description |
 |----------|-------------|
 | `name` | Pipeline name |
 
-**Example:**
+| Flag | Type | Description |
+|------|------|-------------|
+| `--env` | string (repeatable) | Environment variable override (`KEY=VALUE`). Overrides the pipeline's default for this run only. |
+| `--secure-env` | string (repeatable) | Mark an env var name as secure (pair with `--env`). The value is encrypted server-side. |
+| `--material` | string (repeatable) | Pin a material to a specific revision (`FINGERPRINT=REVISION`). |
+
+Without any flags, trigger behaves as before (empty body, uses pipeline defaults).
+
+**Examples:**
 
 ```bash
+# Simple trigger (no overrides)
 orbit gocd pipeline trigger my-pipeline
+
+# Override env vars for this run
+orbit cd pipeline trigger my-pipeline --env VERSION=1.2.3 --env REGION=us-east-1
+
+# Trigger with a secure env var (value encrypted server-side)
+orbit cd pipeline trigger my-pipeline --env "TF_VAR_db_password=s3cret" --secure-env TF_VAR_db_password
+
+# Pin a material to a specific revision
+orbit cd pipeline trigger my-pipeline --material abc123=a2d23c5
+
+# Secret rotation pattern: trigger with per-run overrides pointing at
+# the right encrypted var and AWS Secrets Manager secret ID
+orbit cd pipeline trigger d1epap-secrets-v2 \
+  --env SECRET_ID=epsilon/dev/phoenix-otel-headers \
+  --env SECRET_KEY=SECRET_PHOENIX_OTEL_HEADERS
 ```
 
 ### pipeline pause
