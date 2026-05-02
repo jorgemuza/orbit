@@ -98,8 +98,17 @@ orbit -p myprofile gocd pipeline get my-pipeline --counter 42
 orbit -p myprofile cd pipeline config my-pipeline
 orbit -p myprofile cd pipeline config my-pipeline -o json
 
-# Trigger a pipeline run
+# Trigger a pipeline run (no overrides)
 orbit -p myprofile cd pipeline trigger my-pipeline
+
+# Trigger with per-run env var overrides (e.g. secret rotation, version pinning)
+orbit -p myprofile cd pipeline trigger my-pipeline --env VERSION=1.2.3 --env REGION=us-east-1
+
+# Trigger with a secure env var (value encrypted server-side)
+orbit -p myprofile cd pipeline trigger my-pipeline --env "DB_PASS=s3cret" --secure-env DB_PASS
+
+# Pin a material to a specific revision
+orbit -p myprofile cd pipeline trigger my-pipeline --material abc123=a2d23c5
 
 # Pause/unpause a pipeline
 orbit -p myprofile gocd pipeline pause my-pipeline --reason "Maintenance window"
