@@ -2,7 +2,7 @@
 
 A unified CLI for managing connections to development lifecycle services.
 
-Supports **Jira**, **Confluence**, **GitLab**, **GitHub**, **Bitbucket**, and **GoCD** (cloud and self-hosted). Includes **build provenance attestation** verification via Sigstore and **AI token usage tracking** (tkm) with cost analysis per model. Pairs with [RTK](https://github.com/rtk-ai/rtk) for command output compression (60-90% token savings). Organize connections into profiles to switch between projects seamlessly.
+Supports **Jira**, **Confluence**, **GitLab**, **GitHub**, **Bitbucket**, **GoCD**, and **Azure DevOps** (cloud and self-hosted). Includes **build provenance attestation** verification via Sigstore and **AI token usage tracking** (tkm) with cost analysis per model. Pairs with [RTK](https://github.com/rtk-ai/rtk) for command output compression (60-90% token savings). Organize connections into profiles to switch between projects seamlessly.
 
 Secrets can be stored as [1Password](https://1password.com/) references (`op://vault/item/field`) and are resolved at runtime using the 1Password CLI.
 
@@ -234,6 +234,8 @@ orbit attestation download sha256:abc123... --repo owner/repo
 | GitHub | `github` | `cloud`, `server` | `https://api.github.com` |
 | Bitbucket | `bitbucket` | `cloud`, `server` | `https://api.bitbucket.org/2.0` |
 | GoCD | `gocd` | — | *(required — always self-hosted)* |
+| Azure DevOps | `azure-devops` | `cloud` | *(required)* — `dev.azure.com/{org}` or `{org}.visualstudio.com` |
+| QMetry | `qmetry` | `cloud` | *(required)* |
 
 ### Authentication Methods
 
