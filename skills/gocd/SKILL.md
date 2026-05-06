@@ -29,6 +29,7 @@ For self-hosted instances with self-signed certificates, add `tls_skip_verify: t
 
 **GoCD 25.x compatible.** All API versions verified against [api.gocd.org/25.1.0](https://api.gocd.org/25.1.0/). Key compatibility notes:
 - **Dashboard** handles both the v4 format (GoCD 25.x: pipeline names as strings) and older formats (objects nested inside groups) automatically.
+- **Agent list/get** handles `free_space` as either a number or `"unknown"` string, and `environments` as either `[]string` or `[{"name":"..."}]` objects (v7 format).
 - **Pipeline instance** (`pipeline get --counter N`) uses a three-strategy fallback: modern path, legacy path, then history extraction — works even on servers that restrict the instance API by permission.
 - **Job log** prints actual stage/job names on 404 so you don't have to look up the correct job name separately.
 

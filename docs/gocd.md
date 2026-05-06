@@ -15,7 +15,7 @@ Manage GoCD pipelines, agents, environments, config repos, server administration
 - GoCD is always self-hosted -- `base_url` is required in the service configuration.
 - Authentication uses either token (Bearer) or basic auth.
 - All commands support `-o json` and `-o yaml` for structured output.
-- **GoCD 25.x compatible.** All API versions verified against [api.gocd.org/25.1.0](https://api.gocd.org/25.1.0/). Dashboard handles both v4 (25.x) and older response formats. Pipeline instance falls back to history extraction when the direct instance API is restricted by permission.
+- **GoCD 25.x compatible.** All API versions verified against [api.gocd.org/25.1.0](https://api.gocd.org/25.1.0/). Dashboard handles both v4 (25.x) and older response formats. Pipeline instance falls back to history extraction when the direct instance API is restricted by permission. Agent `free_space` handles both numeric and `"unknown"` string values; `environments` handles both `[]string` (older) and `[{"name":"..."}]` object arrays (v7).
 
 ---
 
