@@ -45,7 +45,7 @@ All commands support `-o json` and `-o yaml` for structured output.
 | Group | Alias | Description |
 |-------|-------|-------------|
 | `project` | | List projects in the organization |
-| `work-item` | `wi` | View, list, create, update work items |
+| `work-item` | `wi` | View, list, create, update, comment on work items |
 | `query` | | Run and list saved queries |
 | `version` | | Verify connectivity and show authenticated user |
 
@@ -85,13 +85,19 @@ orbit -p myprofile ado wi create --project Fusion --type Bug \
   --field "System.Title=Login page broken" \
   --field "System.Description=Steps to reproduce..."
 
-# Update a work item (any field)
+# Update a work item (any field — uses "replace" to avoid triggering state-reset rules)
 orbit -p myprofile ado wi update 12345 --field "System.State=Active"
 orbit -p myprofile ado wi update 12345 --field "System.AssignedTo=someone@company.com"
 orbit -p myprofile ado wi update 12345 \
   --field "System.State=Resolved" \
   --field "Microsoft.VSTS.Common.ResolvedReason=Fixed"
+
+# Add a discussion comment (preserves current state automatically)
+orbit -p myprofile ado wi comment 12345 -m "Root cause: null check in auth handler"
+orbit -p myprofile ado wi comment 12345 -m "Fixed in commit abc123. Deployed to staging."
 ```
+
+> **Comments:** always use `wi comment -m "..."` instead of `wi update --field "System.History=..."`. The comment command fetches the current state and re-sends it in the same PATCH, preventing Azure DevOps work item rules from silently resetting the state.
 
 ### Saved Queries
 

@@ -29,6 +29,7 @@ Manage Azure DevOps (VSTS) projects, work items, and saved queries from the comm
   - [wi list](#wi-list)
   - [wi create](#wi-create)
   - [wi update](#wi-update)
+  - [wi comment](#wi-comment)
 - [query](#query)
   - [query run](#query-run)
   - [query list](#query-list)
@@ -116,7 +117,7 @@ orbit ado wi create --project Fusion --type Bug \
 
 ### wi update
 
-Update fields on an existing work item.
+Update fields on an existing work item. Uses JSON Patch `"replace"` for fields (not `"add"`), which avoids triggering Azure DevOps work item rules that can silently reset state.
 
 | Argument | Position | Description |
 |----------|----------|-------------|
@@ -131,6 +132,31 @@ orbit ado wi update 12345 --field "System.State=Active" -p myprofile
 orbit ado wi update 12345 \
   --field "System.State=Resolved" \
   --field "Microsoft.VSTS.Common.ResolvedReason=Fixed" -p myprofile
+```
+
+### wi comment
+
+Add a discussion comment to a work item. Automatically preserves the current `System.State` — fetches it before patching and re-sends it in the same request to prevent work item rules from resetting the state.
+
+> **Use this instead of** `wi update --field "System.History=..."` — the update path can trigger rule-based state resets because it sets History without anchoring the current state.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `id` | 1 | Work item ID. |
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `-m, --body` | string | Comment text (required). |
+| `--message` | string | Alias for `--body`. |
+
+```bash
+# Post a comment without affecting state
+orbit ado wi comment 12345 -m "Root cause: null check missing in auth handler" -p myprofile
+
+# Multiline comment
+orbit ado wi comment 12345 -m "Fixed in commit abc123.
+Deployed to staging.
+Verified by manual test." -p myprofile
 ```
 
 ---
