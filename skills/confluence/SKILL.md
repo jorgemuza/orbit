@@ -150,6 +150,26 @@ This renders as a PNG image (max 600px wide, 800px tall — auto-scaled) with a 
 - Function-call syntax in aliases (e.g., `dispatch()`)
 - Reverse arrows (`<<--`) — Mermaid only supports left-to-right arrows
 - ASCII box-drawing characters — use proper Mermaid syntax instead
+- **Unquoted `[` `]` `(` `)` inside edge labels `|...|`** — Mermaid's parser interprets these as shape openers and fails with `Expecting 'SQE' / 'PE'` errors. Wrap the whole label in double quotes: `A -->|"secrets[].valueFrom"| B` and `A -->|"on_end (already shaped)"| B`. The auto-sanitizer does NOT fix this.
+
+**When a Kroki render fails, isolate the offending block before guessing.** The orbit CLI prints `Kroki failed to render mermaid diagram` without naming which one. To find the culprit, POST each block to Kroki directly and read the actual parse error — the line number in the error message refers to lines *within the diagram body*, not the markdown file:
+
+```bash
+python3 - <<'PY'
+import re, json, subprocess
+text = open("path/to/doc.md").read()
+for m in re.finditer(r"```mermaid\n(.*?)```", text, re.DOTALL):
+    ln = text[:m.start()].count("\n") + 1
+    payload = json.dumps({"diagram_source": m.group(1), "diagram_type": "mermaid", "output_format": "svg"})
+    r = subprocess.run(["curl","-sS","-w","\n%{http_code}","-H","Content-Type: application/json",
+                        "--data-binary", payload, "https://kroki.io/"],
+                       capture_output=True, text=True, timeout=30)
+    body, code = r.stdout.rsplit("\n", 1)
+    print(f"L{ln}: {'OK' if code=='200' else 'FAIL '+code+' '+body[:300]}")
+PY
+```
+
+Note: do NOT use Python's `urllib` against `kroki.io` — Cloudflare blocks the default UA with `error code: 1010`. Use `curl` (as above) or set a browser User-Agent header.
 
 ### Exporting Pages
 
@@ -163,6 +183,17 @@ orbit -p myprofile confluence export 12345 --format markdown --output docs/
 # Export raw storage format
 orbit -p myprofile confluence export 12345 --format storage --output backup/
 ```
+
+### Moving / Re-parenting Pages
+
+When the repo layout changes and a markdown file moves to a new directory, the published Confluence page stays under its original parent until you re-parent it. Use `move` to update the parent without touching the page body or title.
+
+```bash
+# Move page 895422142 under a new parent
+orbit -p myprofile confluence move 895422142 --parent 878970411
+```
+
+The new parent must be in the same space. Confluence rejects cross-space moves and cycles (moving a page under one of its own descendants).
 
 ### Setting Page Width
 

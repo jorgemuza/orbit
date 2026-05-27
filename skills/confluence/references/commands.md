@@ -11,6 +11,7 @@ Complete reference for all `orbit confluence` commands with flags and examples.
 - [hierarchy — Show Page Hierarchy](#hierarchy)
 - [create — Create Page](#create)
 - [update — Update Page](#update)
+- [move — Re-parent Page](#move)
 - [export — Export Page](#export)
 - [publish — Publish Directory](#publish)
 - [set-width — Set Page Width](#set-width)
@@ -218,6 +219,37 @@ orbit -p paybook confluence update 473676972036 \
 - The command automatically fetches the current page version and increments it
 - If `--title` is not provided, the existing title is preserved
 - When using `--file`, the title from the markdown file is NOT used — provide `--title` explicitly if you want to change it
+
+---
+
+## move
+
+Re-parent a Confluence page under a different parent. Preserves the page body, title, and labels — only the parent changes. Useful when the repo layout shifts and the published page tree needs to follow.
+
+```bash
+orbit -p profile confluence move <page-id> --parent <new-parent-id>
+```
+
+**Flags:**
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--parent` | string | New parent page ID (**required**) |
+
+**Examples:**
+
+```bash
+# Move page under a new parent
+orbit -p paybook confluence move 895422142 --parent 878970411
+
+# JSON output (includes new version number and URL)
+orbit -p paybook confluence move 895422142 --parent 878970411 -o json
+```
+
+**Notes:**
+- The new parent must be in the same space — Confluence rejects cross-space moves at the API level
+- Confluence rejects cycles (moving a page under one of its own descendants)
+- The command fetches the current page first to read the version, then issues a `PUT /content/{id}` with the new `ancestors` field and an incremented version
 
 ---
 
