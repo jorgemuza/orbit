@@ -2,6 +2,28 @@
 
 Complete reference for all `orbit gocd` (alias: `cd`) commands.
 
+## Global Flags
+
+These persistent flags apply to every `orbit` command (including all `gocd` subcommands).
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--timeout` | `15s` | HTTP client timeout (e.g. `90s`, `5m`). Overrides the per-service `http_timeout` config. Raise this for large `pipeline create` POSTs that exceed the default. |
+| `--curl-equivalent` | `false` | Print the equivalent `curl` command for each HTTP request to stderr (auth credential redacted). Handy when escaping to raw curl. |
+| `--print-token` | `false` | With `--curl-equivalent`, print the auth token in full instead of `***REDACTED***`. **Exposes a live bearer token in your terminal/scrollback — use deliberately.** |
+
+The request timeout can also be set per service in `config.yaml` via `http_timeout` (a Go duration string like `5m`), at either the service level or the profile level. Precedence: `--timeout` flag > service `http_timeout` > profile `http_timeout` > `15s` default.
+
+```yaml
+profiles:
+  - name: epsilon
+    http_timeout: 2m          # applies to every service in the profile
+    services:
+      - name: gocd-epsilon
+        type: gocd
+        http_timeout: 5m      # overrides the profile value for this service
+```
+
 ## Pipeline Commands
 
 ### `orbit gocd pipeline list`
@@ -9,6 +31,7 @@ List all pipelines grouped by pipeline group.
 
 | Flag | Default | Description |
 |------|---------|-------------|
+| `--group` | `""` | Filter to a single pipeline group by name |
 | `-o` | `table` | Output format: table, json, yaml |
 
 ### `orbit gocd pipeline status <name>`
@@ -69,10 +92,18 @@ Unpause a pipeline.
 ### `orbit gocd pipeline create --group <group> --from-file <file>`
 Create a pipeline from a JSON or YAML file.
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--group` | Yes | Pipeline group name |
-| `--from-file` | Yes | Path to JSON or YAML file with pipeline definition |
+The target **group is created automatically** by GoCD if it does not already exist — there is no need to run `pipeline-group create` first.
+
+For large pipelines whose admin POST can exceed the HTTP timeout, use `--wait` (pairs with the global `--timeout`). With `--wait`, orbit polls the pipeline group until the pipeline appears — so even if the client times out but the server accepted the request, the command still reports success. On a non-`--wait` failure that looks like a timeout/connection error, orbit prints a hint to verify with `pipeline-group get`.
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--group` | Yes | | Pipeline group name (created automatically if missing) |
+| `--from-file` | Yes | | Path to JSON or YAML file with pipeline definition |
+| `--include-creds-from` | No | `""` | Copy secure (encrypted) environment variables from another pipeline before creating. Existing vars of the same name are not overwritten. |
+| `--wait` | No | `false` | Poll the pipeline group until the pipeline appears (survives client timeouts) |
+| `--wait-timeout` | No | `2m` | Max time to wait when `--wait` is set |
+| `--wait-interval` | No | `5s` | Poll interval when `--wait` is set |
 
 ### `orbit gocd pipeline update <name> --from-file <file>`
 Update a pipeline configuration. Automatically fetches the current ETag. Secure env vars (`encrypted_value`) are preserved through the round-trip — only the populated field (`value` for plaintext, `encrypted_value` for secure) is sent.
@@ -86,7 +117,25 @@ Update a pipeline configuration. Automatically fetches the current ETag. Secure 
 | `--from-file` | Yes | Path to JSON or YAML file with pipeline configuration |
 
 ### `orbit gocd pipeline delete <name>`
-Delete a pipeline.
+Delete a pipeline. When run in an interactive terminal, prompts for confirmation; in pipes/CI (non-interactive) it proceeds without prompting to preserve scriptability.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-y`, `--yes` | `false` | Skip the interactive confirmation prompt |
+
+### `orbit gocd pipeline copy-env <src-pipeline> <dst-pipeline> <VAR>...`
+Copy one or more environment variables (including secure/encrypted values) from a source pipeline into a destination pipeline. Existing variables of the same name in the destination are replaced; others are left untouched. Fetches the destination's full config and re-registers it with the merged variables.
+
+```bash
+orbit cd pipeline copy-env d1epap-deploy-v2 my-new-pipeline NEXUS_USERNAME NEXUS_PASSWORD
+```
+
+### `orbit gocd pipeline diff <name> --against-file <file>`
+Show a unified diff between the live pipeline config in GoCD and a local JSON/YAML file. Both sides are normalized to sorted, indented JSON before comparison. Catches "edited the file but never re-registered" (or vice versa) drift. Prints `No drift` when they match.
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--against-file` | Yes | Local JSON or YAML file to diff the live config against |
 
 ### `orbit gocd pipeline comment <name> --counter <N> --message <msg>`
 Add a comment to a pipeline instance.
@@ -137,11 +186,15 @@ Aliases: `pipeline-group`, `pg`
 List all pipeline groups with name and pipeline count.
 
 ### `orbit gocd pipeline-group get <name>`
-Get pipeline group details.
+Get pipeline group details. By default lists only pipeline names. Use `--include-config` to also fetch each pipeline's full config in one command (avoids manually looping `pipeline config <name>` per pipeline).
 
 | Argument | Description |
 |----------|-------------|
 | `name` | Pipeline group name |
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--include-config` | `false` | Fetch each pipeline's full config (best with `-o json`) |
 
 ### `orbit gocd pipeline-group create --from-file <file>`
 Create a pipeline group from a JSON or YAML file.
