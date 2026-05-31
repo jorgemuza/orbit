@@ -73,8 +73,18 @@ For self-hosted instances with self-signed certificates, add `tls_skip_verify: t
 # List all pipelines by group
 orbit -p myprofile gocd pipeline list
 
-# Create a pipeline from file
+# List only the pipelines in one group
+orbit -p myprofile cd pipeline list --group my-group
+
+# Create a pipeline from file (the group is auto-created if it doesn't exist)
 orbit -p myprofile cd pipeline create --group my-group --from-file pipeline.yaml
+
+# Create a large pipeline: raise the HTTP timeout and wait for it to register
+# server-side (survives a client-side timeout where the server still accepted it)
+orbit --timeout 5m -p myprofile cd pipeline create --group my-group --from-file pipeline.json --wait --wait-timeout 5m
+
+# Create while cloning secure (encrypted) env vars from an existing pipeline
+orbit -p myprofile cd pipeline create --group my-group --from-file pipeline.json --include-creds-from d1epap-deploy-v2
 
 # Update a pipeline configuration (secure env vars like TF_VAR_db_password are preserved)
 orbit -p myprofile cd pipeline update my-pipeline --from-file pipeline.yaml
@@ -83,8 +93,14 @@ orbit -p myprofile cd pipeline update my-pipeline --from-file pipeline.yaml
 orbit -p myprofile cd pipeline config my-pipeline -o json > pipeline.json
 orbit -p myprofile cd pipeline update my-pipeline --from-file pipeline.json
 
-# Delete a pipeline
-orbit -p myprofile cd pipeline delete my-pipeline
+# Copy secure env vars (e.g. Nexus creds) from one pipeline to another
+orbit -p myprofile cd pipeline copy-env d1epap-deploy-v2 my-pipeline NEXUS_USERNAME NEXUS_PASSWORD
+
+# Diff the live config against a checked-in file (catches "edited but never re-registered")
+orbit -p myprofile cd pipeline diff my-pipeline --against-file pipeline.json
+
+# Delete a pipeline (prompts in a terminal; use --yes in scripts/CI)
+orbit -p myprofile cd pipeline delete my-pipeline --yes
 
 # Check pipeline status
 orbit -p myprofile cd pipeline status my-pipeline
@@ -136,8 +152,11 @@ orbit -p myprofile gocd pipeline unlock my-pipeline
 orbit -p myprofile gocd pipeline-group list
 orbit -p myprofile cd pg list
 
-# Get pipeline group details
+# Get pipeline group details (names only)
 orbit -p myprofile cd pg get my-group
+
+# Get the group with every pipeline's full config in one call (no per-pipeline loop)
+orbit -p myprofile cd pg get my-group --include-config -o json
 
 # Create/update/delete pipeline groups
 orbit -p myprofile cd pg create --from-file group.yaml
@@ -511,6 +530,34 @@ orbit -p myprofile cd role create --from-file role.yaml
 
 For resources that require optimistic locking (pipelines, pipeline groups, environments, config repos, roles, auth configs, plugins, cluster profiles, elastic agent profiles, artifact stores), the CLI handles ETag retrieval automatically — just provide the `--from-file` with updated config.
 
+### Tuning HTTP Timeout (large pipeline POSTs)
+
+The HTTP client defaults to a 15s timeout, which can be shorter than GoCD's admin
+API latency for non-trivial pipelines. Raise it with the global `--timeout` flag,
+or persist it per service/profile via `http_timeout` in `config.yaml`. Precedence:
+`--timeout` flag > service `http_timeout` > profile `http_timeout` > 15s default.
+```bash
+orbit --timeout 5m -p myprofile cd pipeline create --group g --from-file p.json --wait
+```
+```yaml
+profiles:
+  - name: myprofile
+    http_timeout: 2m          # default for every service in the profile
+    services:
+      - name: gocd-prod
+        type: gocd
+        http_timeout: 5m      # overrides the profile value
+```
+
+### Escaping to raw curl
+
+To see (or copy) the exact request orbit sends, add `--curl-equivalent` (token
+redacted). Add `--print-token` to include the live bearer token — it then prints
+in full, so use it deliberately.
+```bash
+orbit --curl-equivalent -p myprofile cd elastic-agent-profile list
+```
+
 ### Debug a Failing Config Repo
 ```bash
 orbit -p myprofile cd cr status my-config-repo
@@ -532,5 +579,7 @@ orbit -p myprofile cd server maintenance-off
 - Update operations use ETag-based optimistic locking — the CLI handles this transparently.
 - The `--service` flag is only needed when a profile has multiple GoCD services configured.
 - `base_url` is required in service configuration (GoCD is always self-hosted).
-- All destructive operations execute immediately without confirmation prompts.
+- Destructive operations execute immediately without confirmation prompts, except `pipeline delete`, which prompts in an interactive terminal (use `--yes`, or run non-interactively in scripts/CI, to skip the prompt).
+- A large `pipeline create` can outlast the HTTP timeout even when the server accepts it. Use `--wait` (and/or raise `--timeout`) so orbit polls the group and reports success regardless of a client-side timeout. Without `--wait`, a timeout error prints a hint to verify with `pipeline-group get`.
+- The pipeline group on `pipeline create` is auto-created by GoCD if it doesn't exist — no need to run `pipeline-group create` first.
 - Output formats: `table` (default), `json`, `yaml`.

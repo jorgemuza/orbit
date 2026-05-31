@@ -10,6 +10,16 @@ Manage GoCD pipelines, agents, environments, config repos, server administration
 |------|-------------|
 | `--service` | GoCD service name, required only when a profile has multiple GoCD services configured |
 
+**Global flags (all `orbit` commands):**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--timeout` | `15s` | HTTP client timeout (e.g. `90s`, `5m`). Overrides the per-service `http_timeout` config. Raise it for large `pipeline create` POSTs. |
+| `--curl-equivalent` | `false` | Print the equivalent `curl` command for each request to stderr (credential redacted). |
+| `--print-token` | `false` | With `--curl-equivalent`, print the auth token in full instead of `***REDACTED***`. Exposes a live bearer token — use deliberately. |
+
+The request timeout may also be set in `config.yaml` via `http_timeout` (a Go duration string), at the profile or service level. Precedence: `--timeout` flag > service `http_timeout` > profile `http_timeout` > `15s` default.
+
 **Notes:**
 
 - GoCD is always self-hosted -- `base_url` is required in the service configuration.
@@ -32,6 +42,8 @@ Manage GoCD pipelines, agents, environments, config repos, server administration
   - [pipeline create](#pipeline-create)
   - [pipeline update](#pipeline-update)
   - [pipeline delete](#pipeline-delete)
+  - [pipeline copy-env](#pipeline-copy-env)
+  - [pipeline diff](#pipeline-diff)
   - [pipeline comment](#pipeline-comment)
   - [pipeline export](#pipeline-export)
   - [pipeline compare](#pipeline-compare)
@@ -199,10 +211,15 @@ List all pipelines grouped by pipeline group.
 orbit gocd pipeline list [flags]
 ```
 
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--group` | `""` | Filter to a single pipeline group by name |
+
 **Example:**
 
 ```bash
 orbit gocd pipeline list
+orbit cd pipeline list --group my-group
 orbit cd pipeline list -o json
 ```
 
@@ -362,16 +379,30 @@ Create a pipeline from a JSON or YAML file.
 orbit gocd pipeline create --group <group> --from-file <file>
 ```
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--group` | Yes | Pipeline group name |
-| `--from-file` | Yes | Path to JSON or YAML file with pipeline definition |
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--group` | Yes | | Pipeline group name (created automatically if it does not exist) |
+| `--from-file` | Yes | | Path to JSON or YAML file with pipeline definition |
+| `--include-creds-from` | No | `""` | Copy secure (encrypted) environment variables from another pipeline before creating; existing same-named vars are not overwritten |
+| `--wait` | No | `false` | Poll the pipeline group until the pipeline appears (survives client timeouts) |
+| `--wait-timeout` | No | `2m` | Max time to wait when `--wait` is set |
+| `--wait-interval` | No | `5s` | Poll interval when `--wait` is set |
+
+> **Group auto-creation.** GoCD's `POST /api/admin/pipelines` accepts a brand-new group name, so you do not need `pipeline-group create` first.
+
+> **Surviving client timeouts.** A large pipeline's admin POST can outlast the HTTP timeout even though the server accepts it. Use `--wait` (and/or raise the global `--timeout`): orbit polls the group until the pipeline lands and reports success regardless of a client-side timeout. Without `--wait`, a timeout/connection error prints a hint to verify with `pipeline-group get`.
 
 **Example:**
 
 ```bash
 orbit gocd pipeline create --group my-group --from-file pipeline.yaml
 orbit cd pipeline create --group my-group --from-file pipeline.json
+
+# Large pipeline: raise timeout and wait for it to register server-side
+orbit --timeout 5m cd pipeline create --group my-group --from-file pipeline.json --wait --wait-timeout 5m
+
+# Clone Nexus creds from an existing pipeline while creating
+orbit cd pipeline create --group my-group --from-file pipeline.json --include-creds-from d1epap-deploy-v2
 ```
 
 ### pipeline update
@@ -405,20 +436,67 @@ orbit gocd pipeline update my-pipeline --from-file pipeline.yaml
 
 ### pipeline delete
 
-Delete a pipeline.
+Delete a pipeline. In an interactive terminal this prompts for confirmation; in pipes/CI it proceeds without prompting (preserving scriptability).
 
 ```
-orbit gocd pipeline delete <name>
+orbit gocd pipeline delete <name> [flags]
 ```
 
 | Argument | Description |
 |----------|-------------|
 | `name` | Pipeline name |
 
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-y`, `--yes` | `false` | Skip the interactive confirmation prompt |
+
 **Example:**
 
 ```bash
 orbit gocd pipeline delete my-pipeline
+orbit cd pipeline delete my-pipeline --yes
+```
+
+### pipeline copy-env
+
+Copy environment variables (including secure/encrypted values) from one pipeline to another. Existing same-named variables in the destination are replaced; others are untouched. The destination's full config is fetched and re-registered with the merged variables.
+
+```
+orbit gocd pipeline copy-env <src-pipeline> <dst-pipeline> <VAR>...
+```
+
+| Argument | Description |
+|----------|-------------|
+| `src-pipeline` | Source pipeline to copy variables from |
+| `dst-pipeline` | Destination pipeline to copy variables into |
+| `VAR...` | One or more environment variable names |
+
+**Example:**
+
+```bash
+orbit gocd pipeline copy-env d1epap-deploy-v2 my-new-pipeline NEXUS_USERNAME NEXUS_PASSWORD
+```
+
+### pipeline diff
+
+Show a unified diff between the live pipeline config in GoCD and a local JSON/YAML file. Both sides are normalized to sorted, indented JSON before comparison. Prints `No drift` when they match — useful for catching "edited the file but never re-registered" bugs.
+
+```
+orbit gocd pipeline diff <name> --against-file <file>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `name` | Pipeline name |
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--against-file` | Yes | Local JSON or YAML file to diff the live config against |
+
+**Example:**
+
+```bash
+orbit gocd pipeline diff my-pipeline --against-file pipeline.json
 ```
 
 ### pipeline comment
@@ -553,7 +631,7 @@ orbit cd pg list -o json
 
 ### pipeline-group get
 
-Get pipeline group details.
+Get pipeline group details. By default lists only pipeline names. Use `--include-config` to also fetch each pipeline's full config in one command (avoids manually looping `pipeline config <name>` per pipeline).
 
 ```
 orbit gocd pipeline-group get <name> [flags]
@@ -563,11 +641,16 @@ orbit gocd pipeline-group get <name> [flags]
 |----------|-------------|
 | `name` | Pipeline group name |
 
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--include-config` | `false` | Fetch each pipeline's full config (best with `-o json`) |
+
 **Example:**
 
 ```bash
 orbit gocd pipeline-group get my-group
 orbit cd pg get my-group -o json
+orbit cd pg get my-group --include-config -o json
 ```
 
 ### pipeline-group create
