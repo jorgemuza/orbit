@@ -715,6 +715,42 @@ orbit -p myprofile cd job log --pipeline my-pipeline --stage build --job compile
 orbit -p myprofile cd job log --pipeline deploy --stage prod --job deploy-app --pipeline-counter 10 --tail 50
 ```
 
+### `orbit gocd job artifacts list`
+List the artifacts a job run produced (backed by GoCD's `/files/.../{job}.json`). Table output shows type + path; `-o json` returns the full tree. On a 404 it prints the available stage/job names. Alias: `artifact`.
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--pipeline` | Yes | | Pipeline name |
+| `--stage` | Yes | | Stage name |
+| `--job` | Yes | | Job name |
+| `--pipeline-counter` | Yes | | Pipeline counter |
+| `--stage-counter` | No | 1 | Stage counter |
+
+### `orbit gocd job artifacts get --path <artifact-path>`
+Download a single artifact. If `--path` ends in `/`, the folder is downloaded as a `.zip`.
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--path` | Yes | | Artifact path relative to the job root |
+| `-O`, `--output` | No | artifact basename in cwd | Local destination file |
+| `--pipeline` `--stage` `--job` `--pipeline-counter` | Yes | | Job locator |
+| `--stage-counter` | No | 1 | Stage counter |
+
+### `orbit gocd job artifacts download`
+Download every artifact of a job run, preserving the directory structure.
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--dest` | No | `.` | Destination directory |
+| `--pipeline` `--stage` `--job` `--pipeline-counter` | Yes | | Job locator |
+| `--stage-counter` | No | 1 | Stage counter |
+
+```
+orbit -p myprofile cd job artifacts list --pipeline my-pipeline --stage build --job compile --pipeline-counter 42
+orbit -p myprofile cd job artifacts get --pipeline my-pipeline --stage build --job compile --pipeline-counter 42 --path cruise-output/console.log
+orbit -p myprofile cd job artifacts download --pipeline my-pipeline --stage build --job compile --pipeline-counter 42 --dest ./out
+```
+
 ## Server Commands
 
 ### `orbit gocd server health`

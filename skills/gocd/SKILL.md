@@ -54,7 +54,7 @@ For self-hosted instances with self-signed certificates, add `tls_skip_verify: t
 | `cluster-profile` | `cp` | Elastic agent cluster profile CRUD |
 | `elastic-agent-profile` | `eap` | Elastic agent profile CRUD, usage |
 | `stage` | | Stage cancel, run |
-| `job` | | Job run, console log (with 404 job-name hints) |
+| `job` | | Job run, console log (with 404 job-name hints), artifact list/download |
 | `encrypt` | | Encrypt values |
 | `template` | `tmpl` | Pipeline template CRUD |
 | `package-repo` | `pkg-repo` | Package repository CRUD |
@@ -379,9 +379,23 @@ orbit -p myprofile cd job log --pipeline my-pipeline --stage build --job compile
 
 # View last 50 lines of job log
 orbit -p myprofile cd job log --pipeline deploy --stage prod --job deploy-app --pipeline-counter 10 --tail 50
+
+# List the artifacts a job produced
+orbit -p myprofile cd job artifacts list --pipeline my-pipeline --stage build --job compile --pipeline-counter 42
+
+# Download a single artifact (use -O / --output to choose the local filename)
+orbit -p myprofile cd job artifacts get --pipeline my-pipeline --stage build --job compile --pipeline-counter 42 --path cruise-output/console.log
+
+# Download a whole folder as a .zip (trailing slash on --path)
+orbit -p myprofile cd job artifacts get --pipeline my-pipeline --stage build --job compile --pipeline-counter 42 --path dist/ -O dist.zip
+
+# Download every artifact, preserving the directory tree, into ./out
+orbit -p myprofile cd job artifacts download --pipeline my-pipeline --stage build --job compile --pipeline-counter 42 --dest ./out
 ```
 
-> **Job name hint:** if `--job` is wrong, the CLI prints actual stage/job names from the pipeline instance, e.g. `stage=plan jobs=[terraform-plan]`. Use `pipeline get <name> --counter N` to discover stage/job names before fetching logs.
+> **Job name hint:** if `--job` is wrong, the CLI prints actual stage/job names from the pipeline instance, e.g. `stage=plan jobs=[terraform-plan]` (applies to `job log` and `job artifacts`). Use `pipeline get <name> --counter N` to discover stage/job names first.
+>
+> **Artifacts vs. artifact stores:** `job artifacts` fetches the files a build produced (backed by GoCD's `/files/...` endpoint). The separate `artifact` command manages artifact *store* configuration.
 
 ### Server Administration
 
