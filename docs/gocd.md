@@ -173,6 +173,10 @@ The request timeout may also be set in `config.yaml` via `http_timeout` (a Go du
   - [stage run](#stage-run)
 - [job -- Job commands](#job)
   - [job run](#job-run)
+  - [job log](#job-log)
+  - [job artifacts list](#job-artifacts-list)
+  - [job artifacts get](#job-artifacts-get)
+  - [job artifacts download](#job-artifacts-download)
 - [server -- Server commands](#server)
   - [server health](#server-health)
   - [server maintenance](#server-maintenance)
@@ -2217,6 +2221,81 @@ orbit cd job log --pipeline my-pipeline --stage build --job compile --pipeline-c
 # Last 50 lines only
 orbit cd job log --pipeline deploy --stage prod --job deploy-app --pipeline-counter 10 --tail 50 -p myprofile
 ```
+
+### job artifacts list
+
+List the artifacts a job run produced, backed by GoCD's `/files/.../{job}.json` listing. Table output shows each entry's type and path; `-o json` returns the full artifact tree. On a 404 the CLI prints the available stage/job names on stderr. Alias: `artifact`.
+
+```
+orbit gocd job artifacts list --pipeline <name> --stage <name> --job <name> --pipeline-counter <N> [flags]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--pipeline` | Yes | | Pipeline name. |
+| `--stage` | Yes | | Stage name. |
+| `--job` | Yes | | Job name. |
+| `--pipeline-counter` | Yes | | Pipeline counter. |
+| `--stage-counter` | No | 1 | Stage counter. |
+
+**Example:**
+
+```bash
+orbit cd job artifacts list --pipeline my-pipeline --stage build --job compile --pipeline-counter 42 -p myprofile
+```
+
+### job artifacts get
+
+Download a single artifact file. If `--path` ends in `/`, the folder is downloaded as a `.zip`.
+
+```
+orbit gocd job artifacts get --path <artifact-path> [flags]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--path` | Yes | | Artifact path relative to the job root. |
+| `-O`, `--output` | No | artifact basename in cwd | Local destination file. |
+| `--pipeline` | Yes | | Pipeline name. |
+| `--stage` | Yes | | Stage name. |
+| `--job` | Yes | | Job name. |
+| `--pipeline-counter` | Yes | | Pipeline counter. |
+| `--stage-counter` | No | 1 | Stage counter. |
+
+**Examples:**
+
+```bash
+# Single file
+orbit cd job artifacts get --pipeline my-pipeline --stage build --job compile --pipeline-counter 42 --path cruise-output/console.log -p myprofile
+
+# A folder as a zip
+orbit cd job artifacts get --pipeline my-pipeline --stage build --job compile --pipeline-counter 42 --path dist/ -O dist.zip -p myprofile
+```
+
+### job artifacts download
+
+Download every artifact of a job run, preserving the directory structure under `--dest`.
+
+```
+orbit gocd job artifacts download --pipeline <name> --stage <name> --job <name> --pipeline-counter <N> [flags]
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--dest` | No | `.` | Destination directory. |
+| `--pipeline` | Yes | | Pipeline name. |
+| `--stage` | Yes | | Stage name. |
+| `--job` | Yes | | Job name. |
+| `--pipeline-counter` | Yes | | Pipeline counter. |
+| `--stage-counter` | No | 1 | Stage counter. |
+
+**Example:**
+
+```bash
+orbit cd job artifacts download --pipeline my-pipeline --stage build --job compile --pipeline-counter 42 --dest ./out -p myprofile
+```
+
+> **Job artifacts vs. artifact stores.** `job artifacts` fetches the files a build produced (the `/files/...` endpoint). The separate [`artifact`](#artifact) command manages artifact *store* configuration.
 
 ---
 
