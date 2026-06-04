@@ -14,6 +14,14 @@ Secrets can be stored as [1Password](https://1password.com/) references (`op://v
 brew install jorgemuza/tap/orbit
 ```
 
+Installing the formula directly (as above) trusts only this one formula and needs no
+`brew tap`. If you instead tap the whole repo (`brew tap jorgemuza/tap`), recent
+Homebrew versions print a "tap is not trusted" warning — mark it trusted once with:
+
+```bash
+brew trust jorgemuza/tap
+```
+
 ### Linux / macOS — Install script
 
 ```bash
@@ -32,6 +40,36 @@ scoop install orbit
 ### Binary releases
 
 Download pre-built binaries for all platforms from [GitHub Releases](https://github.com/jorgemuza/orbit/releases).
+
+## Verifying releases
+
+Releases are built reproducibly by GitHub Actions and published with supply-chain
+attestations so you can confirm a binary really came from this repo:
+
+- **Build provenance (SLSA).** Every release artifact carries a GitHub-signed
+  provenance attestation tying it to the exact commit and workflow run. Verify with
+  the GitHub CLI (no extra setup):
+
+  ```bash
+  gh attestation verify orbit_<version>_<os>_<arch>.tar.gz --repo jorgemuza/orbit
+  ```
+
+- **Signed checksums.** `checksums.txt` is signed keylessly with
+  [cosign](https://docs.sigstore.dev/) (`checksums.txt.sig` + `checksums.txt.pem`).
+  Verify the signature, then verify your download's checksum against the file:
+
+  ```bash
+  cosign verify-blob checksums.txt \
+    --signature checksums.txt.sig \
+    --certificate checksums.txt.pem \
+    --certificate-identity-regexp 'https://github.com/jorgemuza/orbit/.*' \
+    --certificate-oidc-issuer https://token.actions.githubusercontent.com
+  shasum -a 256 -c checksums.txt --ignore-missing
+  ```
+
+> Note: these are out-of-band guarantees you opt into — Homebrew does not yet
+> auto-verify attestations for third-party taps. The `brew trust` step above is a
+> separate, consumer-side acknowledgement of *who* you trust to run formula code.
 
 ## Quick Start
 
