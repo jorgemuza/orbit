@@ -43,29 +43,27 @@ Download pre-built binaries for all platforms from [GitHub Releases](https://git
 
 ## Verifying releases
 
-Releases are built reproducibly by GitHub Actions and published with supply-chain
-attestations so you can confirm a binary really came from this repo:
+Releases are built reproducibly by GitHub Actions and the checksums file is signed,
+so you can confirm a binary really came from this project:
 
-- **Build provenance (SLSA).** Every release artifact carries a GitHub-signed
-  provenance attestation tying it to the exact commit and workflow run. Verify with
-  the GitHub CLI (no extra setup):
-
-  ```bash
-  gh attestation verify orbit_<version>_<os>_<arch>.tar.gz --repo jorgemuza/orbit
-  ```
-
-- **Signed checksums.** `checksums.txt` is signed keylessly with
+- **Signed checksums (cosign).** `checksums.txt` is signed keylessly with
   [cosign](https://docs.sigstore.dev/) (`checksums.txt.sig` + `checksums.txt.pem`).
-  Verify the signature, then verify your download's checksum against the file:
+  Download all three from the release, verify the signature, then verify your
+  download's checksum against the file:
 
   ```bash
   cosign verify-blob checksums.txt \
     --signature checksums.txt.sig \
     --certificate checksums.txt.pem \
-    --certificate-identity-regexp 'https://github.com/jorgemuza/orbit/.*' \
+    --certificate-identity-regexp 'https://github.com/jorgemuza/orbit-cli/.*' \
     --certificate-oidc-issuer https://token.actions.githubusercontent.com
   shasum -a 256 -c checksums.txt --ignore-missing
   ```
+
+- **Build provenance (SLSA).** The release workflow also emits GitHub build-provenance
+  attestations — verifiable with `gh attestation verify <file> --repo jorgemuza/orbit-cli`.
+  GitHub only persists these for public repositories, so they're available once the
+  build repo is public; until then, use the cosign verification above.
 
 > Note: these are out-of-band guarantees you opt into — Homebrew does not yet
 > auto-verify attestations for third-party taps. The `brew trust` step above is a
