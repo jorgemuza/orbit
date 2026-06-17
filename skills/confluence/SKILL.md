@@ -48,6 +48,38 @@ orbit -p myprofile confluence hierarchy 473676972036 --depth 5
 orbit -p myprofile confluence hierarchy 473676972036 -o json
 ```
 
+### Reviewing Pages (Comments)
+
+Drop review comments on a page directly from the CLI — useful for leaving feedback
+on published docs without opening the browser.
+
+```bash
+# List all comments on a page (footer + inline, including replies)
+orbit -p myprofile confluence comment list 473676972036
+orbit -p myprofile confluence comment list 473676972036 -o json
+
+# Add a comment (body is Markdown by default)
+orbit -p myprofile confluence comment add 473676972036 --body "LGTM, but the sandbox URL is stale."
+
+# Add a multi-line/Markdown review from a file
+orbit -p myprofile confluence comment add 473676972036 --from-file review.md
+
+# Reply to an existing comment (thread)
+orbit -p myprofile confluence comment add 473676972036 --body "Fixed in v0.60.2" --reply-to 67890
+
+# Anchor an inline comment to specific page text (Confluence Cloud; best-effort)
+orbit -p myprofile confluence comment add 473676972036 \
+  --body "This line is inaccurate — deploys are on-demand, not nightly." \
+  --inline-text "deploys run nightly"
+
+# Delete a comment (prompts in a terminal; use --yes in scripts/CI)
+orbit -p myprofile confluence comment delete 67890 --yes
+```
+
+> **Inline anchoring is best-effort and Cloud-only.** `--inline-text` must match
+> page text exactly or the server rejects it; if in doubt, omit it and quote the
+> line in the comment body — a footer comment is 100% reliable on Server and Cloud.
+
 ### Searching Pages
 
 ```bash

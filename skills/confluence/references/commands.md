@@ -13,6 +13,7 @@ Complete reference for all `orbit confluence` commands with flags and examples.
 - [update — Update Page](#update)
 - [move — Re-parent Page](#move)
 - [export — Export Page](#export)
+- [comment — List/Add/Delete Comments](#comment)
 - [publish — Publish Directory](#publish)
 - [set-width — Set Page Width](#set-width)
 
@@ -277,6 +278,56 @@ orbit -p myprofile confluence export 12345 --format markdown --output docs/
 
 # Export raw storage format
 orbit -p myprofile confluence export 12345 --format storage --output backup/
+```
+
+---
+
+## comment
+
+List, add, and delete comments on a page. Comment bodies are written in Markdown by default (converted to Confluence storage format).
+
+```
+orbit confluence comment list <page-id>
+orbit confluence comment add <page-id> [flags]
+orbit confluence comment delete <comment-id> [flags]
+```
+
+**`comment add` flags:**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--body` | string | | Comment body (Markdown by default). Mutually exclusive with `--from-file`. |
+| `--from-file` | string | | Read the comment body from a Markdown file. |
+| `--storage` | bool | `false` | Treat the body as raw Confluence storage XHTML instead of Markdown. |
+| `--reply-to` | string | | Comment ID to reply to (threads the comment under it). |
+| `--inline-text` | string | | Anchor an inline comment to the first occurrence of this page text (Confluence Cloud, best-effort — rejected if the text isn't found). |
+
+**`comment delete` flags:**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `-y`, `--yes` | bool | `false` | Skip the interactive confirmation prompt. |
+
+`comment list` renders each comment as `[footer|inline] <id> by <author>` with a one-line body excerpt; use `-o json` for the full objects. Footer comments work on both Confluence Server/DC and Cloud; inline anchoring (`--inline-text`) is Cloud-only and best-effort — when unsure, omit it and quote the line in the comment body.
+
+```bash
+# List comments on a page
+orbit -p myprofile confluence comment list 12345
+
+# Add a comment (Markdown body)
+orbit -p myprofile confluence comment add 12345 --body "LGTM, but the sandbox URL is stale."
+
+# Add a longer review from a file
+orbit -p myprofile confluence comment add 12345 --from-file review.md
+
+# Reply to a comment
+orbit -p myprofile confluence comment add 12345 --body "Fixed in v0.60.2" --reply-to 67890
+
+# Inline comment anchored to page text (Cloud)
+orbit -p myprofile confluence comment add 12345 --body "Inaccurate — deploys are on-demand" --inline-text "deploys run nightly"
+
+# Delete a comment without prompting
+orbit -p myprofile confluence comment delete 67890 --yes
 ```
 
 ---
