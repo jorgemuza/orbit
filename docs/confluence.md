@@ -11,6 +11,8 @@ Command reference for `orbit confluence` -- manage Confluence pages from the ter
 - [create](#create) -- Create a new page
 - [update](#update) -- Update an existing page
 - [delete](#delete) -- Delete a page
+- [export](#export) -- Export a page as markdown or storage
+- [comment](#comment) -- List, add, and delete page comments
 - [publish](#publish) -- Publish a directory of markdown files
 - [set-width](#set-width) -- Set page width
 - [Notes](#notes)
@@ -294,6 +296,66 @@ orbit confluence export 12345 --format markdown --output docs/ -p myprofile
 
 # Export raw storage format (Confluence XHTML)
 orbit confluence export 12345 --format storage --output backup/ -p myprofile
+```
+
+---
+
+## comment
+
+List, add, and delete comments on a page. Comment bodies are written in Markdown by default (converted to Confluence storage format). Footer (page-level) comments work on both Confluence Server/DC and Cloud; inline comments are Cloud-only and best-effort.
+
+```
+orbit confluence comment list <page-id> [flags]
+orbit confluence comment add <page-id> [flags]
+orbit confluence comment delete <comment-id> [flags]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `page-id` | The numeric ID of the page (for `list`/`add`) |
+| `comment-id` | The numeric ID of the comment (for `delete`) |
+
+### Flags
+
+**`comment add`:**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--body` | string | | Comment body (Markdown by default). Mutually exclusive with `--from-file`. |
+| `--from-file` | string | | Read the comment body from a Markdown file. |
+| `--storage` | bool | `false` | Treat the body as raw Confluence storage XHTML instead of Markdown. |
+| `--reply-to` | string | | Comment ID to reply to (threads the comment). |
+| `--inline-text` | string | | Anchor an inline comment to the first occurrence of this page text (Cloud, best-effort — rejected if not found). |
+
+**`comment delete`:**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `-y`, `--yes` | bool | `false` | Skip the interactive confirmation prompt. |
+
+### Examples
+
+```bash
+# List comments (footer + inline, with author and a one-line excerpt)
+orbit confluence comment list 12345 -p myprofile
+orbit confluence comment list 12345 -o json -p myprofile
+
+# Add a Markdown comment
+orbit confluence comment add 12345 --body "LGTM, but the sandbox URL is stale." -p myprofile
+
+# Add a longer review from a file
+orbit confluence comment add 12345 --from-file review.md -p myprofile
+
+# Reply to a comment (thread)
+orbit confluence comment add 12345 --body "Fixed in v0.60.2" --reply-to 67890 -p myprofile
+
+# Inline comment anchored to page text (Confluence Cloud)
+orbit confluence comment add 12345 --body "Inaccurate — deploys are on-demand" --inline-text "deploys run nightly" -p myprofile
+
+# Delete a comment without prompting
+orbit confluence comment delete 67890 --yes -p myprofile
 ```
 
 ---
