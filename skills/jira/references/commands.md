@@ -155,19 +155,21 @@ orbit -p profile jira issue view <issue-key> [flags]
 
 The view shows: summary, type, status, priority, assignee, reporter, labels, components, description, subtasks, links, **attachments** (with filename, size, author, date, and download URL), and **comments** (with author, date, and edit indicator). Dates are formatted as `YYYY-MM-DD HH:MM` for readability. Attachments appear before comments for context when screenshots are referenced in comment text.
 
+Comments come from the issue's own comment endpoint, because `comment` is not a navigable field on Jira Server and the issue payload arrives without one. The comments shown are the most recent, printed oldest first, and the heading says `most recent N of M` when the issue has more.
+
 **Examples:**
 
 ```bash
 # View issue with last 10 comments (default)
 orbit -p paybook jira issue view PYMT-123
 
-# View with all comments
+# View with more of the history
 orbit -p paybook jira issue view PYMT-123 --comments 50
 
 # Hide comments
 orbit -p paybook jira issue view PYMT-123 --comments 0
 
-# JSON output (includes full comment history)
+# JSON output (carries the same comments the table view shows, plus the true total)
 orbit -p paybook jira issue view PYMT-123 -o json
 ```
 

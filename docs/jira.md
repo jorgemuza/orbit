@@ -191,6 +191,16 @@ orbit jira issue view MYPROJ-123 --comments 50 -p myprofile
 orbit jira issue view MYPROJ-123 --comments 0 -p myprofile
 ```
 
+Comments are read from the issue's own comment endpoint rather than from the issue payload. `comment` is not a navigable field on Jira Server, so the issue request comes back without one and earlier versions printed no comments at all against a server that had them. The separate request also gives `--comments` something to limit: the issue endpoint returns a ticket's entire comment history or none of it.
+
+The comments shown are the **most recent** ones, printed oldest first so they read in order, and the heading says so when there are more than fit:
+
+```
+--- Comments (most recent 10 of 20, raise --comments for more) ---
+```
+
+`--comments 0` skips the request entirely.
+
 ---
 
 ### issue create
