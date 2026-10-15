@@ -126,6 +126,10 @@ orbit -p myprofile bb pr approve OPS ops-agents 42
 # Remove approval from a PR
 orbit -p myprofile bb pr unapprove OPS ops-agents 42
 
+# Edit the title or description (reviewers and their approvals are preserved)
+orbit -p myprofile bb pr edit OPS ops-agents 42 --title "Corrected title"
+orbit -p myprofile bb pr edit OPS ops-agents 42 --description-file pr-body.md
+
 # Request changes on a PR (Bitbucket Server NEEDS_WORK). Aliases: request-changes.
 # Pair with 'pr comment' to leave the actionable feedback first, then flip the status.
 orbit -p myprofile bb pr comment OPS ops-agents 42 -m "Please address the items above"
