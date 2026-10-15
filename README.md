@@ -242,13 +242,16 @@ Runs are addressed by the number in the web UI. The API path takes a different i
 
 ### Bitbucket
 
-Manage projects, repositories, pull requests, branches, tags, reviewer conditions, and users. Supports Cloud and Data Center. Alias: `bb`.
+Manage projects, repositories, pull requests, branches, tags, reviewer conditions, and users, and search repositories, projects and code across the instance. Supports Cloud and Data Center. Alias: `bb`.
 
 ```bash
 orbit bb repo list MY-PROJ
+orbit bb repo search payments --permission REPO_WRITE
+orbit bb code search go.mod --repos
 orbit bb pr list MY-PROJ my-repo --state open
 orbit bb pr create MY-PROJ my-repo --source feature/x --target main --title "Add feature"
 orbit bb pr approve MY-PROJ my-repo 42
+orbit bb pr merge-status MY-PROJ my-repo 42
 orbit bb branch list MY-PROJ my-repo
 orbit bb reviewer-condition list MY-PROJ
 ```
