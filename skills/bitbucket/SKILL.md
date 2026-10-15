@@ -126,6 +126,10 @@ orbit -p myprofile bb pr approve L3SUP agents-sre 42
 # Remove approval from a PR
 orbit -p myprofile bb pr unapprove L3SUP agents-sre 42
 
+# Edit the title or description (reviewers and their approvals are preserved)
+orbit -p myprofile bb pr edit L3SUP agents-sre 42 --title "Corrected title"
+orbit -p myprofile bb pr edit L3SUP agents-sre 42 --description-file pr-body.md
+
 # Request changes on a PR (Bitbucket Server NEEDS_WORK). Aliases: request-changes.
 # Pair with 'pr comment' to leave the actionable feedback first, then flip the status.
 orbit -p myprofile bb pr comment L3SUP agents-sre 42 -m "Please address the items above"

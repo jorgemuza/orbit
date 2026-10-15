@@ -189,6 +189,26 @@ orbit -p myprofile bb pr create L3SUP agents-sre \
   --reviewers john.doe,jane.smith
 ```
 
+### `bitbucket pr edit <project-key> <repo-slug> <pr-id>`
+
+Edit a pull request's title or description. **Alias:** `update`. **Server only.**
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--title <text>` | No | New title |
+| `--description <text>` | No | New description |
+| `--description-file <path>` | No | Read the description from a file; `-` reads stdin. Mutually exclusive with `--description` |
+
+At least one of the three is required. Use `--description-file` for anything longer than a line:
+
+```
+orbit -p myprofile bb pr edit L3SUP agents-sre 42 --title "Correct the title"
+orbit -p myprofile bb pr edit L3SUP agents-sre 42 --description-file pr-body.md
+cat pr-body.md | orbit -p myprofile bb pr edit L3SUP agents-sre 42 --description-file -
+```
+
+Reviewers survive the edit. Bitbucket's update endpoint replaces the pull request instead of patching it, so a request sending only a description also means "and no reviewers" - it drops every reviewer and their approvals and still answers 200. This command sends the existing reviewers and unchanged title back with the edit, then verifies they survived; a dropped reviewer or a reset approval is reported as an error naming them, since only that person can approve again. Do not hand-roll this with `pr` writes elsewhere.
+
 ### `bitbucket pr diff <project-key> <repo-slug> <pr-id>`
 
 Show the unified diff for a pull request. Useful for code review.

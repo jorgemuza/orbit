@@ -490,27 +490,64 @@ Create a new pull request.
 
 | Flag | Type | Required | Description |
 |------|------|----------|-------------|
-| `--source` | string | Yes | Source branch name. |
-| `--target` | string | Yes | Target branch name. |
+| `--from` | string | Yes | Source branch name. |
+| `--to` | string | Yes | Target branch name. |
 | `--title` | string | Yes | Pull request title. |
 | `--description` | string | No | Pull request description body. |
+| `--reviewers` | string | No | Comma-separated reviewer usernames. |
 
 ```bash
 # Minimal PR
 orbit bb pr create TEAM my-service \
-  --source feature/login \
-  --target main \
+  --from feature/login \
+  --to main \
   --title "Add login flow" \
   -p myprofile
 
-# PR with description
+# PR with description and reviewers
 orbit bb pr create TEAM my-service \
-  --source feature/login \
-  --target main \
+  --from feature/login \
+  --to main \
   --title "Add login flow" \
   --description "Implements OAuth2 login with refresh token support." \
+  --reviewers john.doe,jane.smith \
   -p myprofile
 ```
+
+### `pr edit`
+
+Edit the title or description of an open pull request. **Alias:** `update`. **Server/Data Center only** - Bitbucket Cloud has a different pull request API.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `repo-slug` | 2 | The repository slug. |
+| `pr-id` | 3 | The pull request ID. |
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--title` | string | New title. |
+| `--description` | string | New description. |
+| `--description-file` | string | Read the new description from a file; `-` reads stdin. Mutually exclusive with `--description`. |
+
+A description is usually longer than fits comfortably on a command line, which is what `--description-file` is for:
+
+```bash
+# A one-line title fix
+orbit bb pr edit TEAM my-service 42 --title "Add login flow (OAuth2)" -p myprofile
+
+# A real description, from a file
+orbit bb pr edit TEAM my-service 42 --description-file pr-body.md -p myprofile
+
+# ...or from a pipe
+generate-release-notes | orbit bb pr edit TEAM my-service 42 --description-file - -p myprofile
+```
+
+> **Reviewers are preserved, and that takes work.** Bitbucket's update endpoint *replaces* the pull request rather than patching it: a request carrying only a new description also says "and no reviewers", so Bitbucket drops every reviewer and every approval they had given - and answers `200` as if nothing happened. Editing a description would silently reset the review.
+>
+> So this command reads the pull request first (it needs the `version` for optimistic locking anyway), sends the existing reviewers and the unchanged title back along with the edit, and then checks what came back. A reviewer who disappeared or an approval that was reset is reported as an error naming them, because neither is something orbit can restore - only the reviewer can approve again.
+>
+> Two differences between what was sent and what Bitbucket stores are the server normalising its input, not a failed edit, and are accepted: CRLF line endings become LF, and trailing whitespace is trimmed (a description read from a file ends in a newline; the stored copy does not).
 
 ### `pr merge`
 
