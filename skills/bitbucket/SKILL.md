@@ -1,6 +1,6 @@
 ---
 name: bitbucket
-description: "Manage Bitbucket repositories, pull requests, branches, tags, commits, projects, and admin settings using the orbit CLI. Use this skill whenever the user asks about Bitbucket repos, PRs (pull requests), branches, tags, commits, code review, project management, default reviewer conditions, required approvals, merge restrictions, or PR approvals on Bitbucket Server/Data Center or Bitbucket Cloud. Trigger on phrases like 'list PRs', 'show pull requests', 'create a branch', 'open a PR', 'view the latest commits', 'list repos in project X', 'merge the PR', 'decline the PR', 'approve the PR', 'unapprove', 'request changes', 'needs work', 'mark as needs work', 'reject the PR', 'block the merge', 'check PR activity', 'bypass merge check', 'required approvals', 'reviewer conditions', 'who needs to approve', or any Bitbucket-related task — even casual references like 'what PRs are open', 'show me the repos', 'tag a release', 'check if it merged', 'who approved it', 'list branches', or 'why can't I merge'. Also trigger when the user provides a Bitbucket Server URL (e.g., https://git.example.com/projects/PROJ/repos/my-repo/) or mentions Bitbucket Data Center. The orbit CLI alias is `bb`."
+description: "Manage Bitbucket repositories, pull requests, branches, tags, commits, projects, and admin settings using the orbit CLI. Use this skill whenever the user asks about Bitbucket repos, PRs (pull requests), branches, tags, commits, code review, project management, default reviewer conditions, required approvals, merge restrictions, or PR approvals on Bitbucket Server/Data Center or Bitbucket Cloud. Trigger on phrases like 'list PRs', 'show pull requests', 'create a branch', 'open a PR', 'view the latest commits', 'list repos in project X', 'merge the PR', 'decline the PR', 'approve the PR', 'unapprove', 'request changes', 'find a repo', 'search repos', 'which repos are Go', 'search the code', 'needs work', 'mark as needs work', 'reject the PR', 'block the merge', 'check PR activity', 'bypass merge check', 'required approvals', 'reviewer conditions', 'who needs to approve', 'can this merge', 'why can't it merge', 'merge status', or any Bitbucket-related task — even casual references like 'what PRs are open', 'show me the repos', 'tag a release', 'check if it merged', 'who approved it', 'list branches', or 'why can't I merge'. Also trigger when the user provides a Bitbucket Server URL (e.g., https://git.example.com/projects/PROJ/repos/my-repo/) or mentions Bitbucket Data Center. The orbit CLI alias is `bb`."
 ---
 
 # Bitbucket with orbit CLI
@@ -126,9 +126,27 @@ orbit -p myprofile bb pr approve L3SUP agents-sre 42
 # Remove approval from a PR
 orbit -p myprofile bb pr unapprove L3SUP agents-sre 42
 
+# Can it merge, and if not why not
+orbit -p myprofile bb pr merge-status L3SUP agents-sre 42
+
 # Edit the title or description (reviewers and their approvals are preserved)
 orbit -p myprofile bb pr edit L3SUP agents-sre 42 --title "Corrected title"
 orbit -p myprofile bb pr edit L3SUP agents-sre 42 --description-file pr-body.md
+```
+
+### Finding things
+
+```bash
+# Repos by name, across every project (no project key needed)
+orbit -p myprofile bb repo search agentic
+orbit -p myprofile bb repo search agentic --project EPCAP --permission REPO_WRITE
+
+# Projects by display name
+orbit -p myprofile bb project search "Agentic Platform"
+
+# What a repo is built with: search for the build file, not the name
+orbit -p myprofile bb code search go.mod --repos
+orbit -p myprofile bb code search build.gradle.kts --repos
 
 # Request changes on a PR (Bitbucket Server NEEDS_WORK). Aliases: request-changes.
 # Pair with 'pr comment' to leave the actionable feedback first, then flip the status.

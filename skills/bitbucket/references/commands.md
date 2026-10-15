@@ -10,6 +10,7 @@ Complete reference for all `orbit bitbucket` (alias: `bb`) commands and flags.
 - [tag](#tag)
 - [commit](#commit)
 - [pr (pull request)](#pr-pull-request)
+- [code (search)](#code)
 - [user](#user)
 - [reviewer-condition (admin)](#reviewer-condition-admin)
 
@@ -36,6 +37,22 @@ orbit -p myprofile bb project view L3SUP
 ```
 
 **Output fields:** Key, Name, Description, Public, Type
+
+### `bitbucket project search <text>`
+
+Search projects by display **name** (not key). **Alias:** `find`. **Server only.**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--permission <p>` | | `PROJECT_READ`, `PROJECT_WRITE`, `PROJECT_ADMIN` |
+| `--limit <n>` | 25 | Max results |
+
+```
+orbit -p myprofile bb project search agentic
+orbit -p myprofile bb project search "" --permission PROJECT_ADMIN
+```
+
+A project keyed `EPCAP` but named "Epsilon PeopleCloud Agentic Platform" will NOT match `EPCAP`. With a key in hand, use `project view EPCAP`.
 
 ### `bitbucket project list`
 
@@ -66,6 +83,28 @@ List repositories in a project.
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--limit <n>` | 50 | Max results |
+
+### `bitbucket repo search [text]`
+
+Search repositories by name **across every project**. **Alias:** `find`. **Server only.** Use this instead of listing each project's repos and filtering locally.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--project <key>` | | One project, by key |
+| `--project-name <text>` | | Projects whose display name matches (exclusive with `--project`) |
+| `--permission <p>` | | `REPO_READ`, `REPO_WRITE`, `REPO_ADMIN` |
+| `--visibility <v>` | | `public` or `private` |
+| `--archived <s>` | | `ACTIVE`, `ARCHIVED`, `ALL` |
+| `--limit <n>` | 25 | Max results |
+
+```
+orbit -p myprofile bb repo search agentic
+orbit -p myprofile bb repo search agentic --project EPCAP
+orbit -p myprofile bb repo search payments --permission REPO_WRITE
+orbit -p myprofile bb repo search "" --project-name "Ad Server" --limit 100
+```
+
+`--project` takes a KEY. Bitbucket's own filter is `projectname` and matches the display name, so the raw API returns an empty page for a key; orbit resolves the key first and then matches on it. Paging follows the server's `nextPageStart`, never `start+limit`, because Bitbucket's permission filtering makes that cursor jump ahead of the page it returned.
 
 ---
 
@@ -235,6 +274,23 @@ orbit -p myprofile bb pr merge L3SUP agents-sre 42
 orbit -p myprofile bb pr merge L3SUP agents-sre 42 --bypass-review
 ```
 
+### `bitbucket pr merge-status <project-key> <repo-slug> <pr-id>`
+
+Whether a pull request can be merged, and what is blocking it. **Aliases:** `can-merge`, `mergeable`. **Server only.**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--exit-status` | `false` | Exit non-zero when it cannot be merged |
+
+```
+orbit -p myprofile bb pr merge-status L3SUP agents-sre 42
+orbit -p myprofile bb pr merge-status L3SUP agents-sre 42 --exit-status
+```
+
+Shows the server's verdict (`CLEAN`, `CONFLICTED`, `VETOED`), the conflict or each vetoing merge check in its own words, the reviewer tally with positions first, and the head commit's build stats. Ask this before `pr merge` rather than reading a merge failure.
+
+An already merged or declined PR is reported as such: Bitbucket answers the merge question with a 409 for one that is not open, so the state is read first and becomes the answer. Build statuses come from a separate API that an instance need not have; when it is absent the line says so and the verdict still stands.
+
 ### `bitbucket pr approve <project-key> <repo-slug> <pr-id>`
 
 Approve a pull request as the current user.
@@ -274,6 +330,32 @@ List pull request activity — comments, approvals, merges, status changes.
 **Activity types shown:** COMMENTED, APPROVED, REVIEWED (needs work), MERGED, DECLINED, OPENED
 
 Nested comment replies are shown with indentation — all reply threads are traversed recursively so no responses are hidden.
+
+---
+
+## code
+
+### `bitbucket code search <query>`
+
+Search file contents and paths across repositories. **Aliases:** `find`, `grep`. **Server only**, needs the search index.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--project <key>` | | One project |
+| `--repo <slug>` | | One repository (requires `--project`) |
+| `--repos` | `false` | List matching repositories instead of every file |
+| `--limit <n>` | 25 | Max matching files |
+
+**This is how you tell what a repo is built with** - names rarely say:
+
+```
+orbit -p myprofile bb code search go.mod --repos             # Go
+orbit -p myprofile bb code search build.gradle.kts --repos   # Kotlin/Gradle
+orbit -p myprofile bb code search pom.xml --repos            # Maven
+orbit -p myprofile bb code search "TODO" --project EPCAP --repo agentic-platform-monorepo
+```
+
+**Only `project:` and `repo:` modifiers exist, and an unsupported one is silent.** `lang:kotlin` returns zero hits, exactly like a search that matched nothing - do not conclude from it that there is no Kotlin. Use a build file instead. `--project`/`--repo` set the real modifiers; any other `word:` in the query is flagged in the output.
 
 ---
 

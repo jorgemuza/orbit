@@ -15,6 +15,7 @@ Manage Bitbucket resources from the command line.
 - [Tags](#tag)
 - [Commits](#commit)
 - [Pull Requests](#pr)
+- [Code Search](#code)
 - [Users](#user)
 - [Reviewer Conditions](#reviewer-condition)
 
@@ -66,6 +67,27 @@ orbit bb project list -p myprofile
 # List with a limit
 orbit bb project list -p myprofile --limit 10
 ```
+
+### `project search`
+
+Search projects whose **display name** matches the text. **Alias:** `find`. **Server/Data Center only.**
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `text` | 1 | Part of a project's name. Optional when `--permission` is given. |
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--permission` | string | | Keep only projects you hold this on: `PROJECT_READ`, `PROJECT_WRITE`, `PROJECT_ADMIN`. |
+| `--limit` | int | 25 | Max results. |
+
+```bash
+orbit bb project search agentic -p myprofile
+orbit bb project search "Ad Server" -p myprofile
+orbit bb project search "" --permission PROJECT_ADMIN --limit 100 -p myprofile
+```
+
+> The match is on the **name**, not the key. A project keyed `EPCAP` and named "Epsilon PeopleCloud Agentic Platform" does not turn up for `EPCAP`; use `project view EPCAP` when you already have the key.
 
 ### `project view`
 
@@ -119,6 +141,41 @@ View details of a single repository.
 ```bash
 orbit bb repo view TEAM my-service -p myprofile
 ```
+
+### `repo search`
+
+Search repositories by name **across every project** you can see. **Alias:** `find`. **Server/Data Center only.**
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `text` | 1 | Part of a repository name. Optional when `--project` or `--project-name` is given. |
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--project` | string | | Restrict to one project, **by key**. |
+| `--project-name` | string | | Restrict to projects whose display name matches this text. Mutually exclusive with `--project`. |
+| `--permission` | string | | Keep only repos you hold this on: `REPO_READ`, `REPO_WRITE`, `REPO_ADMIN`. |
+| `--visibility` | string | | `public` or `private`. |
+| `--archived` | string | | `ACTIVE` (the server's default), `ARCHIVED` or `ALL`. |
+| `--limit` | int | 25 | Max results. |
+
+```bash
+# Across every project - no project key needed, unlike `repo list`
+orbit bb repo search agentic -p myprofile
+
+# Narrowed to one project, by key
+orbit bb repo search agentic --project EPCAP -p myprofile
+
+# Only the ones you could push to
+orbit bb repo search payments --permission REPO_WRITE -p myprofile
+
+# Every repo in a family of projects
+orbit bb repo search "" --project-name "Ad Server" --limit 100 -p myprofile
+```
+
+> **`--project` takes a key; Bitbucket's own filter does not.** The API filters repositories by `projectname`, which matches a project's *display name*: asking it for `projectname=EPCAP` returns an empty page, with a `200` and no error, on an instance whose EPCAP project is named "Epsilon PeopleCloud Agentic Platform". Since a key is what every other command here takes, `--project` resolves the key to that project's name to narrow the search server-side, then matches the results on the key itself - a name fragment can belong to several projects ("Acce" matches both "Access" and "Access Business Components").
+>
+> Paging follows the server's own `nextPageStart` rather than `start + limit`. Bitbucket filters each page by permission *after* reading it, so the offset it hands back routinely jumps past what it returned - a three-result page on a live instance came back with `nextPageStart=34`. Computing the offset would re-read some repositories and silently skip others.
 
 ### `repo create`
 
@@ -563,6 +620,52 @@ Merge a pull request.
 orbit bb pr merge TEAM my-service 42 -p myprofile
 ```
 
+### `pr merge-status`
+
+Show whether a pull request can be merged, and what is blocking it. **Aliases:** `can-merge`, `mergeable`. **Server/Data Center only.**
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `repo-slug` | 2 | The repository slug. |
+| `pr-id` | 3 | The pull request ID. |
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--exit-status` | bool | `false` | Exit non-zero when the pull request cannot be merged. |
+
+```bash
+orbit bb pr merge-status TEAM my-service 42 -p myprofile
+
+# Gate a script on it without parsing output
+orbit bb pr merge-status TEAM my-service 42 --exit-status -p myprofile
+```
+
+It reports the server's own verdict - the one the merge button acts on - and the reasons behind it:
+
+```
+PR:        #1298  fix(EAP-1832): tighten catalog OpenAPI types
+State:     OPEN  (fix/EAP-1832-catalog-any-waiver -> develop)
+Mergeable: no (CONFLICTED)
+Blocked by:
+  - the source branch conflicts with the target and has to be rebased or merged first
+Reviewers: 1 approved, 0 needs work, 0 no response (of 1)
+  Sailesh Rajagopalan          APPROVED
+Builds:    none reported
+URL:       https://git.example.com/projects/TEAM/repos/my-service/pull-requests/1298
+```
+
+`Blocked by` carries the conflict, if any, and then each merge check that vetoed the merge with its own wording - "Not enough approvals", "Requires successful builds", or whatever an add-on hook says. Reviewers who have taken a position are listed first, so one approval among a dozen silent reviewers is visible at a glance.
+
+> **An already merged or declined pull request is reported as such, not as an error.** Bitbucket answers the merge question with a `409` for one that is not open ("This pull request has already been merged."), so the pull request's state is read first and becomes the answer:
+>
+> ```
+> State:     MERGED  (fix/EAP-2360-agent-slug-v2 -> develop)
+> Mergeable: no - the pull request is merged, so there is no merge to make
+> ```
+>
+> Build statuses come from `/rest/build-status`, a separate API that an instance need not have. When it cannot be read the line says so and the verdict still stands - a missing build-status plugin is not a reason to fail a question about approvals.
+
 ### `pr decline`
 
 Decline a pull request.
@@ -684,6 +787,52 @@ orbit bb pr activity TEAM my-service 42 -p myprofile
 ```
 
 Nested comment replies are shown with indentation — all reply threads are traversed recursively.
+
+---
+
+## code
+
+Search code across repositories. **Server/Data Center only**, and it needs the instance's search index.
+
+### `code search`
+
+Search file contents and paths. **Aliases:** `find`, `grep`.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `query` | 1 | Bitbucket search syntax. A bare term matches file contents *and* paths. |
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--project` | string | | Restrict to one project, by key. |
+| `--repo` | string | | Restrict to one repository. Requires `--project`. |
+| `--repos` | bool | `false` | List the repositories that match instead of every file. |
+| `--limit` | int | 25 | Max matching files to fetch. |
+
+**This is how you find what a repository is built with**, which its name rarely says:
+
+```bash
+orbit bb code search go.mod --repos -p myprofile              # Go modules
+orbit bb code search build.gradle.kts --repos -p myprofile    # Kotlin / Gradle
+orbit bb code search pom.xml --repos -p myprofile             # Maven
+orbit bb code search requirements.txt --repos -p myprofile    # Python
+
+# Scoped
+orbit bb code search go.mod --project EPCAP -p myprofile
+orbit bb code search "TODO" --project EPCAP --repo agentic-platform-monorepo -p myprofile
+```
+
+`--repos` collapses the file matches into the list of repositories holding them, with a count each, which is usually the actual question:
+
+```
+PROJECT          REPOSITORY                     FILES
+-------          ----------                     -----
+DEVOPSES         consul-k8s                     3
+EPCAP            agentic-platform-monorepo      1
+HDP              gometrics                      1
+```
+
+> **Only `project:` and `repo:` are supported modifiers, and an unsupported one is not an error.** `lang:kotlin` returns zero hits - identical to a search that genuinely matched nothing - so a query written with `lang:` or `ext:` reads as "this instance has no Kotlin". `--project` and `--repo` set the two real modifiers for you, and any other `word:` in a query is called out in the output for exactly this reason. Bitbucket also rejects `repo:` without a `project:`, which this command catches before spending a request.
 
 ---
 
