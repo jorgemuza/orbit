@@ -341,7 +341,7 @@ List branches.
 
 ```bash
 orbit bb branch list TEAM my-service -p myprofile
-orbit bb branch ls TEAM my-service -p myprofile --limit 20
+orbit bb branch list TEAM my-service -p myprofile --limit 20
 ```
 
 ### `branch create`
@@ -352,53 +352,67 @@ Create a new branch.
 |----------|----------|-------------|
 | `project-key` | 1 | The project key. |
 | `repo-slug` | 2 | The repository slug. |
-| `branch` | 3 | Name of the new branch. |
-
-| Flag | Type | Required | Description |
-|------|------|----------|-------------|
-| `--ref` | string | Yes | The commit SHA or branch name to branch from. |
+| `name` | 3 | Name of the new branch. |
+| `start-point` | 4 | The branch name, tag or commit SHA to branch from. |
 
 ```bash
 # Create a feature branch from main
-orbit bb branch create TEAM my-service feature/login --ref main -p myprofile
+orbit bb branch create TEAM my-service feature/login main -p myprofile
 
 # Create a branch from a specific commit
-orbit bb branch create TEAM my-service hotfix/urgent --ref a1b2c3d -p myprofile
+orbit bb branch create TEAM my-service hotfix/urgent a1b2c3d -p myprofile
 ```
 
 ### `branch delete`
 
-Delete a branch.
+Delete a branch. **Server/Data Center only** - Bitbucket Cloud keeps branches under a different API.
 
 | Argument | Position | Description |
 |----------|----------|-------------|
 | `project-key` | 1 | The project key. |
 | `repo-slug` | 2 | The repository slug. |
-| `branch` | 3 | Name of the branch to delete. |
+| `branch` | 3 | Name of the branch to delete. Either form works: `feature/login` or `refs/heads/feature/login`. |
 
 ```bash
 orbit bb branch delete TEAM my-service feature/login -p myprofile
 ```
 
+The commit the branch was at is printed, because that is the way back - recreate it with `branch create` from that SHA:
+
+```
+Deleted branch scratch/orbit-final-check (was at 5e85a5908712)
+```
+
+> **Two things about this operation are not what they appear, and both are handled here.**
+>
+> Branch deletion is not in Bitbucket's core REST API. `/rest/api/latest/.../branches` serves `GET` only, so a `DELETE` sent there comes back as `405 Method Not Allowed` with an empty body - no branch name, no reason, the same answer for every branch. Deletion lives in the `branch-utils` plugin, a separate REST namespace rather than a different version of the same one. Orbit did send the `DELETE` to the core API until v0.72.0, which is why every delete failed with a 405.
+>
+> And `branch-utils` answers a delete of a branch that **is not there** with the same `204 No Content` it gives one it did delete. A typo would therefore report success and leave the branch in place, which is worse than the 405: someone clearing out a list of branches would have no way to tell which names were real. So the branch is looked up first and looked for again afterwards, and "deleted" is only printed when it was there and then was not:
+>
+> ```
+> $ orbit bb branch delete TEAM my-service feature/typo
+> Error: no branch feature/typo in TEAM/my-service
+> ```
+>
+> Bitbucket's own refusals come through intact, since they say what to do about them - for example `You cannot delete this branch since it has at least one open pull request associated with it`.
+
 ### `branch default`
 
-View or set the default branch of a repository.
+Show the default branch of a repository.
 
 | Argument | Position | Description |
 |----------|----------|-------------|
 | `project-key` | 1 | The project key. |
 | `repo-slug` | 2 | The repository slug. |
 
-| Flag | Type | Required | Description |
-|------|------|----------|-------------|
-| `--set` | string | No | Set the default branch to this value. Omit to view the current default. |
+```bash
+orbit bb branch default TEAM my-service -p myprofile
+```
+
+To **change** the default branch, use [`repo edit`](#repo-edit):
 
 ```bash
-# View the current default branch
-orbit bb branch default TEAM my-service -p myprofile
-
-# Change the default branch to develop
-orbit bb branch default TEAM my-service -p myprofile --set develop
+orbit bb repo edit TEAM my-service --default-branch develop -p myprofile
 ```
 
 ---
@@ -435,18 +449,19 @@ Create a new tag.
 |----------|----------|-------------|
 | `project-key` | 1 | The project key. |
 | `repo-slug` | 2 | The repository slug. |
-| `tag` | 3 | Name of the tag. |
+| `tag-name` | 3 | Name of the tag. |
+| `start-point` | 4 | The branch name or commit SHA to tag. |
 
 | Flag | Type | Required | Description |
 |------|------|----------|-------------|
-| `--ref` | string | Yes | The commit SHA or branch name to tag. |
+| `-m`, `--message` | string | No | Tag message. Creates an annotated tag. |
 
 ```bash
 # Tag the current HEAD of main
-orbit bb tag create TEAM my-service v1.0.0 --ref main -p myprofile
+orbit bb tag create TEAM my-service v1.0.0 main -p myprofile
 
-# Tag a specific commit
-orbit bb tag create TEAM my-service v1.0.1 --ref a1b2c3d -p myprofile
+# Tag a specific commit, annotated
+orbit bb tag create TEAM my-service v1.0.1 a1b2c3d -m "Release v1.0.1" -p myprofile
 ```
 
 ---

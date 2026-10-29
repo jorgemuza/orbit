@@ -133,11 +133,15 @@ orbit -p myprofile bb branch create L3SUP agents-sre feature/new-thing main
 
 ### `bitbucket branch delete <project-key> <repo-slug> <branch-name>`
 
-Delete a branch.
+Delete a branch. **Server only.** Either `feature/x` or `refs/heads/feature/x` works.
 
 ```
 orbit -p myprofile bb branch delete L3SUP agents-sre feature/old-thing
 ```
+
+Prints the commit the branch was at, which is how to recreate it: `Deleted branch feature/old-thing (was at 5e85a5908712)`.
+
+Deletion lives in the `branch-utils` plugin, not the core API whose `/branches` is GET-only and answers a DELETE with 405 - orbit sent it to the wrong one until v0.72.0. `branch-utils` also answers a delete of a branch that does not exist with the same 204 it gives a real one, so orbit checks the branch exists first and checks it is gone afterwards; a name that is not there is an error, not a success line.
 
 ---
 
