@@ -234,23 +234,57 @@ orbit -p myprofile bb pr create L3SUP agents-sre \
 
 ### `bitbucket pr edit <project-key> <repo-slug> <pr-id>`
 
-Edit a pull request's title or description. **Alias:** `update`. **Server only.**
+Edit a pull request's title, description or target branch. **Alias:** `update`. **Server only.**
 
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--title <text>` | No | New title |
 | `--description <text>` | No | New description |
 | `--description-file <path>` | No | Read the description from a file; `-` reads stdin. Mutually exclusive with `--description` |
+| `--to <branch>` | No | New target branch; for several pull requests at once use `pr retarget` |
 
-At least one of the three is required. Use `--description-file` for anything longer than a line:
+At least one of the four is required. Use `--description-file` for anything longer than a line:
 
 ```
 orbit -p myprofile bb pr edit L3SUP agents-sre 42 --title "Correct the title"
 orbit -p myprofile bb pr edit L3SUP agents-sre 42 --description-file pr-body.md
 cat pr-body.md | orbit -p myprofile bb pr edit L3SUP agents-sre 42 --description-file -
+orbit -p myprofile bb pr edit L3SUP agents-sre 42 --to develop
 ```
 
 Reviewers survive the edit. Bitbucket's update endpoint replaces the pull request instead of patching it, so a request sending only a description also means "and no reviewers" - it drops every reviewer and their approvals and still answers 200. This command sends the existing reviewers and unchanged title back with the edit, then verifies they survived; a dropped reviewer or a reset approval is reported as an error naming them, since only that person can approve again. Do not hand-roll this with `pr` writes elsewhere.
+
+### `bitbucket pr retarget <project-key> <repo-slug> <pr-id...>`
+
+Point open pull requests at a different target branch - the web interface's "Edit destination branch". Takes several PR IDs at once, which is what a stack of pull requests needs as each one lands. **Server only.**
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--to <branch>` | Yes | The branch the pull requests will merge into |
+
+```
+orbit -p myprofile bb pr retarget L3SUP agents-sre 42 --to develop
+orbit -p myprofile bb pr retarget L3SUP agents-sre 42 43 44 --to develop
+orbit -p myprofile bb pr retarget L3SUP agents-sre 42 43 44 --to develop -o json
+
+# every open PR that targets main, moved onto develop
+orbit -p myprofile bb pr list L3SUP agents-sre --state open -o json \
+  | jq -r '.[] | select(.toRef.displayId == "main") | .id' \
+  | xargs orbit -p myprofile bb pr retarget L3SUP agents-sre --to develop
+```
+
+```
+PR #42 (feature/one): main -> develop
+PR #43 (feature/two): already targets develop
+PR #44: it is MERGED, not open; Bitbucket would move the target branch of a closed pull request anyway, and it would still never merge
+1 retargeted, 1 already there, 1 failed
+```
+
+A failure does not stop the run: every pull request is reported on its own line and the command exits non-zero if any did not move. Re-running is safe, because one that already targets the branch is left alone.
+
+What it will not do, all of which Bitbucket itself allows: write anything when the target branch does not exist (it is checked once, up front, so a typo costs nothing); update a pull request that already targets the branch (the no-op still bumps the version and notifies every watcher); move the target of a merged or declined pull request (it would point at a branch it never merged into). A retarget that would leave two open pull requests with the same source and target is Bitbucket's own `409`, whose body is four kilobytes of the conflicting pull request wrapped around one sentence that omits its number - orbit reports the number.
+
+Reviewers and approvals are preserved the same way `pr edit` preserves them, and for the same reason: this is the endpoint that replaces the pull request. Do not hand-roll a `toRef` PUT through `bb api`.
 
 ### `bitbucket pr diff <project-key> <repo-slug> <pr-id>`
 

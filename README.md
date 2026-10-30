@@ -249,9 +249,10 @@ orbit bb repo list MY-PROJ
 orbit bb repo search payments --permission REPO_WRITE
 orbit bb code search go.mod --repos
 orbit bb pr list MY-PROJ my-repo --state open
-orbit bb pr create MY-PROJ my-repo --source feature/x --target main --title "Add feature"
+orbit bb pr create MY-PROJ my-repo --from feature/x --to main --title "Add feature"
 orbit bb pr approve MY-PROJ my-repo 42
 orbit bb pr merge-status MY-PROJ my-repo 42
+orbit bb pr retarget MY-PROJ my-repo 42 43 44 --to develop
 orbit bb branch list MY-PROJ my-repo
 orbit bb reviewer-condition list MY-PROJ
 ```

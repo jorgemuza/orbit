@@ -132,6 +132,9 @@ orbit -p myprofile bb pr merge-status L3SUP agents-sre 42
 # Edit the title or description (reviewers and their approvals are preserved)
 orbit -p myprofile bb pr edit L3SUP agents-sre 42 --title "Corrected title"
 orbit -p myprofile bb pr edit L3SUP agents-sre 42 --description-file pr-body.md
+
+# Move a stack of PRs onto another target branch, in one command
+orbit -p myprofile bb pr retarget L3SUP agents-sre 42 43 44 --to develop
 ```
 
 ### Finding things
