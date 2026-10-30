@@ -588,7 +588,7 @@ orbit bb pr create TEAM my-service \
 
 ### `pr edit`
 
-Edit the title or description of an open pull request. **Alias:** `update`. **Server/Data Center only** - Bitbucket Cloud has a different pull request API.
+Edit the title, description or target branch of an open pull request. **Alias:** `update`. **Server/Data Center only** - Bitbucket Cloud has a different pull request API.
 
 | Argument | Position | Description |
 |----------|----------|-------------|
@@ -601,6 +601,7 @@ Edit the title or description of an open pull request. **Alias:** `update`. **Se
 | `--title` | string | New title. |
 | `--description` | string | New description. |
 | `--description-file` | string | Read the new description from a file; `-` reads stdin. Mutually exclusive with `--description`. |
+| `--to` | string | New target branch - the branch the pull request will merge into. For several pull requests at once, see [`pr retarget`](#pr-retarget). |
 
 A description is usually longer than fits comfortably on a command line, which is what `--description-file` is for:
 
@@ -613,6 +614,9 @@ orbit bb pr edit TEAM my-service 42 --description-file pr-body.md -p myprofile
 
 # ...or from a pipe
 generate-release-notes | orbit bb pr edit TEAM my-service 42 --description-file - -p myprofile
+
+# A new target branch, on its own or along with the text, in one update
+orbit bb pr edit TEAM my-service 42 --to develop -p myprofile
 ```
 
 > **Reviewers are preserved, and that takes work.** Bitbucket's update endpoint *replaces* the pull request rather than patching it: a request carrying only a new description also says "and no reviewers", so Bitbucket drops every reviewer and every approval they had given - and answers `200` as if nothing happened. Editing a description would silently reset the review.
@@ -620,6 +624,57 @@ generate-release-notes | orbit bb pr edit TEAM my-service 42 --description-file 
 > So this command reads the pull request first (it needs the `version` for optimistic locking anyway), sends the existing reviewers and the unchanged title back along with the edit, and then checks what came back. A reviewer who disappeared or an approval that was reset is reported as an error naming them, because neither is something orbit can restore - only the reviewer can approve again.
 >
 > Two differences between what was sent and what Bitbucket stores are the server normalising its input, not a failed edit, and are accepted: CRLF line endings become LF, and trailing whitespace is trimmed (a description read from a file ends in a newline; the stored copy does not).
+
+### `pr retarget`
+
+Point one or more open pull requests at a different target branch - what the web interface calls editing the destination branch. **Server/Data Center only.**
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `repo-slug` | 2 | The repository slug. |
+| `pr-id...` | 3+ | One or more pull request IDs. A leading `#` is accepted. |
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--to` | string | Yes | The branch the pull requests will merge into. A branch name or a full `refs/heads/...` ref. |
+
+```bash
+# One pull request
+orbit bb pr retarget TEAM my-service 42 --to develop -p myprofile
+
+# A stack of them, in one go
+orbit bb pr retarget TEAM my-service 42 43 44 --to develop -p myprofile
+
+# Machine-readable, including which ones were already there
+orbit bb pr retarget TEAM my-service 42 43 44 --to develop -o json -p myprofile
+
+# Every open pull request that targets main, moved onto develop
+orbit bb pr list TEAM my-service --state open -o json -p myprofile \
+  | jq -r '.[] | select(.toRef.displayId == "main") | .id' \
+  | xargs orbit bb pr retarget TEAM my-service --to develop -p myprofile
+```
+
+```
+PR #42 (feature/one): main -> develop
+PR #43 (feature/two): already targets develop
+PR #44: it is MERGED, not open; Bitbucket would move the target branch of a closed pull request anyway, and it would still never merge
+1 retargeted, 1 already there, 1 failed
+```
+
+A run over several pull requests does not stop at the first failure: each is reported on its own line, the tally follows, and the command exits non-zero if any of them did not move. Running it again is safe - the ones that moved are left alone the second time.
+
+> **What this command refuses to do, and why.**
+>
+> The target branch is checked once, before anything is written. A mistyped branch name would otherwise be found by the first pull request and reported again for every pull request after it, with the earlier ones already moved.
+>
+> **Reviewers and approvals are preserved.** The update endpoint replaces the pull request rather than patching it, so an update carrying only the new branch also says "and no reviewers" - see the note under [`pr edit`](#pr-edit). A retarget reads the pull request first, sends the reviewers back with the new branch, and reports any approval the update cost.
+>
+> **A pull request that already targets the branch is left alone.** Bitbucket accepts that update happily, but it is not free: the version is bumped and everyone watching is notified. Retargeting a stack one branch at a time would otherwise send mail about work that did not happen.
+>
+> **A merged or declined pull request is reported, not moved.** Bitbucket will change the target branch of a closed pull request without complaint, leaving a pull request that points at a branch it never merged into. Over a list of pull requests that is a silent rewrite of the record.
+>
+> **Only one pull request may be open for a given source and target.** Bitbucket answers a retarget that would collide with a `409` whose body is the entire conflicting pull request - some four kilobytes of JSON around one sentence that does not include its number. orbit reports the number instead: `#7 is already open from feature/x to develop, and Bitbucket allows only one pull request for a given source and target; merge, decline or retarget #7 first`.
 
 ### `pr merge`
 

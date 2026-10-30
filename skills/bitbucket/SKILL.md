@@ -132,6 +132,9 @@ orbit -p myprofile bb pr merge-status OPS ops-agents 42
 # Edit the title or description (reviewers and their approvals are preserved)
 orbit -p myprofile bb pr edit OPS ops-agents 42 --title "Corrected title"
 orbit -p myprofile bb pr edit OPS ops-agents 42 --description-file pr-body.md
+
+# Move a stack of PRs onto another target branch, in one command
+orbit -p myprofile bb pr retarget OPS ops-agents 42 43 44 --to develop
 ```
 
 ### Finding things
