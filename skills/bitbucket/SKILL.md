@@ -1,6 +1,6 @@
 ---
 name: bitbucket
-description: "Manage Bitbucket repositories, pull requests, branches, tags, commits, projects, and admin settings using the orbit CLI. Use this skill whenever the user asks about Bitbucket repos, PRs (pull requests), branches, tags, commits, code review, project management, default reviewer conditions, required approvals, merge restrictions, or PR approvals on Bitbucket Server/Data Center or Bitbucket Cloud. Trigger on phrases like 'list PRs', 'show pull requests', 'create a branch', 'open a PR', 'view the latest commits', 'list repos in project X', 'merge the PR', 'decline the PR', 'approve the PR', 'unapprove', 'request changes', 'find a repo', 'search repos', 'which repos are Go', 'search the code', 'needs work', 'mark as needs work', 'reject the PR', 'block the merge', 'check PR activity', 'bypass merge check', 'required approvals', 'reviewer conditions', 'who needs to approve', 'can this merge', 'why can't it merge', 'merge status', or any Bitbucket-related task — even casual references like 'what PRs are open', 'show me the repos', 'tag a release', 'check if it merged', 'who approved it', 'list branches', or 'why can't I merge'. Also trigger when the user provides a Bitbucket Server URL (e.g., https://git.example.com/projects/PROJ/repos/my-repo/) or mentions Bitbucket Data Center. The orbit CLI alias is `bb`."
+description: "Manage Bitbucket repositories, pull requests, branches, tags, commits, projects, and admin settings using the orbit CLI. Use this skill whenever the user asks about Bitbucket repos, PRs (pull requests), branches, tags, commits, code review, project management, default reviewer conditions, required approvals, merge restrictions, or PR approvals on Bitbucket Server/Data Center or Bitbucket Cloud. Trigger on phrases like 'list PRs', 'show pull requests', 'create a branch', 'open a PR', 'view the latest commits', 'list repos in project X', 'merge the PR', 'decline the PR', 'approve the PR', 'unapprove', 'request changes', 'find a repo', 'search repos', 'which repos are Go', 'search the code', 'needs work', 'mark as needs work', 'reject the PR', 'block the merge', 'check PR activity', 'bypass merge check', 'required approvals', 'reviewer conditions', 'who needs to approve', 'can this merge', 'why can't it merge', 'merge status', or any Bitbucket-related task - even casual references like 'what PRs are open', 'show me the repos', 'tag a release', 'check if it merged', 'who approved it', 'list branches', or 'why can't I merge'. Also trigger when the user provides a Bitbucket Server URL (e.g., https://git.example.com/projects/PROJ/repos/my-repo/) or mentions Bitbucket Data Center. The orbit CLI alias is `bb`."
 ---
 
 # Bitbucket with orbit CLI
@@ -9,7 +9,7 @@ Manage Bitbucket repositories, pull requests, branches, tags, commits, projects,
 
 ## Prerequisites
 
-1. `orbit` CLI installed — if `which orbit` fails, install with:
+1. `orbit` CLI installed - if `which orbit` fails, install with:
    - **macOS/Linux (Homebrew):** `brew install jorgemuza/tap/orbit`
    - **macOS/Linux (script):** `curl -sSfL https://raw.githubusercontent.com/jorgemuza/orbit/main/install.sh | sh`
    - **Windows (Scoop):** `scoop bucket add jorgemuza https://github.com/jorgemuza/scoop-bucket && scoop install orbit`
@@ -96,6 +96,9 @@ orbit -p myprofile bb pr list OPS ops-agents --state merged
 # List all PRs
 orbit -p myprofile bb pr list OPS ops-agents --state all
 
+# Only the drafts (STATE reads DRAFT for an open draft)
+orbit -p myprofile bb pr list OPS ops-agents --draft
+
 # View PR details (shows from/to branches, reviewers, approval status)
 orbit -p myprofile bb pr view OPS ops-agents 42
 
@@ -107,6 +110,10 @@ orbit -p myprofile bb pr create OPS ops-agents \
 orbit -p myprofile bb pr create OPS ops-agents \
   --from feature/new --to main --title "Add feature" \
   --reviewers john.doe,jane.smith
+
+# Create a PR as a draft, for work that is not ready for review
+orbit -p myprofile bb pr create OPS ops-agents \
+  --from feature/wip --to main --title "Spike" --draft
 
 # View PR diff (for code review)
 orbit -p myprofile bb pr diff OPS ops-agents 42
@@ -135,6 +142,13 @@ orbit -p myprofile bb pr edit OPS ops-agents 42 --description-file pr-body.md
 
 # Move a stack of PRs onto another target branch, in one command
 orbit -p myprofile bb pr retarget OPS ops-agents 42 43 44 --to develop
+
+# Hold PRs back, and send a whole stack out for review
+orbit -p myprofile bb pr draft OPS ops-agents 42
+orbit -p myprofile bb pr ready OPS ops-agents 42 43 44
+
+# Pull one back to a draft as part of an edit, in one update
+orbit -p myprofile bb pr edit OPS ops-agents 42 --title "WIP: spike" --draft
 ```
 
 ### Finding things
@@ -156,7 +170,7 @@ orbit -p myprofile bb code search build.gradle.kts --repos
 orbit -p myprofile bb pr comment OPS ops-agents 42 -m "Please address the items above"
 orbit -p myprofile bb pr needs-work OPS ops-agents 42
 
-# Decline a PR (closes it — use needs-work for "request changes" instead)
+# Decline a PR (closes it - use needs-work for "request changes" instead)
 orbit -p myprofile bb pr decline OPS ops-agents 42
 
 # Add a comment to a PR
@@ -275,7 +289,26 @@ orbit -p myprofile bb pr needs-work OPS ops-agents 42
 |---------|---------|-------------|
 | Approve | `pr approve` | PR is ready to merge; no blockers. |
 | Request changes | `pr needs-work` | PR needs fixes but is still the right direction. Author addresses feedback and pushes; you flip to `approve`. PR stays open. |
-| Reject | `pr decline` | PR is fundamentally wrong and shouldn't be merged at all. **Closes the PR**; reversible only via reopen. Rarely the right choice after a normal review — prefer `needs-work`. |
+| Reject | `pr decline` | PR is fundamentally wrong and shouldn't be merged at all. **Closes the PR**; reversible only via reopen. Rarely the right choice after a normal review - prefer `needs-work`. |
+
+Not a review outcome but next to one: `pr draft` pulls a PR out of review entirely until the author marks it ready, which is for work that was put up too early rather than work that needs fixing.
+
+**Holding work back, and sending it out:**
+```bash
+# Open it held back, and send it out when it is ready
+orbit -p myprofile bb pr create OPS ops-agents \
+  --from feature/wip --to main --title "Spike" --draft
+orbit -p myprofile bb pr ready OPS ops-agents 42
+
+# Pull one back when review finds it premature
+orbit -p myprofile bb pr draft OPS ops-agents 42
+
+# A whole stack of drafts, out for review at once
+orbit -p myprofile bb pr list OPS ops-agents --draft -o json \
+  | jq -r '.[].id' \
+  | xargs orbit -p myprofile bb pr ready OPS ops-agents
+```
+A draft is `OPEN` and can be reviewed and approved, and approvals survive it being marked ready. The only thing it cannot do is merge, so `pr merge` refuses one and points at `pr ready`. Needs Data Center 8.18+.
 
 **Extract project key and repo slug from a URL:**
 Given `https://git.example.com/projects/OPS/repos/ops-agents/pull-requests`:
@@ -290,11 +323,12 @@ orbit -p myprofile bb repo list OPS
 
 ## Important Notes
 
-- **Do NOT run `pr diff` in parallel with other commands.** The diff endpoint returns raw text (not JSON) and can interfere with parallel JSON-based commands. Always run `pr diff` sequentially — never in the same parallel Bash block as other orbit commands.
-- **Profile required** — Always pass `-p <profile>` to select the Bitbucket connection. The profile must have a service of type `bitbucket` configured.
-- **Service flag** — If a profile has multiple Bitbucket services, use `--service <name>` to disambiguate.
-- **Server vs Cloud** — The service variant (`server` or `cloud`) in config determines the API prefix. Server uses `/rest/api/latest/`, Cloud uses `/2.0/`.
+- **Do NOT run `pr diff` in parallel with other commands.** The diff endpoint returns raw text (not JSON) and can interfere with parallel JSON-based commands. Always run `pr diff` sequentially - never in the same parallel Bash block as other orbit commands.
+- **Profile required** - Always pass `-p <profile>` to select the Bitbucket connection. The profile must have a service of type `bitbucket` configured.
+- **Service flag** - If a profile has multiple Bitbucket services, use `--service <name>` to disambiguate.
+- **Server vs Cloud** - The service variant (`server` or `cloud`) in config determines the API prefix. Server uses `/rest/api/latest/`, Cloud uses `/2.0/`.
 - **Secret references** - Credentials in config can use 1Password (`op://vault/item/field`) or Infisical (`infisical://<env>/<path>/<KEY>`) references, resolved at runtime. Run `orbit auth` once to resolve and cache all secrets (a single biometric prompt for 1Password). Use `orbit auth clear` to wipe the cache. See [Secrets](../../docs/secrets.md).
-- **PR states are uppercase** — Use `OPEN`, `MERGED`, `DECLINED`, or `ALL` (case-insensitive input is accepted).
-- **Pagination** — Most list commands default to 25-50 results. Use `--limit N` to adjust.
-- **URL parsing** — When a user provides a Bitbucket Server URL like `https://host/projects/KEY/repos/SLUG/...`, extract the project key and repo slug from the URL path to use with orbit commands.
+- **PR states are uppercase** - Use `OPEN`, `MERGED`, `DECLINED`, or `ALL` (case-insensitive input is accepted).
+- **A draft is a flag, not a state** - A draft PR is `OPEN` and reviewable; the only thing it cannot do is merge. Mark one ready with `pr ready` (several at once is fine), and hold one back with `pr draft`. Needs Data Center 8.18+. Note that Bitbucket's own merge check answers `CLEAN` for a draft, so trust `pr merge-status` (which counts the draft as a blocker) rather than a raw merge call. Bitbucket does not clear the flag when a PR closes, so a merged or declined PR may still report `draft: true` in JSON.
+- **Pagination** - Most list commands default to 25-50 results. Use `--limit N` to adjust.
+- **URL parsing** - When a user provides a Bitbucket Server URL like `https://host/projects/KEY/repos/SLUG/...`, extract the project key and repo slug from the URL path to use with orbit commands.

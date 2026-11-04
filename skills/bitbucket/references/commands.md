@@ -205,14 +205,19 @@ List pull requests.
 |------|---------|-------------|
 | `--state <state>` | | Filter: `OPEN`, `MERGED`, `DECLINED`, `ALL` |
 | `--limit <n>` | 25 | Max results |
+| `--draft` | | Keep only drafts; `--draft=false` keeps only the ones that are not. Filtered server side |
 
 **Output columns:** ID, State, Author, Title
+
+The STATE column reads `DRAFT` for an open draft, the way the web interface shows it. Bitbucket does not clear the draft flag when a pull request closes, so for a closed one the column shows `MERGED` or `DECLINED` instead, which is the fact that matters.
 
 ### `bitbucket pr view <project-key> <repo-slug> <pr-id>`
 
 View pull request details.
 
-**Output fields:** ID, Title, State, From Branch, To Branch, Author, Reviewers (with approval status), Created, Updated, URL, Description
+**Output fields:** ID, Version, Title, State, From Branch, To Branch, Author, Reviewers (with approval status), Created, Updated, URL, Description
+
+State reads `OPEN (draft)` for a draft.
 
 ### `bitbucket pr create <project-key> <repo-slug>`
 
@@ -225,16 +230,22 @@ Create a pull request.
 | `--to <branch>` | Yes | Target branch |
 | `--description <text>` | No | PR description |
 | `--reviewers <slugs>` | No | Comma-separated reviewer usernames |
+| `--draft` | No | Create as a draft; Bitbucket will not merge it until it is marked ready. Data Center 8.18+ |
 
 ```
 orbit -p myprofile bb pr create OPS ops-agents \
   --from feature/new --to main --title "Add new feature" \
   --reviewers john.doe,jane.smith
+
+orbit -p myprofile bb pr create OPS ops-agents \
+  --from feature/wip --to main --title "Spike" --draft
 ```
+
+An instance older than 8.18 ignores `draft` and answers 201 with an ordinary pull request, open for review when it was meant to be held back. orbit checks the flag that came back and reports it, naming the pull request it did create.
 
 ### `bitbucket pr edit <project-key> <repo-slug> <pr-id>`
 
-Edit a pull request's title, description or target branch. **Alias:** `update`. **Server only.**
+Edit a pull request's title, description, target branch or draft state. **Alias:** `update`. **Server only.**
 
 | Flag | Required | Description |
 |------|----------|-------------|
@@ -242,14 +253,16 @@ Edit a pull request's title, description or target branch. **Alias:** `update`. 
 | `--description <text>` | No | New description |
 | `--description-file <path>` | No | Read the description from a file; `-` reads stdin. Mutually exclusive with `--description` |
 | `--to <branch>` | No | New target branch; for several pull requests at once use `pr retarget` |
+| `--draft` | No | Convert to a draft; `--draft=false` marks it ready. For several at once use `pr draft` / `pr ready` |
 
-At least one of the four is required. Use `--description-file` for anything longer than a line:
+At least one of the five is required. Use `--description-file` for anything longer than a line:
 
 ```
 orbit -p myprofile bb pr edit OPS ops-agents 42 --title "Correct the title"
 orbit -p myprofile bb pr edit OPS ops-agents 42 --description-file pr-body.md
 cat pr-body.md | orbit -p myprofile bb pr edit OPS ops-agents 42 --description-file -
 orbit -p myprofile bb pr edit OPS ops-agents 42 --to develop
+orbit -p myprofile bb pr edit OPS ops-agents 42 --title "WIP: spike" --draft
 ```
 
 Reviewers survive the edit. Bitbucket's update endpoint replaces the pull request instead of patching it, so a request sending only a description also means "and no reviewers" - it drops every reviewer and their approvals and still answers 200. This command sends the existing reviewers and unchanged title back with the edit, then verifies they survived; a dropped reviewer or a reset approval is reported as an error naming them, since only that person can approve again. Do not hand-roll this with `pr` writes elsewhere.
@@ -286,6 +299,32 @@ What it will not do, all of which Bitbucket itself allows: write anything when t
 
 Reviewers and approvals are preserved the same way `pr edit` preserves them, and for the same reason: this is the endpoint that replaces the pull request. Do not hand-roll a `toRef` PUT through `bb api`.
 
+### `bitbucket pr draft <project-key> <repo-slug> <pr-id...>` / `bitbucket pr ready <...>`
+
+Convert open pull requests to drafts, or mark drafts ready for review - the web interface's "Convert to draft" and "Mark as ready". Both take several PR IDs at once. `pr ready` has the aliases `publish` and `undraft`. No flags; the direction is the command. **Requires Data Center 8.18+. Server only.**
+
+```
+orbit -p myprofile bb pr draft OPS ops-agents 42
+orbit -p myprofile bb pr ready OPS ops-agents 42 43 44
+orbit -p myprofile bb pr draft OPS ops-agents 42 43 44 -o json
+
+# every draft in the repo, marked ready
+orbit -p myprofile bb pr list OPS ops-agents --draft -o json \
+  | jq -r '.[].id' \
+  | xargs orbit -p myprofile bb pr ready OPS ops-agents
+```
+
+```
+PR #42 (feature/one): now a draft
+PR #43 (feature/two): already a draft
+PR #44: it is MERGED, not open, and Bitbucket will not change the draft state of a closed pull request - it would have to be reopened first
+1 marked as draft, 1 already in draft, 1 failed
+```
+
+A draft is a flag, not a state: it is `OPEN`, it can be reviewed and approved, and approvals given to a draft survive being marked ready. What it cannot do is merge. `pr merge` refuses a draft up front and points here; `pr merge-status` counts it as a blocker, which the server's own merge check does not - that answers `CLEAN` for a draft and then the merge is refused.
+
+What these commands will not do: change a pull request already in the state asked for (the no-op bumps the version and notifies every watcher), or touch a merged or declined one (Bitbucket refuses it too, but only after the write has been sent). Reviewers and approvals are preserved the same way `pr edit` preserves them, and for the same reason: this is the endpoint that replaces the pull request. Do not hand-roll a `draft` PUT.
+
 ### `bitbucket pr diff <project-key> <repo-slug> <pr-id>`
 
 Show the unified diff for a pull request. Useful for code review.
@@ -312,6 +351,8 @@ orbit -p myprofile bb pr merge OPS ops-agents 42
 orbit -p myprofile bb pr merge OPS ops-agents 42 --bypass-review
 ```
 
+A draft is refused up front, pointing at `pr ready`, rather than after the attempt - which under `--bypass-review` would mean disabling every merge hook first for a request Bitbucket was never going to accept. Other refusals are reported as Bitbucket's own sentence rather than the JSON body carrying it, and a version race says what each side was on and that nothing was merged.
+
 ### `bitbucket pr merge-status <project-key> <repo-slug> <pr-id>`
 
 Whether a pull request can be merged, and what is blocking it. **Aliases:** `can-merge`, `mergeable`. **Server only.**
@@ -326,6 +367,8 @@ orbit -p myprofile bb pr merge-status OPS ops-agents 42 --exit-status
 ```
 
 Shows the server's verdict (`CLEAN`, `CONFLICTED`, `VETOED`), the conflict or each vetoing merge check in its own words, the reviewer tally with positions first, and the head commit's build stats. Ask this before `pr merge` rather than reading a merge failure.
+
+A draft is counted as a blocker on top of the server's verdict, because the server does not count it: its merge check answers `CLEAN` for a draft with no conflict and no veto, and the merge is then refused. The outcome in brackets is dropped when it would contradict the verdict, so a draft reads `Mergeable: no` with the draft named as the blocker.
 
 An already merged or declined PR is reported as such: Bitbucket answers the merge question with a 409 for one that is not open, so the state is read first and becomes the answer. Build statuses come from a separate API that an instance need not have; when it is absent the line says so and the verdict still stands.
 
@@ -359,7 +402,7 @@ Add a comment to a pull request.
 
 ### `bitbucket pr activity <project-key> <repo-slug> <pr-id>`
 
-List pull request activity — comments, approvals, merges, status changes.
+List pull request activity - comments, approvals, merges, status changes.
 
 | Flag | Default | Description |
 |------|---------|-------------|
@@ -367,7 +410,7 @@ List pull request activity — comments, approvals, merges, status changes.
 
 **Activity types shown:** COMMENTED, APPROVED, REVIEWED (needs work), MERGED, DECLINED, OPENED
 
-Nested comment replies are shown with indentation — all reply threads are traversed recursively so no responses are hidden.
+Nested comment replies are shown with indentation - all reply threads are traversed recursively so no responses are hidden.
 
 ---
 
@@ -408,6 +451,8 @@ List users.
 | `--filter <text>` | | Filter by username or display name |
 | `--limit <n>` | 25 | Max results |
 
+**Output columns:** ID, USERNAME, DISPLAY NAME, ACTIVE. USERNAME is the value `pr create --reviewers` and the reviewer flags take; on some instances it is an email address, so the columns are sized from the data rather than truncated.
+
 ---
 
 ## reviewer-condition (admin)
@@ -429,7 +474,7 @@ orbit -p myprofile bb rc list PROJ -o json
 
 ### `bitbucket reviewer-condition update <project-key> <condition-id>`
 
-Update the required approvals count for a default reviewer condition. Preserves all reviewers and branch matchers — only changes the approval requirement.
+Update the required approvals count for a default reviewer condition. Preserves all reviewers and branch matchers - only changes the approval requirement.
 
 | Flag | Required | Description |
 |------|----------|-------------|
@@ -443,7 +488,7 @@ orbit -p myprofile bb rc update PROJ 1063 --required-approvals 0
 orbit -p myprofile bb rc update PROJ 1063 --required-approvals 2
 ```
 
-**Common use case — bypass merge block:**
+**Common use case - bypass merge block:**
 When `pr merge` fails with "Not all required reviewers have approved yet", this is caused by a project-level condition. Set required approvals to 0, merge, then restore. The `--bypass-review` flag on `pr merge` does this automatically.
 
 ### `bitbucket reviewer-condition delete <project-key> <condition-id>`

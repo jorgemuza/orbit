@@ -58,7 +58,7 @@ List projects.
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--limit` | int | — | Maximum number of projects to return. |
+| `--limit` | int | - | Maximum number of projects to return. |
 
 ```bash
 # List all projects
@@ -119,7 +119,7 @@ List repositories in a project.
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--limit` | int | — | Maximum number of repositories to return. |
+| `--limit` | int | - | Maximum number of repositories to return. |
 
 ```bash
 # List all repos in a project
@@ -337,7 +337,7 @@ List branches.
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--limit` | int | — | Maximum number of branches to return. |
+| `--limit` | int | - | Maximum number of branches to return. |
 
 ```bash
 orbit bb branch list TEAM my-service -p myprofile
@@ -434,7 +434,7 @@ List tags.
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--limit` | int | — | Maximum number of tags to return. |
+| `--limit` | int | - | Maximum number of tags to return. |
 
 ```bash
 orbit bb tag list TEAM my-service -p myprofile
@@ -483,7 +483,7 @@ List commits in a repository.
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--limit` | int | — | Maximum number of commits to return. |
+| `--limit` | int | - | Maximum number of commits to return. |
 
 ```bash
 orbit bb commit list TEAM my-service -p myprofile
@@ -523,8 +523,9 @@ List pull requests in a repository.
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--state` | string | — | Filter by state: `open`, `declined`, `merged`, or `all`. |
-| `--limit` | int | — | Maximum number of pull requests to return. |
+| `--state` | string | - | Filter by state: `open`, `declined`, `merged`, or `all`. |
+| `--limit` | int | 25 | Maximum number of pull requests to return. |
+| `--draft` | bool | - | Keep only drafts. `--draft=false` keeps only pull requests that are not drafts. Bitbucket filters server side. |
 
 ```bash
 # List open PRs (default)
@@ -535,7 +536,13 @@ orbit bb pr list TEAM my-service -p myprofile --state merged
 
 # List all PRs with a limit
 orbit bb pr ls TEAM my-service -p myprofile --state all --limit 25
+
+# Only the drafts, and only the ones that are not
+orbit bb pr list TEAM my-service --draft -p myprofile
+orbit bb pr list TEAM my-service --draft=false -p myprofile
 ```
+
+The `STATE` column reads `DRAFT` for an open draft, the way the web interface shows it: a draft is `OPEN`, but a listing that called it that would hide the only unusual thing about it. A closed pull request keeps whatever draft flag it had - Bitbucket does not clear it - so there the column shows `MERGED` or `DECLINED`, which is the fact that matters.
 
 ### `pr view`
 
@@ -550,6 +557,8 @@ View details of a single pull request.
 ```bash
 orbit bb pr view TEAM my-service 42 -p myprofile
 ```
+
+The `State` line folds in Bitbucket's separate draft flag: `OPEN (draft)` is a pull request nobody is being asked to merge yet. See [`pr draft`](#pr-draft--pr-ready).
 
 ### `pr create`
 
@@ -567,6 +576,7 @@ Create a new pull request.
 | `--title` | string | Yes | Pull request title. |
 | `--description` | string | No | Pull request description body. |
 | `--reviewers` | string | No | Comma-separated reviewer usernames. |
+| `--draft` | bool | No | Create as a draft. Bitbucket will not merge it until it is marked ready. Requires Data Center 8.18 or newer. |
 
 ```bash
 # Minimal PR
@@ -584,11 +594,21 @@ orbit bb pr create TEAM my-service \
   --description "Implements OAuth2 login with refresh token support." \
   --reviewers john.doe,jane.smith \
   -p myprofile
+
+# A draft, for work that is not ready for review yet
+orbit bb pr create TEAM my-service \
+  --from feature/login \
+  --to main \
+  --title "Add login flow" \
+  --draft \
+  -p myprofile
 ```
+
+> **A draft that was not made is reported.** An instance older than 8.18 does not know the field, ignores it, and answers `201` with an ordinary pull request - one that is open for review when it was meant to be held back. orbit checks what came back and says so, naming the pull request it did create.
 
 ### `pr edit`
 
-Edit the title, description or target branch of an open pull request. **Alias:** `update`. **Server/Data Center only** - Bitbucket Cloud has a different pull request API.
+Edit the title, description, target branch or draft state of an open pull request. **Alias:** `update`. **Server/Data Center only** - Bitbucket Cloud has a different pull request API.
 
 | Argument | Position | Description |
 |----------|----------|-------------|
@@ -602,6 +622,9 @@ Edit the title, description or target branch of an open pull request. **Alias:**
 | `--description` | string | New description. |
 | `--description-file` | string | Read the new description from a file; `-` reads stdin. Mutually exclusive with `--description`. |
 | `--to` | string | New target branch - the branch the pull request will merge into. For several pull requests at once, see [`pr retarget`](#pr-retarget). |
+| `--draft` | bool | Convert to a draft; `--draft=false` marks it ready for review. For several at once, see [`pr draft`](#pr-draft--pr-ready). |
+
+At least one of them is required.
 
 A description is usually longer than fits comfortably on a command line, which is what `--description-file` is for:
 
@@ -617,6 +640,9 @@ generate-release-notes | orbit bb pr edit TEAM my-service 42 --description-file 
 
 # A new target branch, on its own or along with the text, in one update
 orbit bb pr edit TEAM my-service 42 --to develop -p myprofile
+
+# A retitle that also pulls it back to a draft, in one update
+orbit bb pr edit TEAM my-service 42 --title "WIP: spike" --draft -p myprofile
 ```
 
 > **Reviewers are preserved, and that takes work.** Bitbucket's update endpoint *replaces* the pull request rather than patching it: a request carrying only a new description also says "and no reviewers", so Bitbucket drops every reviewer and every approval they had given - and answers `200` as if nothing happened. Editing a description would silently reset the review.
@@ -676,6 +702,57 @@ A run over several pull requests does not stop at the first failure: each is rep
 >
 > **Only one pull request may be open for a given source and target.** Bitbucket answers a retarget that would collide with a `409` whose body is the entire conflicting pull request - some four kilobytes of JSON around one sentence that does not include its number. orbit reports the number instead: `#7 is already open from feature/x to develop, and Bitbucket allows only one pull request for a given source and target; merge, decline or retarget #7 first`.
 
+### `pr draft` / `pr ready`
+
+Convert one or more open pull requests to drafts, or mark drafts ready for review - the web interface's "Convert to draft" and "Mark as ready". **Requires Bitbucket Data Center 8.18 or newer. Server/Data Center only.**
+
+`pr ready` has the aliases `publish` and `undraft`.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `repo-slug` | 2 | The repository slug. |
+| `pr-id...` | 3+ | One or more pull request IDs. A leading `#` is accepted. |
+
+Neither takes a flag; the direction is the command.
+
+```bash
+# Hold one back
+orbit bb pr draft TEAM my-service 42 -p myprofile
+
+# Send a whole stack out for review
+orbit bb pr ready TEAM my-service 42 43 44 -p myprofile
+
+# Machine-readable, including which ones were already there
+orbit bb pr draft TEAM my-service 42 43 44 -o json -p myprofile
+
+# Every draft in the repository, marked ready
+orbit bb pr list TEAM my-service --draft -o json -p myprofile \
+  | jq -r '.[].id' \
+  | xargs orbit bb pr ready TEAM my-service -p myprofile
+```
+
+```
+PR #42 (feature/one): now a draft
+PR #43 (feature/two): already a draft
+PR #44: it is MERGED, not open, and Bitbucket will not change the draft state of a closed pull request - it would have to be reopened first
+1 marked as draft, 1 already in draft, 1 failed
+```
+
+As with `pr retarget`, a run over several pull requests does not stop at the first failure, and running it again is safe.
+
+> **What a draft is, in Bitbucket's terms.** It is a flag on the pull request, not a state of its own: a draft is `OPEN`, it can be reviewed and approved, and approvals given to a draft survive it being marked ready. The one thing it cannot do is merge - the merge refuses with *"This is a draft pull request and cannot be merged"*, and `orbit bb pr merge` refuses it before that, pointing at `pr ready`.
+>
+> **The merge check does not know about it.** `orbit bb pr merge-status` asks the server whether a pull request can merge, and for a draft the server answers `CLEAN`, with no conflict and no veto. orbit counts the draft as a blocker itself, so `merge-status` reports `Mergeable: no` with the draft as the reason rather than promising a merge that would be refused.
+>
+> **Reviewers and approvals are preserved.** The draft flag rides on the same endpoint that replaces the pull request, so an update carrying only the flag would drop every reviewer - see the note under [`pr edit`](#pr-edit). The pull request is read first, the reviewers go back with the change, and any approval it cost is reported.
+>
+> **A pull request already in the state asked for is left alone.** Bitbucket accepts that update, bumps the version and notifies everyone watching, for a change that did not happen.
+>
+> **A merged or declined pull request is reported, not changed.** Bitbucket refuses this one itself - *"This pull request has been declined and must be reopened before it can be drafted or published"* - but only after the write has been built and sent. orbit refuses it first, which is what names the pull request in the message when several were asked for at once.
+>
+> **An instance without drafts is caught.** Older instances ignore the field and answer `200` with the pull request unchanged. orbit checks the flag that came back rather than the status code, and reports the version that has drafts.
+
 ### `pr merge`
 
 Merge a pull request.
@@ -686,9 +763,22 @@ Merge a pull request.
 | `repo-slug` | 2 | The repository slug. |
 | `pr-id` | 3 | The pull request ID. |
 
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--bypass-review` | bool | `false` | Temporarily disable merge checks and required-approval conditions for the merge, restoring them afterwards. Requires repo admin. |
+
 ```bash
 orbit bb pr merge TEAM my-service 42 -p myprofile
 ```
+
+> **A draft is refused before anything is touched.** Bitbucket will not merge a draft, and it says so only once the merge has been attempted - which under `--bypass-review` means every merge hook disabled and every required-approvals condition zeroed first, all for a request that was never going to be accepted. So the pull request's draft flag is checked up front:
+>
+> ```
+> pull request TEAM/my-service#42 is a draft, and Bitbucket will not merge a draft; mark it ready for review first:
+>   orbit bb pr ready TEAM my-service 42
+> ```
+>
+> **A refusal reads as one sentence.** Bitbucket answers a refused merge with a `409` whose body is a JSON object wrapped around the reason; the reason is kept and the wrapper dropped, so an already-merged pull request reports *"This pull request has already been merged."* rather than the exception that carried it. A pull request that changed between being read and being merged says which version each side was on, and that nothing was merged.
 
 ### `pr merge-status`
 
@@ -726,6 +816,17 @@ URL:       https://git.example.com/projects/TEAM/repos/my-service/pull-requests/
 ```
 
 `Blocked by` carries the conflict, if any, and then each merge check that vetoed the merge with its own wording - "Not enough approvals", "Requires successful builds", or whatever an add-on hook says. Reviewers who have taken a position are listed first, so one approval among a dozen silent reviewers is visible at a glance.
+
+> **A draft is counted as a blocker, because the server does not count it.** Bitbucket's merge check answers `CLEAN` for a draft - no conflict, no veto - and then the merge endpoint refuses it. Relaying only the server's verdict would promise a merge that cannot happen, so the draft is added as a blocker of its own:
+>
+> ```
+> State:     OPEN (draft)  (feature/login -> main)
+> Mergeable: no
+> Blocked by:
+>   - the pull request is a draft, and Bitbucket will not merge a draft until it is marked ready for review
+> ```
+>
+> The outcome in brackets is the server's merge check, not always what decided the verdict, so it is left out when it would contradict it: `no (CLEAN)` would read as a contradiction, and the blocker already says what is wrong. It is printed as usual when the two agree - the `no (CONFLICTED)` above, or a `yes (CLEAN)` for one that can merge. `--exit-status` and the `canMerge` field of `-o json` follow the verdict, so a script gated on either will not try to merge a draft.
 
 > **An already merged or declined pull request is reported as such, not as an error.** Bitbucket answers the merge question with a `409` for one that is not open ("This pull request has already been merged."), so the pull request's state is read first and becomes the answer:
 >
@@ -817,7 +918,7 @@ orbit bb pr unapprove TEAM my-service 42 -p myprofile
 
 ### `pr needs-work`
 
-Flag a pull request as `NEEDS_WORK` — Bitbucket Server's "request changes" signal. Blocks merge the same way the manual "Needs Work" button in the UI does, without closing the PR (unlike `decline`). Aliases: `request-changes`. **Server only** — Bitbucket Cloud has a different approval model.
+Flag a pull request as `NEEDS_WORK` - Bitbucket Server's "request changes" signal. Blocks merge the same way the manual "Needs Work" button in the UI does, without closing the PR (unlike `decline`). Aliases: `request-changes`. **Server only** - Bitbucket Cloud has a different approval model.
 
 Works even when the caller isn't already listed as a reviewer on the PR, and fails loudly if Bitbucket doesn't actually store the flag - see the note under this section.
 
@@ -856,7 +957,7 @@ View the activity feed of a pull request (comments, approvals, status changes).
 orbit bb pr activity TEAM my-service 42 -p myprofile
 ```
 
-Nested comment replies are shown with indentation — all reply threads are traversed recursively.
+Nested comment replies are shown with indentation - all reply threads are traversed recursively.
 
 ---
 
@@ -918,12 +1019,16 @@ List users.
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--limit` | int | — | Maximum number of users to return. |
+| `--filter` | string | - | Filter by username or display name. |
+| `--limit` | int | 25 | Maximum number of users to return. |
 
 ```bash
 orbit bb user list -p myprofile
 orbit bb user ls -p myprofile --limit 100
+orbit bb user list --filter john -p myprofile
 ```
+
+**Output columns:** ID, USERNAME, DISPLAY NAME, ACTIVE. The columns are sized from the data rather than to a fixed width, because on an instance where the username is an email address it runs well past twenty characters - and it cannot be truncated, since it is the value that `pr create --reviewers` takes.
 
 ---
 
