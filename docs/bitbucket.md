@@ -101,6 +101,21 @@ View details of a single project.
 orbit bb project view TEAM -p myprofile
 ```
 
+### `project permissions`
+
+List who holds a project: each user's and each group's own grant (`PROJECT_READ`, `PROJECT_WRITE`, `PROJECT_ADMIN`, `REPO_CREATE`), and what the project gives **every licensed user** (`default`). Bitbucket shows this only to the project's admins; anyone else gets "only an admin of project KEY can read who holds it".
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+
+```bash
+orbit bb project permissions PROJ
+orbit bb project permissions PROJ -o json   # {users, groups, default}
+```
+
+> The default is easy to miss and usually the answer. On PROJ every licensed user holds `PROJECT_READ`, which is why someone with no grant of their own anywhere still reads every repository in it.
+
 ---
 
 ## repo
@@ -271,7 +286,7 @@ orbit bb repo forks OPS ops-agents -p myprofile
 
 ### `repo permissions`
 
-List user-level permissions on a repository.
+List the users holding their own grant on a repository; `--groups` adds the groups holding one. Neither says what one person can do on it - they may hold it through the project, a group or the project's default. That is [`repo access`](#repo-access).
 
 | Argument | Position | Description |
 |----------|----------|-------------|
@@ -281,10 +296,33 @@ List user-level permissions on a repository.
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--limit` | int | 50 | Maximum results. |
+| `--groups` | bool | false | Also list group grants. The JSON is then `{users, groups}`; without it, the user list as before. |
 
 ```bash
 orbit bb repo permissions OPS ops-agents -p myprofile
+orbit bb repo permissions OPS ops-agents --groups -o json
 ```
+
+### `repo access`
+
+What one person can do on a repository, and every grant it comes from: their own grant on the repository, a group's grant on it, their own or a group's grant on its project, the project's grant to every licensed user, and a public repository. The person is one account exactly, by username or email (see [`user view`](#user-view)).
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `project-key` | 1 | The project key. |
+| `repo-slug` | 2 | The repository slug. |
+| `username-or-email` | 3 | The account's username or email address, exactly. |
+
+```bash
+orbit bb repo access PROJ my-repo jane.doe@example.com
+# Jane Doe (jdoe@corp.example) on PROJ/my-repo: REPO_WRITE
+#   REPO_WRITE   from repository (REPO_WRITE)
+#   REPO_READ    from project default (PROJECT_READ)
+```
+
+JSON (`-o json`): `user`, `effective` (the highest `REPO_*`, `""` for none), `direct` (their own grant on the repository - the one `repo grant` changes), `sources` (`via`, `permission` as Bitbucket holds it, `level` on this repository), `membership_known` and `unresolved_groups`.
+
+> Group membership is read through the endpoint Bitbucket's own user pickers use. Where an instance hides it from the account orbit signs in as, `membership_known` is false, the groups holding a grant are listed as unresolved, and `effective` is a lower bound ("at least ..."). Reading the grants needs admin on the project and the repository, as `project permissions` does.
 
 ### `repo grant`
 
@@ -1029,6 +1067,21 @@ orbit bb user list --filter john -p myprofile
 ```
 
 **Output columns:** ID, USERNAME, DISPLAY NAME, ACTIVE. The columns are sized from the data rather than to a fixed width, because on an instance where the username is an email address it runs well past twenty characters - and it cannot be truncated, since it is the value that `pr create --reviewers` takes.
+
+> `--filter` is a substring search over username, display name **and** email. "Jane Doe" and "Jane Smith" both match `jane`; to name one person, use `user view`.
+
+### `user view`
+
+The one account whose username or email address is exactly the one given (case-insensitive), across every page of the directory. Refused when no account has it, and when two accounts share the email (give the username then). A display name is not accepted: two people can share one.
+
+| Argument | Position | Description |
+|----------|----------|-------------|
+| `username-or-email` | 1 | The username or email address, exactly. |
+
+```bash
+orbit bb user view jane.doe@example.com
+orbit bb user view jdoe@corp.example -o json
+```
 
 ---
 
