@@ -284,6 +284,26 @@ List forks of a repository.
 orbit bb repo forks OPS ops-agents -p myprofile
 ```
 
+### `repo merge-strategy`
+
+Show or set which merge strategies a repository allows and its default. **Server only.** Setting needs repo admin, makes the repository use its own configuration (rather than its project's or the server's), and reads it back.
+
+```
+orbit bb repo merge-strategy <project-key> <repo-slug> [--default <id> --enable <id,id>]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--default` | string | | Strategy a merge uses unless it asks for another |
+| `--enable` | strings | | Strategies a merge may use; must include the default |
+
+Strategy ids: `no-ff`, `ff`, `ff-only`, `rebase-no-ff`, `rebase-ff-only`, `squash`, `squash-ff-only`.
+
+```bash
+orbit bb repo merge-strategy PROJ web-monorepo -p myprofile
+orbit bb repo merge-strategy PROJ web-monorepo --default squash --enable squash,no-ff -p myprofile
+```
+
 ### `repo permissions`
 
 List the users holding their own grant on a repository; `--groups` adds the groups holding one. Neither says what one person can do on it - they may hold it through the project, a group or the project's default. That is [`repo access`](#repo-access).
@@ -804,10 +824,17 @@ Merge a pull request.
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--bypass-review` | bool | `false` | Temporarily disable merge checks and required-approval conditions for the merge, restoring them afterwards. Requires repo admin. |
+| `--strategy` | string | repo default | Merge strategy id (`squash`, `no-ff`, ...). Must be one the repository enables; checked before anything else, including `--bypass-review`. With `--strategy` the new commit's parent count is checked against it (1 for a squash, 2 for a merge commit); a merge that happened but cannot be confirmed is still reported as merged, follow-up steps still run, and the command exits non-zero. Without it nothing is checked. |
+| `--message` | string | | The whole commit message, subject line first. |
+| `--message-from-pr` | bool | `false` | Commit message `Pull request #N: title` with the description as the body - what the web UI writes. |
+| `--delete-source-branch` | bool | `false` | Delete the source branch once merged, only while it still points at the merged commit. Left in place, and reported, when it is in a fork (or the response does not say), is the default branch or a branch-model development/production branch, has another open pull request into it (the base of a stack), or was pushed to since. |
 
 ```bash
 orbit bb pr merge TEAM my-service 42 -p myprofile
+orbit bb pr merge TEAM my-service 42 --strategy squash --message-from-pr --delete-source-branch -p myprofile
 ```
+
+> **The commit message over the API.** A merge made through the REST API, with no message, gets Bitbucket's subject `Merge pull request #N in P/R from X to Y` - the title is not in it, unlike a merge from the web UI (`Pull request #N: title`). `--message-from-pr` writes the UI's form, so history reads the same however a pull request was merged. For a squash, Bitbucket then appends `Squashed commit of the following:` and every branch commit, whatever the message; neither the API nor the repository settings turn that off.
 
 > **A draft is refused before anything is touched.** Bitbucket will not merge a draft, and it says so only once the merge has been attempted - which under `--bypass-review` means every merge hook disabled and every required-approvals condition zeroed first, all for a request that was never going to be accepted. So the pull request's draft flag is checked up front:
 >

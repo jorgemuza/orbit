@@ -127,6 +127,16 @@ orbit -p myprofile bb pr merge OPS ops-agents 42
 # Merge a PR bypassing review checks (requires repo admin)
 orbit -p myprofile bb pr merge OPS ops-agents 42 --bypass-review
 
+# Squash with the PR title as the subject, and delete the branch
+orbit -p myprofile bb pr merge PROJ my-repo 42 --strategy squash --message-from-pr --delete-source-branch
+
+# Keep a merge commit (a long-lived branch others build on)
+orbit -p myprofile bb pr merge PROJ my-repo 43 --strategy no-ff
+
+# Which merge strategies a repo allows; set them (repo admin)
+orbit -p myprofile bb repo merge-strategy PROJ my-repo
+orbit -p myprofile bb repo merge-strategy PROJ my-repo --default squash --enable squash,no-ff
+
 # Approve a PR
 orbit -p myprofile bb pr approve OPS ops-agents 42
 

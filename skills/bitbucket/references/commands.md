@@ -76,6 +76,15 @@ orbit -p myprofile bb repo view OPS ops-agents
 
 **Output fields:** ID, Slug, Name, Description, State, SCM, Forkable, Project, Clone URLs
 
+### `bitbucket repo merge-strategy <project-key> <repo-slug>`
+
+Show the merge strategies a repository allows, its default, and whether that comes from the repository, its project or the server. With `--default <id> --enable <id,id>` it sets them (repo admin) and reads them back. **Server only.**
+
+```
+orbit -p myprofile bb repo merge-strategy PROJ my-repo
+orbit -p myprofile bb repo merge-strategy PROJ my-repo --default squash --enable squash,no-ff
+```
+
 ### `bitbucket repo list <project-key>`
 
 List repositories in a project.
@@ -345,11 +354,18 @@ Merge a pull request. Automatically handles version for optimistic locking.
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--bypass-review` | `false` | Temporarily disable PRE_PULL_REQUEST_MERGE hooks AND set project-level default reviewer conditions to 0 required approvals before merging, then restore all settings after. Requires project/repo admin permissions. |
+| `--strategy` | repo default | Merge strategy id (`squash`, `no-ff`, ...); must be enabled on the repo, checked first. The commit's parent count is then verified; an unconfirmed merge still reports as merged and exits non-zero. |
+| `--message` | | Whole commit message, subject first |
+| `--message-from-pr` | `false` | `Pull request #N: title` + description, as the web UI writes it (an API merge otherwise gets a subject without the title) |
+| `--delete-source-branch` | `false` | Delete the source branch after merging, only at the merged commit; kept and reported for a fork, the default or branch-model branch, a stack base, or a branch pushed to since |
 
 ```
 orbit -p myprofile bb pr merge OPS ops-agents 42
 orbit -p myprofile bb pr merge OPS ops-agents 42 --bypass-review
+orbit -p myprofile bb pr merge PROJ my-repo 42 --strategy squash --message-from-pr --delete-source-branch
 ```
+
+For a squash, Bitbucket always appends `Squashed commit of the following:` with every branch commit, whatever the message.
 
 A draft is refused up front, pointing at `pr ready`, rather than after the attempt - which under `--bypass-review` would mean disabling every merge hook first for a request Bitbucket was never going to accept. Other refusals are reported as Bitbucket's own sentence rather than the JSON body carrying it, and a version race says what each side was on and that nothing was merged.
 
