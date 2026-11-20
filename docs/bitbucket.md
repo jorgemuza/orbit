@@ -918,7 +918,9 @@ orbit bb pr decline TEAM my-service 42 -p myprofile
 
 ### `pr comment`
 
-Add a comment to a pull request.
+Add a comment to a pull request, or with `--file` and `--line` to one line of its diff, as a reviewer leaves it in the web UI (Server and Data Center).
+
+`--line` is the line's number in the new file; `--old-line` its number in the old file, for a line the pull request removes. Whether the line is added, removed or unchanged context is read from the pull request's own diff, with the web UI's 10 lines of context, so the caller never states it. A line the diff does not show is refused (`not in the pull request's diff`): it has nowhere to anchor.
 
 | Argument | Position | Description |
 |----------|----------|-------------|
@@ -929,9 +931,33 @@ Add a comment to a pull request.
 | Flag | Type | Required | Description |
 |------|------|----------|-------------|
 | `--body` | string | Yes | The comment text. |
+| `--file` | string | No | Comment on a line of this file's diff (its path in the repository). |
+| `--line` | int | No | With `--file`: the line's number in the new file. |
+| `--old-line` | int | No | With `--file`: the line's number in the old file, for a removed line. |
+| `--blocker` | bool | No | With `--file`: make it a task the author has to resolve. |
+| `--commit` | string | No | With `--file`: refuse if the pull request's source has moved past this commit (a prefix is enough), so a comment written against one head never lands on another. |
 
 ```bash
 orbit bb pr comment TEAM my-service 42 --body "LGTM, approved." -p myprofile
+orbit bb pr comment EPCAP agentic-platform-chat-sdk 6 --file gocd/scripts/publish.sh --line 12 \
+  --body "This runs before the version check" --commit 0395020f
+orbit bb pr comment EPCAP agentic-platform-chat-sdk 6 --file README.md --old-line 630 --blocker \
+  --body "Keep the VPN note: the publish needs it" -o json
+```
+
+### `pr dashboard`
+
+Your pull requests across every repository, as your Bitbucket dashboard lists them (Server and Data Center). `--role reviewer` is what waits on your review.
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--role` | string | No | `reviewer`, `author` or `participant` (default: any). |
+| `--state` | string | No | `OPEN` (default), `MERGED` or `DECLINED`. |
+| `--limit` | int | No | Max results (default: every one). |
+
+```bash
+orbit bb pr dashboard --role reviewer
+orbit bb pr dashboard --role author --state merged --limit 10 -o json
 ```
 
 ### `pr diff`
